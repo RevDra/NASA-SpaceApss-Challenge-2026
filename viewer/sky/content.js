@@ -340,6 +340,11 @@ const MORE = {
     hint: ['Drag to look around', 'Scroll or pinch to zoom', 'Click a star, planet or constellation name'],
     here: 'You were looking here',
     toastTime: 'Time set',
+    liveObservation: 'Live observation (JPL Horizons)', physicalProfile: 'Physical & orbital profile',
+    photoCredit: 'Photo', nasaExplore: 'NASA Solar System Exploration',
+    specDiameter: 'Diameter', specMass: 'Mass', specGravity: 'Gravity',
+    specDistSun: 'Distance to Sun', specOrbit: 'Orbital period', specDay: 'Day length',
+    specTemp: 'Temperature', specAtmosphere: 'Atmosphere', specMoons: 'Moons', specMissions: 'Key missions',
   },
   vi: {
     modeMap: 'Bản đồ sao', modeLocal: 'Bầu trời của tôi',
@@ -405,32 +410,266 @@ const MORE = {
     hint: ['Kéo chuột để nhìn quanh', 'Cuộn hoặc chụm hai ngón để phóng to', 'Bấm vào một ngôi sao, hành tinh hoặc tên chòm sao'],
     here: 'Bạn vừa xem chỗ này',
     toastTime: 'Đã đặt thời gian',
+    liveObservation: 'Quan sát thời gian thực (JPL Horizons)', physicalProfile: 'Hồ sơ vật lý & quỹ đạo',
+    photoCredit: 'Ảnh chụp', nasaExplore: 'Khám phá Hệ Mặt Trời (NASA)',
+    specDiameter: 'Đường kính', specMass: 'Khối lượng', specGravity: 'Trọng lực bề mặt',
+    specDistSun: 'Khoảng cách tới Mặt Trời', specOrbit: 'Chu kỳ quỹ đạo', specDay: 'Độ dài ngày',
+    specTemp: 'Nhiệt độ', specAtmosphere: 'Bầu khí quyển', specMoons: 'Vệ tinh tự nhiên', specMissions: 'Nhiệm vụ thám hiểm',
   },
 };
 Object.assign(UI.en, MORE.en);
 Object.assign(UI.vi, MORE.vi);
 
-/* Solar-system bodies: plain-language one-liners that hold for any date. Numbers (distance, brightness, phase) are computed live. */
+/* Solar-system bodies: official NASA imagery, physical specs and plain-language guides. Numbers (distance, brightness, phase) are computed live. */
 export const BODIES = {
-  sun: { name: { en: 'Sun', vi: 'Mặt Trời' }, colour: [1, 0.88, 0.62],
-    story: { en: 'Our own star. Everything on the clock is measured from where it sits, and the whole sky bends around its daylight.', vi: 'Ngôi sao của chúng ta. Mọi thứ trên đồng hồ đều được tính theo vị trí của nó, và cả bầu trời bị ánh sáng ban ngày của nó che lấp.' } },
-  moon: { name: { en: 'Moon', vi: 'Mặt Trăng' }, colour: [0.93, 0.92, 0.88],
-    story: { en: 'The shape you see is real: it is the share of the Moon lit by the Sun, as seen from Earth right now. It always shows us the same face.', vi: 'Hình dạng bạn thấy là thật: đó là phần Mặt Trăng được Mặt Trời chiếu sáng, nhìn từ Trái Đất ngay lúc này. Nó luôn hướng cùng một mặt về phía ta.' } },
-  mercury: { name: { en: 'Mercury', vi: 'Sao Thủy' }, colour: [0.78, 0.74, 0.7],
-    story: { en: 'The closest planet to the Sun. It never strays far from it, so it only shows low in the dusk or dawn glow.', vi: 'Hành tinh gần Mặt Trời nhất. Nó không bao giờ rời xa Mặt Trời nên chỉ hiện thấp trong ánh chiều tà hoặc bình minh.' } },
-  venus: { name: { en: 'Venus', vi: 'Sao Kim' }, colour: [1, 0.96, 0.82],
-    story: { en: 'The brightest planet. Thick clouds reflect most of the sunlight that hits them, and it comes closer to us than any other planet.', vi: 'Hành tinh sáng nhất. Lớp mây dày phản xạ gần hết ánh sáng Mặt Trời chiếu tới, và nó đến gần ta hơn mọi hành tinh khác.' } },
-  mars: { name: { en: 'Mars', vi: 'Sao Hỏa' }, colour: [1, 0.62, 0.42],
-    story: { en: 'The red comes from iron-rich dust on its surface. Its brightness swings a lot as the distance to Earth changes.', vi: 'Màu đỏ đến từ bụi giàu sắt trên bề mặt. Độ sáng của nó thay đổi nhiều theo khoảng cách tới Trái Đất.' } },
-  jupiter: { name: { en: 'Jupiter', vi: 'Sao Mộc' }, colour: [1, 0.93, 0.8],
-    story: { en: 'The largest planet. Its four biggest moons show up as tiny dots through ordinary binoculars.', vi: 'Hành tinh lớn nhất. Bốn mặt trăng lớn nhất của nó hiện thành những chấm nhỏ qua ống nhòm thường.' } },
-  saturn: { name: { en: 'Saturn', vi: 'Sao Thổ' }, colour: [0.98, 0.9, 0.7],
-    story: { en: 'Famous for its rings, which a small telescope shows clearly. To the eye it is a steady, pale-gold point.', vi: 'Nổi tiếng với các vành đai, kính thiên văn nhỏ cũng thấy rõ. Bằng mắt thường nó là một điểm vàng nhạt, sáng đều.' } },
-  uranus: { name: { en: 'Uranus', vi: 'Sao Thiên Vương' }, colour: [0.75, 0.93, 0.95],
-    story: { en: 'At the very edge of naked-eye visibility under a dark sky. It was found with a telescope in 1781.', vi: 'Ở ngay giới hạn mắt thường nhìn thấy dưới bầu trời tối. Nó được tìm ra bằng kính thiên văn năm 1781.' } },
-  neptune: { name: { en: 'Neptune', vi: 'Sao Hải Vương' }, colour: [0.62, 0.74, 1],
-    story: { en: 'Too faint for the naked eye. It was found in 1846, after its pull on Uranus had been calculated.', vi: 'Quá mờ cho mắt thường. Nó được tìm ra năm 1846, sau khi người ta tính được lực hút của nó lên sao Thiên Vương.' } },
+  sun: {
+    name: { en: 'Sun', vi: 'Mặt Trời' }, colour: [1, 0.88, 0.62],
+    image: 'sky/assets/planets/sun.jpg', credit: 'NASA / SDO (Solar Dynamics Observatory)',
+    type: { en: 'Yellow Dwarf Star (G2V)', vi: 'Sao lùn vàng (G2V) · Trung tâm Hệ Mặt Trời' },
+    caption: {
+      en: 'Extreme ultraviolet portrait of the Sun by NASA SDO, revealing coronal loops, dynamic solar flares, and plasma arcs.',
+      vi: 'Chân dung cực tím của Mặt Trời từ vệ tinh NASA SDO, làm nổi bật các cung từ trường và bão plasma rực lửa.'
+    },
+    story: {
+      en: 'Our own star. It contains 99.86% of all mass in the Solar System. Everything on the clock is measured from where it sits, and the whole sky bends around its daylight.',
+      vi: 'Ngôi sao của chúng ta, chiếm tới 99,86% tổng khối lượng toàn Hệ Mặt Trời. Mọi thứ trên đồng hồ đều được tính theo vị trí của nó, và cả bầu trời bị ánh sáng ban ngày của nó che lấp.'
+    },
+    specs: {
+      diameter: { en: '1,392,700 km (109 × Earth)', vi: '1.392.700 km (109 × Trái Đất)' },
+      mass: { en: '1.989 × 10³⁰ kg (333,000 × Earth)', vi: '1,989 × 10³⁰ kg (333.000 × Trái Đất)' },
+      gravity: { en: '274 m/s² (28 × Earth)', vi: '274 m/s² (28 × Trái Đất)' },
+      day: { en: '25–35 Earth days (differential rotation)', vi: '25–35 ngày Trái Đất (quay vi sai)' },
+      temp: { en: '5,500°C (surface) · 15,000,000°C (core)', vi: '5.500°C (bề mặt) · 15.000.000°C (lõi)' },
+      atmosphere: { en: '73.4% Hydrogen, 25.0% Helium plasma', vi: '73,4% Hydro, 25,0% Heli (plasma)' },
+      missions: { en: 'SOHO, SDO, Parker Solar Probe, Solar Orbiter', vi: 'SOHO, SDO, Parker Solar Probe, Solar Orbiter' }
+    }
+  },
+  moon: {
+    name: { en: 'Moon', vi: 'Mặt Trăng' }, colour: [0.93, 0.92, 0.88],
+    image: 'sky/assets/planets/moon.jpg', credit: 'NASA / USGS / Galileo',
+    type: { en: 'Earth’s Natural Satellite', vi: 'Vệ tinh tự nhiên duy nhất của Trái Đất' },
+    caption: {
+      en: 'Full disc view of the Moon by NASA Galileo spacecraft, highlighting the dark volcanic maria and ancient impact highlands.',
+      vi: 'Toàn cảnh bề mặt Mặt Trăng chụp bởi tàu NASA Galileo, làm rõ các biển tối (dung nham bazan cổ đại) và hố va chạm dày đặc.'
+    },
+    story: {
+      en: 'The shape you see is real: it is the share of the Moon lit by the Sun, as seen from Earth right now. Because of tidal locking, it always shows us the exact same face.',
+      vi: 'Hình dạng bạn thấy là thật: đó là phần Mặt Trăng được Mặt Trời chiếu sáng, nhìn từ Trái Đất ngay lúc này. Do hiện tượng khóa thủy triều, nó luôn hướng cùng một mặt về phía ta.'
+    },
+    specs: {
+      diameter: { en: '3,474 km (0.27 × Earth)', vi: '3.474 km (0,27 × Trái Đất)' },
+      mass: { en: '7.35 × 10²² kg (0.012 × Earth)', vi: '7,35 × 10²² kg (0,012 × Trái Đất)' },
+      gravity: { en: '1.62 m/s² (1/6 Earth gravity)', vi: '1,62 m/s² (bằng 1/6 Trái Đất)' },
+      orbit: { en: '27.3 Earth days around Earth', vi: '27,3 ngày quay quanh Trái Đất' },
+      day: { en: '27.3 Earth days (tidally locked)', vi: '27,3 ngày Trái Đất (bị khóa thủy triều)' },
+      temp: { en: '-130°C to +120°C (no air buffer)', vi: '-130°C đến +120°C (không có khí quyển điều hòa)' },
+      atmosphere: { en: 'Nearly vacuum (extremely thin exosphere)', vi: 'Gần như chân không (exosphere siêu mỏng)' },
+      moons: { en: '0', vi: '0' },
+      missions: { en: 'Apollo 11–17, LRO, Chang\u2019e, Artemis', vi: 'Apollo 11–17, LRO, Thường Nga, Artemis' }
+    }
+  },
+  mercury: {
+    name: { en: 'Mercury', vi: 'Sao Thủy' }, colour: [0.78, 0.74, 0.7],
+    image: 'sky/assets/planets/mercury.jpg', credit: 'NASA / JHUAPL / Carnegie (MESSENGER)',
+    type: { en: 'Terrestrial Planet', vi: 'Hành tinh đất đá gần Mặt Trời nhất' },
+    caption: {
+      en: 'Enhanced-color global mosaic by NASA MESSENGER, accentuating subtle mineral and chemical differences across cratered terrains.',
+      vi: 'Ảnh ghép màu tăng cường từ tàu NASA MESSENGER, hé lộ thành phần khoáng vật và vô số miệng hố trên bề mặt Sao Thủy.'
+    },
+    story: {
+      en: 'The closest planet to the Sun and the smallest in the Solar System. It never strays far from the Sun, so you only see it low in the dusk or dawn twilight.',
+      vi: 'Hành tinh nhỏ nhất và gần Mặt Trời nhất. Nó không bao giờ rời xa Mặt Trời nên bạn chỉ có thể chiêm ngưỡng nó ở vị trí thấp trong ánh chiều tà hoặc bình minh.'
+    },
+    specs: {
+      diameter: { en: '4,879 km (0.38 × Earth)', vi: '4.879 km (0,38 × Trái Đất)' },
+      mass: { en: '3.30 × 10²³ kg (0.055 × Earth)', vi: '3,30 × 10²³ kg (0,055 × Trái Đất)' },
+      gravity: { en: '3.70 m/s² (0.38 × Earth)', vi: '3,70 m/s² (0,38 × Trái Đất)' },
+      distSun: { en: '0.387 AU (57.9 million km)', vi: '0,387 AU (57,9 triệu km)' },
+      orbit: { en: '88 Earth days', vi: '88 ngày Trái Đất' },
+      day: { en: '58.6 Earth days', vi: '58,6 ngày Trái Đất' },
+      temp: { en: '-180°C (night) to +430°C (day)', vi: '-180°C (đêm) đến +430°C (ngày)' },
+      atmosphere: { en: 'Trace exosphere (Oxygen, Sodium, Hydrogen)', vi: 'Khí quyển siêu loãng (Oxy, Natri, Hydro)' },
+      moons: { en: '0', vi: '0' },
+      missions: { en: 'Mariner 10, MESSENGER, BepiColombo', vi: 'Mariner 10, MESSENGER, BepiColombo' }
+    }
+  },
+  venus: {
+    name: { en: 'Venus', vi: 'Sao Kim' }, colour: [1, 0.96, 0.82],
+    image: 'sky/assets/planets/venus.jpg', credit: 'NASA / JPL (Magellan)',
+    type: { en: 'Terrestrial Planet', vi: 'Hành tinh đất đá · Sao Hôm / Sao Mai' },
+    caption: {
+      en: 'Global radar elevation map from NASA Magellan spacecraft, cutting through dense sulfuric acid clouds to reveal volcanic domes.',
+      vi: 'Bản đồ radar toàn cầu của Sao Kim từ tàu NASA Magellan, nhìn xuyên qua tầng mây dày đặc để làm rõ các vòm núi lửa.'
+    },
+    story: {
+      en: 'The brightest planet in the night sky. Thick reflective clouds cause an extreme runaway greenhouse effect, making its surface hotter than an oven day and night.',
+      vi: 'Hành tinh sáng nhất trên bầu trời đêm. Lớp mây dày đặc gây ra hiệu ứng nhà kính cực độ, biến bề mặt Sao Kim thành một "lò lửa" nóng hơn cả Sao Thủy suốt ngày đêm.'
+    },
+    specs: {
+      diameter: { en: '12,104 km (0.95 × Earth)', vi: '12.104 km (0,95 × Trái Đất)' },
+      mass: { en: '4.87 × 10²⁴ kg (0.815 × Earth)', vi: '4,87 × 10²⁴ kg (0,815 × Trái Đất)' },
+      gravity: { en: '8.87 m/s² (0.90 × Earth)', vi: '8,87 m/s² (0,90 × Trái Đất)' },
+      distSun: { en: '0.723 AU (108.2 million km)', vi: '0,723 AU (108,2 triệu km)' },
+      orbit: { en: '224.7 Earth days', vi: '224,7 ngày Trái Đất' },
+      day: { en: '243 Earth days (spins backward)', vi: '243 ngày Trái Đất (quay nghịch hành)' },
+      temp: { en: '+465°C average (hottest planet)', vi: '+465°C trung bình (nóng nhất Hệ Mặt Trời)' },
+      atmosphere: { en: '96.5% CO₂, 3.5% N₂, H₂SO₄ clouds (92 bar)', vi: '96,5% CO₂, mây axit sunfuric (áp suất 92 atm)' },
+      moons: { en: '0', vi: '0' },
+      missions: { en: 'Venera, Magellan, Akatsuki, DAVINCI, VERITAS', vi: 'Venera, Magellan, Akatsuki, DAVINCI, VERITAS' }
+    }
+  },
+  earth: {
+    name: { en: 'Earth', vi: 'Trái Đất' }, colour: [0.2, 0.6, 1.0],
+    image: 'sky/assets/planets/earth.jpg', credit: 'NASA (Apollo 17 Blue Marble)',
+    type: { en: 'Terrestrial Planet (Our Home)', vi: 'Hành tinh đất đá · Ngôi nhà của chúng ta' },
+    caption: {
+      en: 'The iconic "Blue Marble" photograph taken on December 7, 1972, by the Apollo 17 crew heading toward the Moon.',
+      vi: 'Bức ảnh lịch sử "Viên ngọc xanh" (The Blue Marble) chụp Trái Đất ngày 7/12/1972 bởi phi hành đoàn tàu Apollo 17.'
+    },
+    story: {
+      en: 'Our home world, the only known place in the universe confirmed to harbor life. Over 71% of its surface is covered by liquid water oceans.',
+      vi: 'Hành tinh quê hương của chúng ta, nơi duy nhất trong vũ trụ được xác nhận có sự sống. Hơn 71% bề mặt được bao phủ bởi các đại dương nước lỏng.'
+    },
+    specs: {
+      diameter: { en: '12,742 km', vi: '12.742 km' },
+      mass: { en: '5.97 × 10²⁴ kg', vi: '5,97 × 10²⁴ kg' },
+      gravity: { en: '9.81 m/s²', vi: '9,81 m/s²' },
+      distSun: { en: '1.000 AU (149.6 million km)', vi: '1,000 AU (149,6 triệu km)' },
+      orbit: { en: '365.25 days (1 year)', vi: '365,25 ngày (1 năm)' },
+      day: { en: '23.93 hours (24h civil)', vi: '23,93 giờ (1 ngày)' },
+      temp: { en: '-89°C to +57°C (avg +15°C)', vi: '-89°C đến +57°C (TB +15°C)' },
+      atmosphere: { en: '78% N₂, 21% O₂, 1% Argon/Water', vi: '78% Nitơ, 21% Oxy, 1% Argon & hơi nước' },
+      moons: { en: '1 (The Moon)', vi: '1 (Mặt Trăng)' },
+      missions: { en: 'Home of all space explorers and telescopes', vi: 'Cái nôi khởi nguồn của mọi kính thiên văn vũ trụ' }
+    }
+  },
+  mars: {
+    name: { en: 'Mars', vi: 'Sao Hỏa' }, colour: [1, 0.62, 0.42],
+    image: 'sky/assets/planets/mars.jpg', credit: 'NASA / USGS (Viking Orbiter)',
+    type: { en: 'Terrestrial Planet', vi: 'Hành tinh đất đá · Hành tinh Đỏ' },
+    caption: {
+      en: 'Global true-color mosaic by NASA Viking 1 orbiter, showing the vast Valles Marineris canyon complex and rust-red desert plains.',
+      vi: 'Toàn cảnh ảnh ghép màu thật của Sao Hỏa từ tàu NASA Viking 1, làm nổi bật đại hẻm vực Valles Marineris và các hoang mạc đỏ.'
+    },
+    story: {
+      en: 'The Red Planet gets its iconic hue from iron oxide (rust) on its surface. It hosts the tallest volcano (Olympus Mons) and the deepest canyon in the Solar System.',
+      vi: 'Hành tinh Đỏ mang màu sắc đặc trưng từ bụi oxit sắt (rỉ sét) trên bề mặt. Nơi đây sở hữu ngọn núi lửa cao nhất (Olympus Mons) và hẻm vực lớn nhất Hệ Mặt Trời.'
+    },
+    specs: {
+      diameter: { en: '6,779 km (0.53 × Earth)', vi: '6.779 km (0,53 × Trái Đất)' },
+      mass: { en: '6.42 × 10²³ kg (0.107 × Earth)', vi: '6,42 × 10²³ kg (0,107 × Trái Đất)' },
+      gravity: { en: '3.72 m/s² (0.38 × Earth)', vi: '3,72 m/s² (0,38 × Trái Đất)' },
+      distSun: { en: '1.524 AU (227.9 million km)', vi: '1,524 AU (227,9 triệu km)' },
+      orbit: { en: '687 Earth days (1.88 years)', vi: '687 ngày Trái Đất (1,88 năm)' },
+      day: { en: '24.62 hours (1 Martian Sol)', vi: '24,62 giờ (1 ngày Sao Hỏa - Sol)' },
+      temp: { en: '-125°C to +20°C (avg -60°C)', vi: '-125°C đến +20°C (trung bình -60°C)' },
+      atmosphere: { en: '95.3% CO₂, 2.6% N₂, 1.9% Argon (thin 0.006 bar)', vi: '95,3% CO₂, 2,6% N₂ (áp suất chỉ bằng 0,6% Trái Đất)' },
+      moons: { en: '2 (Phobos & Deimos)', vi: '2 (Phobos và Deimos)' },
+      missions: { en: 'Viking, Pathfinder, Curiosity, Perseverance, Ingenuity', vi: 'Viking, Pathfinder, Curiosity, Perseverance, Ingenuity' }
+    }
+  },
+  jupiter: {
+    name: { en: 'Jupiter', vi: 'Sao Mộc' }, colour: [1, 0.93, 0.8],
+    image: 'sky/assets/planets/jupiter.jpg', credit: 'NASA / JPL / University of Arizona (Cassini)',
+    type: { en: 'Gas Giant Planet', vi: 'Hành tinh khí khổng lồ lớn nhất' },
+    caption: {
+      en: 'True-color portrait of Jupiter photographed by NASA Cassini spacecraft, displaying its swirling cloud bands and the Great Red Spot.',
+      vi: 'Chân dung màu thật của Sao Mộc chụp bởi tàu NASA Cassini, hiển thị rõ Vết Đỏ Lớn và các dải mây bão xoáy rực rỡ.'
+    },
+    story: {
+      en: 'The king of planets, with more mass than all other planets combined. Its iconic Great Red Spot is a persistent anticyclonic storm larger than the Earth.',
+      vi: 'Vua của các hành tinh, nặng hơn tất cả các hành tinh khác cộng lại. Vết Đỏ Lớn huyền thoại là một cơn bão khổng lồ tồn tại hàng thế kỷ, có kích thước to hơn cả Trái Đất.'
+    },
+    specs: {
+      diameter: { en: '139,820 km (11.0 × Earth)', vi: '139.820 km (11,0 × Trái Đất)' },
+      mass: { en: '1.90 × 10²⁷ kg (317.8 × Earth)', vi: '1,90 × 10²⁷ kg (317,8 × Trái Đất)' },
+      gravity: { en: '24.79 m/s² (2.53 × Earth)', vi: '24,79 m/s² (2,53 × Trái Đất)' },
+      distSun: { en: '5.203 AU (778.5 million km)', vi: '5,203 AU (778,5 triệu km)' },
+      orbit: { en: '11.86 Earth years', vi: '11,86 năm Trái Đất' },
+      day: { en: '9.93 hours (fastest rotating planet)', vi: '9,93 giờ (tự quay nhanh nhất Hệ Mặt Trời)' },
+      temp: { en: '-110°C (cloud deck level)', vi: '-110°C (tại đỉnh tầng mây)' },
+      atmosphere: { en: '89.8% Hydrogen, 10.2% Helium, traces of ammonia', vi: '89,8% Hydro, 10,2% Heli, vết amoniac' },
+      moons: { en: '95 confirmed (Io, Europa, Ganymede, Callisto)', vi: '95 vệ tinh (Io, Europa, Ganymede, Callisto)' },
+      missions: { en: 'Pioneer, Voyager, Galileo, Juno, Europa Clipper', vi: 'Pioneer, Voyager, Galileo, Juno, Europa Clipper' }
+    }
+  },
+  saturn: {
+    name: { en: 'Saturn', vi: 'Sao Thổ' }, colour: [0.98, 0.9, 0.7],
+    image: 'sky/assets/planets/saturn.jpg', credit: 'NASA / JPL / SSI (Cassini)',
+    type: { en: 'Gas Giant Planet', vi: 'Hành tinh khí khổng lồ với vành đai' },
+    caption: {
+      en: 'Spectacular natural-color panorama of Saturn and its rings, captured by NASA Cassini spacecraft during equinox.',
+      vi: 'Bức tranh toàn cảnh màu tự nhiên của Sao Thổ và vành đai tráng lệ chụp bởi tàu NASA Cassini trong thời điểm điểm phân.'
+    },
+    story: {
+      en: 'Celebrated for its awe-inspiring ring system spanning 282,000 km but averaging only 10 metres thick. It is so light that it would float in water if there were an ocean big enough.',
+      vi: 'Viên ngọc quý của bầu trời với hệ thống vành đai trải rộng tới 282.000 km nhưng bề dày chỉ khoảng 10 mét. Mật độ của nó nhẹ đến mức có thể nổi trên mặt nước nếu có đại dương đủ lớn.'
+    },
+    specs: {
+      diameter: { en: '116,460 km (9.14 × Earth)', vi: '116.460 km (9,14 × Trái Đất)' },
+      mass: { en: '5.68 × 10²⁶ kg (95.2 × Earth)', vi: '5,68 × 10²⁶ kg (95,2 × Trái Đất)' },
+      gravity: { en: '10.44 m/s² (1.06 × Earth)', vi: '10,44 m/s² (1,06 × Trái Đất)' },
+      distSun: { en: '9.537 AU (1.43 billion km)', vi: '9,537 AU (1,43 tỷ km)' },
+      orbit: { en: '29.46 Earth years', vi: '29,46 năm Trái Đất' },
+      day: { en: '10.66 hours', vi: '10,66 giờ' },
+      temp: { en: '-140°C (cloud deck level)', vi: '-140°C (tại đỉnh tầng mây)' },
+      atmosphere: { en: '96.3% Hydrogen, 3.25% Helium, methane traces', vi: '96,3% Hydro, 3,25% Heli, vết metan' },
+      moons: { en: '146 confirmed (Titan with lakes, Enceladus with geysers)', vi: '146 vệ tinh (Titan có hồ metan, Enceladus có mạch nước ngầm)' },
+      missions: { en: 'Pioneer 11, Voyager 1 & 2, Cassini-Huygens', vi: 'Pioneer 11, Voyager 1 & 2, Cassini-Huygens' }
+    }
+  },
+  uranus: {
+    name: { en: 'Uranus', vi: 'Sao Thiên Vương' }, colour: [0.75, 0.93, 0.95],
+    image: 'sky/assets/planets/uranus.jpg', credit: 'NASA / JPL-Caltech (Voyager 2)',
+    type: { en: 'Ice Giant Planet', vi: 'Hành tinh băng khổng lồ nghiêng 98°' },
+    caption: {
+      en: 'Pale cyan disc of Uranus recorded by NASA Voyager 2 in 1986. Methane in its upper atmosphere absorbs red wavelengths, creating this peaceful hue.',
+      vi: 'Đĩa tròn màu xanh lơ của Sao Thiên Vương chụp bởi tàu NASA Voyager 2 năm 1986. Khí metan hấp thụ ánh sáng đỏ tạo nên sắc xanh ngọc độc đáo.'
+    },
+    story: {
+      en: 'An ice giant that rolls around the Sun on its side with an axial tilt of 97.8°. It holds the coldest planetary atmosphere recorded in the Solar System, plunging down to -224°C.',
+      vi: 'Hành tinh băng khổng lồ "nằm nghiêng" khi quay quanh Mặt Trời với độ nghiêng trục lên tới 97,8°. Nó nắm giữ kỷ lục bầu khí quyển lạnh nhất Hệ Mặt Trời, xuống tới -224°C.'
+    },
+    specs: {
+      diameter: { en: '50,724 km (3.98 × Earth)', vi: '50.724 km (3,98 × Trái Đất)' },
+      mass: { en: '8.68 × 10²⁵ kg (14.5 × Earth)', vi: '8,68 × 10²⁵ kg (14,5 × Trái Đất)' },
+      gravity: { en: '8.69 m/s² (0.89 × Earth)', vi: '8,69 m/s² (0,89 × Trái Đất)' },
+      distSun: { en: '19.19 AU (2.87 billion km)', vi: '19,19 AU (2,87 tỷ km)' },
+      orbit: { en: '84.02 Earth years', vi: '84,02 năm Trái Đất' },
+      day: { en: '17.24 hours (retrograde rotation)', vi: '17,24 giờ (quay nghịch hành)' },
+      temp: { en: '-195°C to -224°C (coldest planet)', vi: '-195°C đến -224°C (lạnh nhất Hệ Mặt Trời)' },
+      atmosphere: { en: '82.5% H₂, 15.2% He, 2.3% Methane ice', vi: '82,5% Hydro, 15,2% Heli, 2,3% Băng Metan' },
+      moons: { en: '28 confirmed (Titania, Oberon, Miranda with giant cliffs)', vi: '28 vệ tinh (Titania, Oberon, Miranda)' },
+      missions: { en: 'Voyager 2 (historic flyby in January 1986)', vi: 'Voyager 2 (chuyến bay ngang lịch sử năm 1986)' }
+    }
+  },
+  neptune: {
+    name: { en: 'Neptune', vi: 'Sao Hải Vương' }, colour: [0.62, 0.74, 1],
+    image: 'sky/assets/planets/neptune.jpg', credit: 'NASA / JPL (Voyager 2)',
+    type: { en: 'Ice Giant Planet', vi: 'Hành tinh băng khổng lồ xa nhất' },
+    caption: {
+      en: 'Full-disc portrait of deep azure Neptune by NASA Voyager 2 in 1989, revealing the Great Dark Spot and bright white cirrus-like methane clouds.',
+      vi: 'Toàn cảnh Sao Hải Vương xanh thẳm từ tàu NASA Voyager 2 năm 1989, với Vết Tối Lớn và những dải mây ti metan trắng bay ở tầng cao.'
+    },
+    story: {
+      en: 'The most distant major planet from the Sun, dark, cold, and whipped by supersonic winds reaching 2,100 km/h—the fastest atmospheric storms recorded in the Solar System.',
+      vi: 'Hành tinh xa nhất trong Hệ Mặt Trời, lạnh giá và bị tàn phá bởi những cơn cuồng phong siêu thanh lên tới 2.100 km/h — nhanh nhất từng được ghi nhận trong Hệ Mặt Trời.'
+    },
+    specs: {
+      diameter: { en: '49,244 km (3.86 × Earth)', vi: '49.244 km (3,86 × Trái Đất)' },
+      mass: { en: '1.02 × 10²⁶ kg (17.1 × Earth)', vi: '1,02 × 10²⁶ kg (17,1 × Trái Đất)' },
+      gravity: { en: '11.15 m/s² (1.14 × Earth)', vi: '11,15 m/s² (1,14 × Trái Đất)' },
+      distSun: { en: '30.07 AU (4.50 billion km)', vi: '30,07 AU (4,50 tỷ km)' },
+      orbit: { en: '164.8 Earth years', vi: '164,8 năm Trái Đất' },
+      day: { en: '16.11 hours', vi: '16,11 giờ' },
+      temp: { en: '-200°C average', vi: '-200°C trung bình' },
+      atmosphere: { en: '80.0% H₂, 19.0% He, 1.5% Methane (supersonic winds)', vi: '80,0% Hydro, 19,0% Heli, 1,5% Metan' },
+      moons: { en: '16 confirmed (Triton with active nitrogen geysers)', vi: '16 vệ tinh (Triton có mạch phun băng nitơ)' },
+      missions: { en: 'Voyager 2 (August 1989), Hubble, JWST', vi: 'Voyager 2 (1989), Hubble, JWST' }
+    }
+  },
 };
+
 
 /* ------------------------------------------------------------------ the opening journey (scroll story) */
 const JOURNEY = {

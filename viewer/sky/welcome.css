@@ -41,7 +41,9 @@ body.is-hover #sky { cursor: pointer; }
   padding: var(--edge); pointer-events: none;
 }
 .bar > * { pointer-events: auto; }
-.brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 500; letter-spacing: .01em; }
+.brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 500; letter-spacing: .01em; cursor: pointer; transition: opacity .2s var(--ease), transform .2s var(--ease); }
+.brand:hover { opacity: .85; }
+.brand:active { transform: scale(.98); }
 .brand b { font-weight: 800; }
 .bar-actions { display: flex; gap: 8px; align-items: center; }
 .chip {
@@ -536,3 +538,96 @@ body:not(.is-intro) .jrail { display: none; }
 .zoom-ring { position: fixed; z-index: 91; left: 50%; top: 50%; width: 36px; height: 36px; margin: -18px 0 0 -18px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .85); pointer-events: none; opacity: 0; box-shadow: 0 0 24px rgba(56, 189, 248, .7); }
 .zoom-ring.is-on { animation: zoom-ring 1.2s cubic-bezier(.3, 0, .2, 1) forwards; }
 @keyframes zoom-ring { 0% { opacity: 0; transform: scale(.4); } 25% { opacity: 1; } 100% { opacity: 0; transform: scale(34); } }
+
+/* ---------- solar-system bodies: real photos & rich specs ---------- */
+.body-hero {
+  margin: 14px 0 18px;
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(14, 21, 37, 0.75);
+  border: 1px solid var(--line);
+  box-shadow: 0 16px 36px -12px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.body-hero-img-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: radial-gradient(circle at center, #1b263b 0%, #060910 100%);
+}
+.body-hero-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform .6s var(--ease);
+}
+.body-hero:hover .body-hero-img {
+  transform: scale(1.04);
+}
+.body-hero-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  background: rgba(8, 12, 22, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+.body-hero-cap {
+  padding: 12px 14px 14px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text-2);
+  border-top: 1px solid var(--line-soft);
+  background: rgba(8, 12, 22, 0.45);
+}
+.body-credit {
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: var(--silver);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.body-credit span {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: rgba(56, 189, 248, 0.12);
+  color: var(--sky);
+}
+.body-credit b {
+  font-weight: 600;
+  color: #d1d5db;
+}
+.body-specs {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 14px;
+  font-size: 13.5px;
+}
+.body-specs dt {
+  color: var(--silver);
+  font-weight: 500;
+}
+.body-specs dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: #e2e8f0;
+  line-height: 1.45;
+  word-break: break-word;
+}

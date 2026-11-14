@@ -126,7 +126,7 @@ $('#t-date').addEventListener('change', (e) => { const ms = new Date(e.target.va
 $('#t-now').addEventListener('click', () => { Object.assign(state.t, { ms: Date.now(), speed: 1, dir: 1, playing: true, live: true }); syncTimeUI(true); renderLive(); });
 
 /* ================================================================== sky mode + location */
-const isLocal = () => state.skyMode === 'local' && state.mode !== 'depth';
+const isLocal = () => state.skyMode === 'local' && state.mode === 'sky';
 function setSkyMode(mode) {
   if (mode !== state.skyMode && sky) {   // keep looking at the same piece of sky when switching frame
     const cur = eq(view.ra, view.dec), M = state.M;
@@ -143,7 +143,7 @@ function setSkyMode(mode) {
   document.querySelectorAll('#mode-seg [role=radio]').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.mode === mode)));
   $('#site-btn').hidden = mode !== 'local' || state.mode === 'intro';
   if (mode !== 'local') setPop('#site-pop', false);
-  if (sky) sky.dome.visible = sky.ground.visible = mode === 'local' && state.mode !== 'depth';
+  if (sky) sky.dome.visible = sky.ground.visible = mode === 'local' && state.mode === 'sky';
   renderGuide(); renderLive();
 }
 $('#mode-seg').addEventListener('click', (e) => { const b = e.target.closest('[role=radio]'); if (b) setSkyMode(b.dataset.mode); });
@@ -277,7 +277,7 @@ $('#start-list').addEventListener('click', (e) => {
   else if (i === 3) { Object.assign(state.t, { speed: 604800, dir: 1, playing: true, live: false }); syncTimeUI(true); if (state.eph) select('body', 'moon'); }
 });
 function renderCoach() {
-  const el = $('#coach'), steps = T('hint');
+  const el = $('#coach'), touch = matchMedia('(hover: none)').matches, steps = T('hint').map((x) => (touch ? x.replace('Kéo chuột', 'Kéo').replace('Cuộn hoặc chụm', 'Chụm').replace('Scroll or pinch', 'Pinch').replace(/^Click/, 'Tap') : x));
   if (state.coachDone) { $('#coach-step').textContent = '✓'; $('#coach-text').textContent = T('hintDone'); return; }
   $('#coach-step').textContent = `${state.coach + 1}/${steps.length}`; $('#coach-text').textContent = steps[state.coach];
   el.classList.toggle('is-hidden', !$('#start').hidden);
@@ -363,14 +363,38 @@ function buildLabels() {
 }
 function markSelected() {
   document.querySelectorAll('.lbl-const').forEach((b) => b.classList.toggle('is-sel', !!state.sel && state.sel.kind === 'const' && state.sel.id === b.dataset.id));
+  document.querySelectorAll('.lbl-body').forEach((b) => b.classList.toggle('is-sel', !!state.sel && state.sel.kind === 'body' && state.sel.id === b.dataset.id));
 }
-let hoverCode = null, hoverStar = -1, mouse = { x: 0, y: 0 };
+let hoverCode = null, hoverStar = -1, hoverBody = null, mouse = { x: 0, y: 0 };
 function setHover(code) {
   if (hoverCode === code) return;
   hoverCode = code;
   document.querySelectorAll('.lbl-const').forEach((b) => b.classList.toggle('is-on', b.dataset.id === code));
-  document.body.classList.toggle('is-hover', !!code || hoverStar >= 0);
+  document.body.classList.toggle('is-hover', !!code || hoverStar >= 0 || !!hoverBody);
   if (sky) sky.styleLines();
+}
+
+function showBodyTip(id) {
+  const tip = $('#tip');
+  if (!id || !BODIES[id]) { tip.hidden = true; return; }
+  const b = BODIES[id], p = state.pos && state.pos[id];
+  const typeStr = b.type ? esc(pick(b.type)) : (id === 'sun' ? T('starLabel') : id === 'moon' ? T('moonLabel') : T('planetLabel'));
+  const rgb = b.colour ? `rgb(${Math.round(b.colour[0] * 255)},${Math.round(b.colour[1] * 255)},${Math.round(b.colour[2] * 255)})` : '#38bdf8';
+  let stats = '';
+  if (p) {
+    if (id === 'moon' && state.pos.phase) {
+      stats = `<span>${nf(state.pos.phase.fraction * 100)}% ${T('lit')}</span>`;
+    } else if (p.mag != null) {
+      stats = `<span>${T('magShort')} ${nf(p.mag, 1)}</span>`;
+    }
+    if (p.delta != null) {
+      stats += `<span>${nf(p.delta, id === 'moon' ? 4 : 2)} ${id === 'moon' ? 'AU' : T('au')}</span>`;
+    }
+  }
+  tip.innerHTML = `<div class="tip-h"><i class="sw-dot" style="background:${rgb}"></i><b>${esc(pick(b.name))}</b></div>` +
+    `<div class="tip-l">${typeStr}</div>` +
+    (stats ? `<div class="tip-g mono">${stats}</div>` : '');
+  tip.hidden = false; placeTip();
 }
 
 /* ================================================================== star hover card */
@@ -450,8 +474,56 @@ function renderPanel() {
     cta = `<a class="btn btn-primary btn-wide" href="${viewerUrl(o.ra, o.dec)}">${T('openViewer')}</a>`;
   } else if (kind === 'body') {
     const b = BODIES[id];
-    html += `<p class="p-eyebrow">${id === 'sun' ? T('starLabel') : id === 'moon' ? T('moonLabel') : T('planetLabel')}</p><h2>${esc(pick(b.name))}</h2><p class="p-nick" id="live-nick"></p>` +
-      `<div class="p-sec"><p>${esc(pick(b.story))}</p></div><div class="p-sec"><dl class="facts" id="live"></dl></div>` + (id === 'sun' ? `<p class="p-note warn">${T('sunWarn')}</p>` : '');
+    const typeLabel = id === 'sun' ? T('starLabel') : id === 'moon' ? T('moonLabel') : T('planetLabel');
+    const badgeText = b.type ? esc(pick(b.type)) : typeLabel;
+
+    let hero = '';
+    if (b.image) {
+      hero = `<div class="body-hero">` +
+        `<div class="body-hero-img-wrap">` +
+          `<img class="body-hero-img" src="${esc(b.image)}" alt="${esc(pick(b.name))}" loading="lazy">` +
+          `<span class="body-hero-badge">${badgeText}</span>` +
+        `</div>` +
+        (b.caption || b.credit ? `<div class="body-hero-cap">` +
+          (b.caption ? `<p style="margin:0">${esc(pick(b.caption))}</p>` : '') +
+          (b.credit ? `<div class="body-credit"><span>${T('photoCredit')}</span> <b>${esc(b.credit)}</b></div>` : '') +
+        `</div>` : '') +
+      `</div>`;
+    }
+
+    let specsHtml = '';
+    if (b.specs) {
+      const sp = b.specs;
+      const specRows = [
+        sp.diameter ? row(T('specDiameter'), esc(pick(sp.diameter))) : '',
+        sp.mass ? row(T('specMass'), esc(pick(sp.mass))) : '',
+        sp.gravity ? row(T('specGravity'), esc(pick(sp.gravity))) : '',
+        sp.distSun ? row(T('specDistSun'), esc(pick(sp.distSun))) : '',
+        sp.orbit ? row(T('specOrbit'), esc(pick(sp.orbit))) : '',
+        sp.day ? row(T('specDay'), esc(pick(sp.day))) : '',
+        sp.temp ? row(T('specTemp'), esc(pick(sp.temp))) : '',
+        sp.atmosphere ? row(T('specAtmosphere'), esc(pick(sp.atmosphere))) : '',
+        sp.moons ? row(T('specMoons'), esc(pick(sp.moons))) : '',
+        sp.missions ? row(T('specMissions'), esc(pick(sp.missions))) : ''
+      ].filter(Boolean).join('');
+
+      if (specRows) {
+        specsHtml = `<div class="p-sec"><h3>${T('physicalProfile')}</h3><dl class="body-specs">${specRows}</dl></div>`;
+      }
+    }
+
+    const nasaLink = id === 'sun' ? 'https://science.nasa.gov/sun/' :
+                     id === 'moon' ? 'https://science.nasa.gov/moon/' :
+                     `https://science.nasa.gov/${id}/`;
+
+    html += `<p class="p-eyebrow is-mover">${typeLabel}</p><h2>${esc(pick(b.name))}</h2><p class="p-nick" id="live-nick"></p>` +
+      hero +
+      `<div class="p-sec"><p>${esc(pick(b.story))}</p></div>` +
+      `<div class="p-sec"><h3>${T('liveObservation')}</h3><dl class="facts" id="live"></dl></div>` +
+      specsHtml +
+      (id === 'sun' ? `<p class="p-note warn">${T('sunWarn')}</p>` : '');
+
+    cta = `<a class="btn btn-solid btn-wide" target="_blank" rel="noopener" href="${nasaLink}">${T('nasaExplore')}</a>`;
   } else if (kind === 'comet') {
     const tb = state.eph.comets[id], f = tb.facts || {};
     html += `<p class="p-eyebrow is-mover">${T('cometLabel')}</p><h2>${esc(tb.name)}</h2><p class="p-nick" id="live-nick"></p>` +
@@ -758,7 +830,7 @@ async function initSky() {
   const canvas = $('#sky');
   let renderer;
   try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' }); } catch (e) { return fallback(); }
-  const dpr = Math.min(devicePixelRatio || 1, 2);
+  const dpr = Math.min(devicePixelRatio || 1, innerWidth < 900 ? 1.5 : 2);   // phones: fewer pixels to shade, smoother and cooler
   renderer.setPixelRatio(dpr); renderer.setClearColor(0x02040a, 1);
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(view.fov, 1, 0.05, 2000);
@@ -1063,7 +1135,7 @@ function bindControls(canvas) {
     const p = pointers.get(e.pointerId);
     if (!p) { if (state.mode === 'sky') hoverPick(e.clientX, e.clientY); return; }
     const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY; moved += Math.abs(dx) + Math.abs(dy);
-    if (moved > 6) { document.body.classList.add('is-dragging'); dragging = true; showTip(-1); hoverStar = -1; }
+    if (moved > 6) { document.body.classList.add('is-dragging'); dragging = true; showTip(-1); hoverStar = -1; hoverBody = null; }
     if (pointers.size === 2 && pinch0) {
       const [a, b] = [...pointers.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
       view.fov = clamp(pinch0.fov * pinch0.d / Math.max(d, 1), 8, 85); fovTarget = view.fov; coachAdvance(1); return;
@@ -1079,12 +1151,12 @@ function bindControls(canvas) {
     pointers.delete(e.pointerId); pinch0 = null; document.body.classList.remove('is-dragging'); dragging = false;
     if (pointers.size === 0 && moved < 6 && downAt && state.mode === 'sky') {
       hoverPick(e.clientX, e.clientY);
-      if (hoverStar >= 0) select('star', hoverStar); else if (hoverCode) select('const', hoverCode);
+      if (hoverBody) select('body', hoverBody); else if (hoverStar >= 0) select('star', hoverStar); else if (hoverCode) select('const', hoverCode);
     }
     if (moved < 6) vel = { ra: 0, dec: 0 };
   };
   canvas.addEventListener('pointerup', up); canvas.addEventListener('pointercancel', up);
-  canvas.addEventListener('pointerleave', () => { showTip(-1); hoverStar = -1; });
+  canvas.addEventListener('pointerleave', () => { showTip(-1); hoverStar = -1; hoverBody = null; });
   canvas.addEventListener('wheel', (e) => {
     if (state.mode === 'intro') return; e.preventDefault();
     if (state.mode === 'depth') { const t = $('#depth-t'); t.value = clamp(+t.value - e.deltaY * 0.6, 0, 1000); onDepthSlider(); return; }
@@ -1113,11 +1185,49 @@ function rayCelestial(cx, cy) {
   const M = state.M, c = isLocal() ? new THREE.Vector3(M[0] * w.x + M[3] * w.y + M[6] * w.z, M[1] * w.x + M[4] * w.y + M[7] * w.z, M[2] * w.x + M[5] * w.y + M[8] * w.z) : w;
   return { w, c };
 }
-/* Hover: nearest star (brightness-weighted), else nearest constellation figure, measured in screen pixels. */
+/* Hover: nearest body (Moon/planets/Sun), nearest star, or nearest constellation figure. */
 function hoverPick(cx, cy) {
   if (!sky || dragging) return;
   const { THREE } = sky, { c } = rayCelestial(cx, cy), local = isLocal(), M = state.M;
-  const pxAng = (view.fov / innerHeight) * D2R, lim = 11 * pxAng, cosLim = Math.cos(lim), { vec, f, n } = state.stars;
+  const pxAng = (view.fov / innerHeight) * D2R;
+
+  // 1. Pick solar system bodies (Moon, Sun, Planets)
+  let bestB = null, minBDist = 28 * pxAng;
+  if (state.eph && state.pos && state.show.bodies) {
+    for (const k of ['moon', 'sun', ...BODY_KEYS]) {
+      const p = state.pos[k];
+      if (!p) continue;
+      if (local) {
+        const alt = altOf(p);
+        if (alt && alt.alt < 0) continue;
+      }
+      const bv = eq(p.ra, p.dec, 1);
+      const dot = bv[0] * c.x + bv[1] * c.y + bv[2] * c.z;
+      const ang = Math.acos(clamp(dot, -1, 1));
+      const bLim = (k === 'sun' || k === 'moon') ? Math.max(36 * pxAng, 0.038) : Math.max(24 * pxAng, 0.024);
+      if (ang < bLim && ang < minBDist) {
+        minBDist = ang;
+        bestB = k;
+      }
+    }
+  }
+  if (bestB) {
+    if (bestB !== hoverBody) {
+      hoverBody = bestB;
+      hoverStar = -1;
+      showBodyTip(bestB);
+    }
+    document.body.classList.add('is-hover');
+    setHover(null);
+    return;
+  }
+  if (hoverBody) {
+    hoverBody = null;
+    showTip(-1);
+  }
+
+  // 2. Pick nearest star (brightness-weighted)
+  const lim = 11 * pxAng, cosLim = Math.cos(lim), { vec, f, n } = state.stars;
   let bestS = -1, bs = 1e9;
   for (let i = 0; i < n; i++) {
     const d = vec[i * 3] * c.x + vec[i * 3 + 1] * c.y + vec[i * 3 + 2] * c.z;
@@ -1137,11 +1247,17 @@ function hoverPick(cx, cy) {
   setHover(best);
 }
 
-/* ================================================================== intro -> sky */
+/* ================================================================== intro <-> sky */
 function enterSky(instant) {
   if (state.mode !== 'intro') return;
   state.mode = 'sky';
-  if (instant) { $('#journey').style.transition = 'none'; $('#ui').style.transition = 'none'; }
+  if (location.hash !== '#sky') {
+    try { history.replaceState(null, '', '#sky'); } catch { /* ignore */ }
+  }
+  if (instant) {
+    $('#journey').style.transition = 'none'; $('#ui').style.transition = 'none';
+    setTimeout(() => { $('#journey').style.transition = ''; $('#ui').style.transition = ''; }, 50);
+  }
   document.body.classList.remove('is-intro'); $('#ui').hidden = false; $('#mode-seg').hidden = false;
   applyToggles(); setSkyMode(state.skyMode);
   let seen = false; try { seen = localStorage.getItem('sky-start-seen') === '1'; } catch { /* ignore */ }
@@ -1151,6 +1267,67 @@ function enterSky(instant) {
   const target = state.arrive ? { ra: state.arrive.ra, dec: clamp(state.arrive.dec, -84, 84), fov: 26 } : { ra: 86, dec: 3, fov: 68 };
   if (instant || reduce) { Object.assign(view, target); fovTarget = target.fov; sky.intro.visible = false; return; }
   sky.entering = { t0: performance.now(), dur: 3200, from: { ...view }, target, earthFrom: sky.earth.position.y, fadeFrom: sky.nebMat.uniforms.uFade.value, done: () => { sky.intro.visible = false; } };
+}
+
+function enterIntro(instant) {
+  if (state.mode === 'depth') exitDepth(true);
+  if (state.sel) closePanel();
+  $('#star-ring').hidden = true;
+  $('#tip').hidden = true;
+  state.sel = null;
+  state.hoverStar = -1;
+  state.hoverCode = null;
+  state.track = null;
+  setPop('#site-pop', false);
+  setPop('#layers', false);
+  setPop('#col-pop', false);
+  setGuide(false);
+  if (window.SpacePlan && window.SpacePlan.closeModals) window.SpacePlan.closeModals();
+  if (tourApi && tourApi.close) tourApi.close();
+  document.querySelectorAll('.tp-overlay, .tp-tip').forEach((el) => { el.hidden = true; el.classList.remove('is-on'); });
+
+  state.mode = 'intro';
+  if (instant) {
+    $('#journey').style.transition = 'none';
+    $('#ui').style.transition = 'none';
+  }
+  document.body.classList.add('is-intro');
+  $('#ui').hidden = true;
+  $('#mode-seg').hidden = true;
+  $('#site-btn').hidden = true;
+  $('#start').hidden = true;
+  $('#coach-pop').hidden = true;
+
+  if (location.hash) {
+    try { history.replaceState(null, '', location.pathname + location.search); } catch { location.hash = ''; }
+  }
+
+  const jr = $('#journey');
+  if (jr) {
+    if (instant || reduce) jr.scrollTop = 0;
+    else jr.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  J.p = 0; J.target = 0; J.tx = 0; J.ty = 0; J.px = 0; J.py = 0;
+  markChapter(0);
+
+  if (sky) {
+    sky.entering = null;
+    tween = null;
+    fovTarget = null;
+    vel = { ra: 0, dec: 0 };
+    Object.assign(view, { ra: 75, dec: -4.5, fov: 60 });
+    sky.intro.visible = true;
+    sky.earth.position.set(0, -(40 + 2.6), 0);
+    sky.nebMat.uniforms.uFade.value = 1;
+    if (sky.dome) sky.dome.visible = false;
+    if (sky.ground) sky.ground.visible = false;
+    if (sky.celestial) sky.celestial.visible = true;
+    sky.camera.position.set(0, 0, 0);
+  }
+  if (instant) {
+    setTimeout(() => { $('#journey').style.transition = ''; $('#ui').style.transition = ''; }, 50);
+  }
+  jr?.focus({ preventScroll: true });
 }
 
 /* ================================================================== depth (3D) mode: the shape is an illusion */
@@ -1436,6 +1613,17 @@ $('#lang').addEventListener('click', () => {
   applyLang();
 });
 $('#enter').addEventListener('click', () => enterSky(false));
+document.querySelector('.bar .brand')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  enterIntro(false);
+});
+window.addEventListener('hashchange', () => {
+  if (location.hash === '#sky' && state.mode === 'intro') {
+    enterSky(false);
+  } else if (location.hash !== '#sky' && (state.mode === 'sky' || state.mode === 'depth')) {
+    enterIntro(false);
+  }
+});
 bindJourney();
 (async function boot() {
   applyLang();
@@ -1448,7 +1636,7 @@ bindJourney();
       window.SpacePlan = planApi = initPlan({ A, lang: () => lang, eph: () => state.eph, state, setSite, setSkyMode, setTime, select, toast });
     }
   } catch (e) { console.warn('[plan]', e); }
-  try { tourApi = initTour({ A, lang: () => lang, state, enter: () => { if (state.mode === 'intro') enterSky(false); }, setSkyMode, select, closePanel, go: (url) => zoomIntoViewer(url), focusStar, clearHint: () => { state.hintStar = -1; }, selectStar: (name) => { const i = starIndex(name); if (i >= 0) { state.hintStar = -1; select('star', i); } }, moverUrl: () => { const m = MOVERS.find((x) => x.id === 'barnard'); return viewerUrl(m.ra, m.dec, m.fov, m.band); } }); } catch (e) { console.warn('[tour]', e); }
+  try { tourApi = initTour({ A, lang: () => lang, state, enter: () => { if (state.mode === 'intro') enterSky(false); }, setSkyMode, select, closePanel, go: (url) => zoomIntoViewer(url), enter3d: (code) => { if (state.cons[code]) enterDepth(code); }, leave3d: () => exitDepth(true), focusStar, clearHint: () => { state.hintStar = -1; }, selectStar: (name) => { const i = starIndex(name); if (i >= 0) { state.hintStar = -1; select('star', i); } }, moverUrl: (id = 'barnard') => { const m = MOVERS.find((x) => x.id === id) || MOVERS[0]; return viewerUrl(m.ra, m.dec, m.fov, m.band); }, movers: () => MOVERS.map((m) => ({ id: m.id, name: pick(m.name) })) }); } catch (e) { console.warn('[tour]', e); }
   await initSky();
   $('#enter').disabled = false; $('#skip-sky').disabled = false; $('#loading').classList.add('is-done'); $('#journey').focus({ preventScroll: true });
   if (location.hash === '#sky') enterSky(true);

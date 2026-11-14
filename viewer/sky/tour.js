@@ -20,13 +20,14 @@ const G = {
     chooseH: 'How do you want to start?', chooseSub: 'Pick a path. You can open this again any time from the "How to use" button.',
     starter: ['Starter', 'Explore step by step', 'Eight short steps: the sky, planets, the clock, a constellation, when and where to watch it, a star, then the main screen.', 'Start the tour'],
     pro: ['Pro', 'Straight to the data', 'Two steps: open a star and read its real parameters, then see the whole main screen in one look.', 'Go Pro'],
-    never: 'Do not open this automatically', toMain: 'Open the main screen', helpMe: 'Open it for me', tryIt: 'Your turn: tap the star', modeStarter: 'Starter', modePro: 'Pro',
+    never: 'Do not open this automatically', toMain: 'Open the main screen', helpMe: 'Open it for me', pickFirst: 'Pick a target first', tryIt: 'Your turn: tap the star', modeStarter: 'Starter', modePro: 'Pro',
     flow: {
       starter: [
         ['This is the real sky', 'Drag to look around, scroll to zoom. Every dot is a real star, put where it really is right now.'],
         ['Planets and the Moon', 'They sit where they really are at this moment. Tap Jupiter, or any planet, to read about it.'],
         ['The clock moves the sky', 'Press play, pick a speed or a date. Everything moves to where it was, or will be.'],
         ['Open a constellation', 'Tap a constellation name. Its star figure lights up and a panel opens with how to find it.'],
+        ['See it in 3D', 'The same constellation in real depth: its stars sit at very different distances. Drag to turn it, slide to fly through it.'],
         ['When to watch it', 'Under the constellation a strip of nights shows the best time. Add it to Google Calendar or download it.'],
         ['Where in Vietnam', 'Choose a place on the 3D map of Vietnam. Taller bars mean the constellation climbs higher there.'],
         ['Pan to a bright star', 'Drag to pan the sky. The pulsing ring is Sirius, the brightest star. Hover it, then tap it to read its facts.', ['Its facts, from real data', 'Read \u201cDrift across the sky\u201d: the star really is moving. Bigger means faster.']],
@@ -48,13 +49,14 @@ const G = {
     chooseH: 'Bạn muốn bắt đầu thế nào?', chooseSub: 'Chọn một luồng. Bạn có thể mở lại bất cứ lúc nào bằng nút "Hướng dẫn sử dụng".',
     starter: ['Starter', 'Khám phá từng bước', 'Tám bước ngắn: bầu trời, hành tinh, đồng hồ, một chòm sao, khi nào và ở đâu ngắm, một ngôi sao, rồi vào màn hình chính.', 'Bắt đầu tour'],
     pro: ['Pro', 'Đi thẳng vào dữ liệu', 'Hai bước: mở một ngôi sao và đọc thông số thật, rồi xem toàn bộ màn hình chính trong một lần nhìn.', 'Vào chế độ Pro'],
-    never: 'Đừng tự mở cái này nữa', toMain: 'Vào màn hình chính', helpMe: 'Mở giúp tôi', tryIt: 'Đến lượt bạn: bấm vào ngôi sao', modeStarter: 'Starter', modePro: 'Pro',
+    never: 'Đừng tự mở cái này nữa', toMain: 'Vào màn hình chính', helpMe: 'Mở giúp tôi', pickFirst: 'Chọn một mục tiêu trước', tryIt: 'Đến lượt bạn: bấm vào ngôi sao', modeStarter: 'Starter', modePro: 'Pro',
     flow: {
       starter: [
         ['Đây là bầu trời thật', 'Kéo để nhìn quanh, cuộn để phóng to. Mỗi chấm là một ngôi sao thật, đặt đúng chỗ của nó ngay lúc này.'],
         ['Hành tinh và Mặt Trăng', 'Chúng nằm đúng chỗ thật ở thời điểm này. Bấm vào Sao Mộc, hay hành tinh nào, để đọc về nó.'],
         ['Đồng hồ điều khiển bầu trời', 'Bấm chạy, chọn tốc độ hoặc một ngày. Mọi thứ di chuyển về nơi nó từng ở, hay sẽ ở.'],
         ['Mở một chòm sao', 'Bấm tên một chòm sao. Hình nối sao sáng lên và một bảng mở ra, chỉ cách tìm nó.'],
+        ['Xem dạng 3D', 'Cùng chòm sao đó nhưng theo chiều sâu thật: các ngôi sao ở xa gần rất khác nhau. Kéo để xoay, trượt để bay xuyên qua.'],
         ['Khi nào ngắm được', 'Dưới chòm sao có dải các đêm kèm giờ đẹp nhất. Thêm vào Google Calendar hoặc tải về.'],
         ['Ở đâu tại Việt Nam', 'Chọn một nơi trên bản đồ 3D Việt Nam. Cột càng cao nghĩa là chòm sao càng lên cao ở đó.'],
         ['Lia tới một ngôi sao sáng', 'Kéo để lia bầu trời. Vòng sáng nhấp nháy là Sirius, ngôi sao sáng nhất. Rê chuột vào nó rồi bấm để đọc thông tin.', ['Thông tin thật của nó', 'Đọc dòng \u201cTrôi trên bầu trời\u201d: ngôi sao này thực sự đang di chuyển. Số càng lớn là chạy càng nhanh.']],
@@ -135,7 +137,7 @@ export function initTour(api) {
     card(); const canvas = $('canvas', planetCard); if (!canvas) return;
     if (!p3.THREE) { try { p3.THREE = await import('three'); } catch { return; } }
     const T = p3.THREE; cancelAnimationFrame(p3.raf);
-    const stage = $('.pl3d-stage', planetCard), r = new T.WebGLRenderer({ canvas, antialias: true, alpha: true }); r.setPixelRatio(Math.min(devicePixelRatio, 2));
+    const stage = $('.pl3d-stage', planetCard), r = new T.WebGLRenderer({ canvas, antialias: true, alpha: true }); r.setPixelRatio(Math.min(devicePixelRatio, innerWidth < 900 ? 1.5 : 2));
     const scene = new T.Scene(), cam = new T.PerspectiveCamera(32, 1, 0.1, 50); cam.position.set(0, 0, 6.4);
     const p = PLANETS.find((x) => x.id === p3.cur), idx = PLANETS.indexOf(p), group = new T.Group(), spin = new T.Group();
     group.rotation.z = -p.tilt * Math.PI / 180; group.add(spin); scene.add(group);
@@ -168,15 +170,16 @@ export function initTour(api) {
       { run: () => { closeModals(); api.setSkyMode('map'); if (api.state.eph) api.select('body', 'jupiter'); } },
       { run: () => { closeModals(); api.closePanel(); }, target: '#time-dock' },
       { run: () => { closeModals(); api.select('const', 'Ori'); } },
+      { depth: true, run: () => { closeModals(); api.select('const', 'Ori'); setTimeout(() => api.enter3d('Ori'), 1700); } },
       { run: () => { closeModals(); const pl = $('#pl'); if (pl) pl.scrollIntoView({ block: 'center', behavior: 'smooth' }); }, target: '#pl' },
       { run: () => { const p = SP(); if (p) { p.setConst('Ori'); p.openMap(); } } },
       { ask: true, run: () => { closeModals(); api.setSkyMode('map'); api.closePanel(); api.focusStar('Sirius'); } },
-      { run: () => { closeModals(); api.select('mover', 'barnard'); }, target: '#panel .facts' },
+      { run: () => { closeModals(); api.select('mover', chosen); }, target: '#panel .facts' },
       { run: () => { closeModals(); }, target: '#panel .p-cta', final: true },
     ],
     pro: [
       { ask: true, run: () => { closeModals(); api.setSkyMode('map'); api.closePanel(); api.focusStar('Sirius'); } },
-      { run: () => { closeModals(); }, final: true },
+      { run: () => { closeModals(); api.closePanel(); }, final: true },
     ],
   };
   const tour = Object.assign(document.createElement('aside'), { id: 'tour', hidden: true });
@@ -184,6 +187,7 @@ export function initTour(api) {
   const hl = Object.assign(document.createElement('div'), { id: 'tour-hl', hidden: true }); document.body.appendChild(hl);
   const pick = Object.assign(document.createElement('div'), { id: 'tour-pick', className: 'tour-pick', hidden: true });
   pick.setAttribute('role', 'dialog'); pick.setAttribute('aria-modal', 'true'); document.body.appendChild(pick);
+  const chosen = 'barnard';                    // the main screen always opens on Barnard's Star
   let mode = null, step = 0, forced = false, hlTimer = 0;
   const setOn = (on) => document.body.classList.toggle('tour-on', on);
 
@@ -195,13 +199,15 @@ export function initTour(api) {
   }
   function renderCard(flowKey, f, found) {
     const tx = t(), N = FLOWS[flowKey].length, [h0, p0, fd] = tx.flow[flowKey][step], h = found && fd ? fd[0] : h0, p = found && fd ? fd[1] : p0;
-    const nextLabel = f.final ? tx.toMain : f.ask && !found ? tx.helpMe : tx.next;
-    tour.innerHTML = `<p class="tour-n"><span class="tour-mode is-${flowKey}">${esc(flowKey === 'pro' ? tx.modePro : tx.modeStarter)}</span> ${esc(fmt(tx.step, { a: step + 1, b: N }))}</p><h3>${esc(h)}</h3><p>${esc(p)}</p>${f.ask && !found ? `<p class="tour-try">${esc(tx.tryIt)}</p>` : ''}<div class="tour-dots">${[...Array(N)].map((_, i) => `<i class="${i === step ? 'is-on' : ''}"></i>`).join('')}</div>
-      <div class="tour-btns"><button type="button" class="tour-skip" data-a="skip">${esc(tx.skip)}</button><span></span>${step ? `<button type="button" class="tour-b" data-a="back">${esc(tx.back)}</button>` : ''}<button type="button" class="tour-b tour-primary" data-a="next">${esc(nextLabel)}</button></div>`;
+    const needPick = f.pickTarget && !chosen, nextLabel = needPick ? tx.pickFirst : f.final ? tx.toMain : f.ask && !found ? tx.helpMe : tx.next;
+    tour.innerHTML = `<p class="tour-n"><span class="tour-mode is-${flowKey}">${esc(flowKey === 'pro' ? tx.modePro : tx.modeStarter)}</span> ${esc(fmt(tx.step, { a: step + 1, b: N }))}</p><h3>${esc(h)}</h3><p>${esc(p)}</p>${f.ask && !found ? `<p class="tour-try">${esc(tx.tryIt)}</p>` : ''}${f.pickTarget ? `<div class="tour-targets">${api.movers().map((m) => `<button type="button" data-mv="${m.id}" class="${m.id === chosen ? 'is-on' : ''}">${esc(m.name)}</button>`).join('')}</div>` : ''}<div class="tour-dots">${[...Array(N)].map((_, i) => `<i class="${i === step ? 'is-on' : ''}"></i>`).join('')}</div>
+      <div class="tour-btns"><button type="button" class="tour-skip" data-a="skip">${esc(tx.skip)}</button><span></span>${step ? `<button type="button" class="tour-b" data-a="back">${esc(tx.back)}</button>` : ''}<button type="button" class="tour-b tour-primary" data-a="next"${needPick ? ' disabled' : ''}>${esc(nextLabel)}</button></div>`;
   }
   function runStep() {
     const f = FLOWS[mode][step]; clearInterval(poll); api.clearHint && api.clearHint();
-    renderCard(mode, f, false); tour.hidden = false; hl.hidden = true; setOn(true); f.run();
+    renderCard(mode, f, false); tour.hidden = false; hl.hidden = true; setOn(true);
+    if (!f.depth && api.leave3d) api.leave3d();          // every other step starts back in the flat sky
+    f.run();
     placeHl(f.target);
     if (f.ask) {                                              // hands-on: the user pans, hovers and taps the star; we notice and show what to read
       poll = setInterval(() => { if (tour.hidden) { clearInterval(poll); return; } if (picked()) { clearInterval(poll); renderCard(mode, f, true); placeHl('#panel .facts'); } }, 300);
@@ -211,7 +217,7 @@ export function initTour(api) {
   function begin(m) { mode = m; step = 0; pick.hidden = true; runStep(); }
   function toMain() {
     const m = mode; end(); try { sessionStorage.setItem('space-vi-vtour', m); } catch { /* ignore */ }
-    api.go(api.moverUrl());
+    api.go(api.moverUrl(chosen));
   }
   tour.addEventListener('click', (e) => {
     const b = e.target.closest('button'); if (!b) return; const a = b.dataset.a, last = FLOWS[mode].length - 1;
@@ -268,5 +274,5 @@ export function initTour(api) {
     if (!tour.hidden) runStep(); if (!pick.hidden) showChooser();
   }
   refresh();
-  return { refresh, start, auto };
+  return { refresh, start, auto, close: end };
 }

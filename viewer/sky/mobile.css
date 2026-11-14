@@ -1,0 +1,66 @@
+/* Phone and tablet layout for the sky page (loaded last, so it wins). Touch first: 40 px targets, no overflow, safe areas. */
+:root { --safe-b: env(safe-area-inset-bottom, 0px); --safe-t: env(safe-area-inset-top, 0px); }
+html { -webkit-text-size-adjust: 100%; }
+button, a, select, input { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+
+@media (max-width: 900px) {
+  .bar { padding: calc(10px + var(--safe-t)) 12px 10px; gap: 8px; }
+  .bar-actions { flex: 1; min-width: 0; justify-content: flex-end; flex-wrap: nowrap; gap: 6px; }
+  .brand span { display: none; }
+  /* the top bar keeps only what is needed: the two modes, a ? button, the language */
+  #skip, .chip-quiet { display: none; }
+  #howto-bar, #lang { height: 38px; min-width: 38px; padding: 0 12px; font-size: 12.5px; }
+  #howto-bar { font-size: 0; padding: 0; width: 38px; }
+  #howto-bar::before { content: "?"; font-size: 17px; font-weight: 800; }
+  .seg button { height: 32px; }
+
+  /* bottom: one row of icon buttons above a compact clock */
+  .dock-left { left: 12px; right: 12px; bottom: calc(10px + var(--safe-b)); gap: 6px; justify-content: space-between; }
+  .dock-left .btn { flex: 1 1 0; min-width: 0; height: 44px; padding: 0; justify-content: center; gap: 0; border-radius: 14px; }
+  .dock-left .btn span { display: none; }
+  .dock-left .btn .col-n, .dock-left .btn .badge { display: inline-grid; }
+  .time-dock { left: 12px; right: 12px; bottom: calc(64px + var(--safe-b)); transform: none; width: auto; justify-content: space-between; flex-wrap: wrap; gap: 6px; padding: 6px 8px; }
+  .t-field { flex: 1 1 120px; } .t-field input, .t-field select { width: 100%; height: 40px; }
+  .t-btn { width: 44px; height: 44px; } .t-now { height: 40px; padding: 0 14px; }
+  .t-cap { font-size: 9px; }
+  .t-date { flex: 1 1 58%; } .t-now { flex: 0 0 auto; margin-left: auto; }
+  .coach { bottom: calc(176px + var(--safe-b)); max-width: calc(100vw - 24px); font-size: 13px; }
+  .panel { max-height: 56dvh; padding-bottom: calc(24px + var(--safe-b)); }
+  .panel .x { width: 40px; height: 40px; }
+  .depth-bar { left: 12px; right: 12px; bottom: calc(10px + var(--safe-b)); }
+  .toast { bottom: calc(176px + var(--safe-b)); }
+
+  /* journey */
+  .chap { padding: calc(84px + var(--safe-t)) 18px calc(96px + var(--safe-b)); min-height: 100svh; }
+  .chap-split { grid-template-columns: 1fr; gap: 22px; }
+  .jrail { display: none; }
+  #start-fab { bottom: calc(18px + var(--safe-b)); width: calc(100vw - 36px); max-width: 360px; justify-content: center; height: 52px; }
+  .hero-cta { flex-wrap: wrap; gap: 8px; }
+  .hero-cta .btn { flex: 1 1 100%; justify-content: center; }
+  .do-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .do-tile { padding: 14px 12px; } .do-tile svg { width: 48px; height: 48px; } .do-tile b { font-size: 14.5px; } .do-tile span { font-size: 12px; }
+  .pl3d-stage { height: 200px; }
+}
+@media (max-width: 420px) {
+  .do-grid { grid-template-columns: 1fr; }
+  .do-tile { grid-template-columns: 56px 1fr; column-gap: 12px; align-items: center; }
+  .do-tile svg { grid-row: span 3; } .do-tile em { margin-top: 0; }
+}
+
+/* the guided tour card, chooser, calendar and map as bottom sheets */
+@media (max-width: 900px) {
+  #tour { left: 10px; right: 10px; width: auto; transform: none; top: calc(62px + var(--safe-t)); bottom: auto; padding: 14px 14px 12px; max-height: 40dvh; overflow-y: auto; }
+  body.tour-on .time-dock, body.tour-on .dock-left { opacity: .0; pointer-events: none; }
+  .tour-b, .tour-skip { height: 42px; } .tour-skip { padding: 0 8px; }
+  .tour-pick { align-items: end; padding: 0; } .tp-box { width: 100%; border-radius: 24px 24px 0 0; padding: 22px 18px calc(18px + var(--safe-b)); max-height: 92dvh; }
+  .tp-card { padding: 16px 14px; } .tp-never { padding: 8px 0; }
+  .pl-modal { padding: 0; align-items: end; } .pl-card { width: 100%; max-height: 94dvh; border-radius: 24px 24px 0 0; padding: 16px 14px calc(16px + var(--safe-b)); }
+  .pl-map { height: 94dvh; } .vn-stage { min-height: 260px; }
+  .pl-x, .pl-ic { width: 42px; height: 42px; } .pl-btn { height: 42px; } .vn-chip { height: 42px; }
+  .pl-nights { padding-bottom: 8px; } .pl-night { width: 50px; }
+  .pl-actions { gap: 8px; } .pl-actions .pl-btn { flex: 1 1 calc(50% - 8px); }
+  .pl-day b { font-size: 11px; } .pl-day { padding: 2px 0 4px; }
+  #star-hint { width: 54px; height: 54px; }
+}
+@media (max-width: 900px) { .pl-ev { max-height: none; overflow: visible; } }
+@media (max-width: 900px) { body.is-intro .bar { background: linear-gradient(180deg, rgba(2, 4, 10, .88) 40%, transparent); padding-bottom: 18px; } }

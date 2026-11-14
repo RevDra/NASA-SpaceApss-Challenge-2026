@@ -931,6 +931,13 @@ body.tm-on .sky-frame { filter: saturate(.55) brightness(.8); }
 
 /* star card: vital signs, charts, habitable zone */
 .star-card { width: min(440px, calc(100% - 24px)); background: rgba(5, 9, 19, .965); border-color: var(--hair); border-radius: 18px; }
+.sc-lifesec.is-spot { animation: life-spot 1.6s ease-in-out 3; border-radius: 14px; }
+@keyframes life-spot { 50% { box-shadow: 0 0 0 3px rgba(56, 189, 248, .8), 0 0 28px rgba(56, 189, 248, .5); } }
+.ky-life { display: grid; gap: 3px; padding: 11px 13px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, .18); background: rgba(255, 255, 255, .05); }
+.ky-life span { font: 600 10px "JetBrains Mono", monospace; letter-spacing: .08em; text-transform: uppercase; color: #94a3b8; } .ky-life b { font-size: 14.5px; line-height: 1.35; } .ky-life small { font-size: 11px; color: #94a3b8; }
+.ky-life.is-yes { background: rgba(94, 234, 212, .14); border-color: #5eead4; } .ky-life.is-yes b { color: #5eead4; }
+.ky-life.is-maybe { background: rgba(245, 165, 74, .12); border-color: rgba(245, 165, 74, .6); } .ky-life.is-maybe b { color: #fbbf24; }
+.ky-life.is-no b { color: #fca5a5; }
 .sc-vitals { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px 0 6px; }
 .vt { padding: 10px 11px 10px; border-radius: 12px; background: rgba(255, 255, 255, .03); border: 1px solid rgba(255, 255, 255, .07); min-width: 0; }
 .vt-h { display: flex; align-items: center; gap: 7px; font: 600 10px var(--font-mono); letter-spacing: .09em; text-transform: uppercase; color: var(--silver); }
@@ -1041,6 +1048,33 @@ html.zoom-arrive::after { content: ''; position: fixed; inset: 0; z-index: 400; 
 @keyframes zoom-arrive { from { transform: scale(1.5); filter: blur(10px); opacity: 0; } 55% { opacity: 1; } to { transform: none; filter: none; opacity: 1; } }
 @keyframes zoom-veil { from { opacity: 1; } to { opacity: 0; visibility: hidden; } }
 </style>
+<style id="mobile-css">
+/* phones: nothing wider than the screen, touch-sized controls, safe areas */
+:root { --safe-b: env(safe-area-inset-bottom, 0px); }
+button, a, select, input { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+@media (max-width: 820px) {
+  .statusbar, .status, #data-status { white-space: normal !important; overflow-wrap: anywhere; min-width: 0; }
+  .statusbar { padding-bottom: calc(10px + var(--safe-b)); }
+  .hud-tl .chip, #hud-mission { white-space: normal; max-width: calc(100vw - 56px); line-height: 1.35; }
+  .tab, .fr-btn, .nav .tab { min-height: 40px; }
+  .sidebar { overflow: visible; } .sidebar-scroll { padding-bottom: calc(22px + var(--safe-b)); }
+  .star-card, #star-card { max-width: calc(100vw - 20px); }
+  .tmbar, #tmbar { left: 10px; right: 10px; width: auto; max-height: 56svh; overflow-y: auto; }
+  .tm-btn, .tmbar button { min-height: 40px; }
+  input[type=range] { min-height: 28px; }
+  .mm-num { height: 34px; width: 72px; font-size: 13px; }
+  .nav { padding-top: max(0px, env(safe-area-inset-top, 0px)); }
+  #vt .vt-card { bottom: calc(10px + var(--safe-b)); max-height: 56svh; overflow-y: auto; }
+  .vt-pins { display: none; }                       /* on a phone the card lists the four points; pins would sit under it */
+  .vt-btns { flex-wrap: wrap; } .vt-key, .vt-ok { height: 42px; flex: 1 1 140px; }
+  .wait svg { width: min(160px, 46%); }
+}
+@media (max-width: 480px) {
+  .fr-hint { display: none; }                       /* the picture needs the room; the guide and the Guide button explain it */
+  .fr-veil .fr-card, .fr-card { max-width: calc(100vw - 16px); padding: 18px 14px; }
+  .tour-card { left: 8px; right: 8px; }
+}
+</style>
 </head>
 <body class="bg-void font-sans text-white antialiased">
 
@@ -1077,7 +1111,7 @@ html.zoom-arrive::after { content: ''; position: fixed; inset: 0; z-index: 400; 
 
 <!-- ============ Top floating navbar (kept above the panel layer so tabs stay usable) ============ -->
 <header class="nav" id="nav">
-  <a class="brand" href="welcome.html#sky" aria-label="Space_VI, back to the sky map" title="Back to the sky map">
+  <a class="brand" href="welcome.html" aria-label="Space_VI, return to landing page" title="Về trang chủ / Return to landing page">
     <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
       <circle cx="16" cy="16" r="10.5" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".55"/>
       <ellipse cx="16" cy="16" rx="14.5" ry="5.2" transform="rotate(-24 16 16)" fill="none" stroke="var(--sky)" stroke-width="1.5"/>
@@ -2461,6 +2495,18 @@ html.zoom-arrive::after { content: ''; position: fixed; inset: 0; z-index: 400; 
       return `<li class="plc" style="--c:rgb(${c})"><span class="pd" aria-hidden="true"></span><span><b>${esc(p.pl_name)}</b><small>${[isNum(p.pl_rade) ? fx(SVT.rad, { r: p.pl_rade.toFixed(2) }) : null, isNum(p.pl_orbper) ? fx(SVT.per, { p: p.pl_orbper < 100 ? p.pl_orbper.toFixed(1) : Math.round(p.pl_orbper) }) : null, x.a ? fx(SVT.teq, { t: Math.round(x.teq) }) : null].filter(Boolean).join(' · ')}</small></span>${x.v ? `<span class="vd ${x.v === 'in' ? 'in' : ''}">${SVT.v[x.v]}</span>` : ''}</li>`; }).join('')}</ul>` : `<p class="sc-cap">${SVT.noPlanets}</p>`;
     return `<section class="sc-sec sc-chart"><h4>${SVT.hzH}</h4>${svg}<p class="sc-cap">${cap}</p>${list}</section>`;
   }
+  /* honest verdict on the chance of life, shown at the top of the life section: habitable zone and known planets only */
+  function verdictHTML(d, D, T, lumClass) {
+    const vi = LV === 'vi', t = isNum(D.teff) ? D.teff : T, L = D.lum_lsun;
+    const zone = isNum(L) ? hzZone(t, L) : null, pls = isNum(L) ? planetsOf(d, D, t, L) : [], inZ = pls.filter((x) => x.v === 'in');
+    const K = vi ? { life: 'Khả năng có sự sống', yes: (n, names) => `${n} hành tinh trong vùng ở được${names ? ': ' + names : ''}`, maybe: 'Có vùng ở được, chưa biết hành tinh nào ở đó', no: 'Khó: đây là sao khổng lồ, quá sáng và đang tiến hoá', none: 'Chưa đủ dữ liệu', note: 'Vùng ở được không phải bằng chứng của sự sống.' }
+      : { life: 'Chance of life', yes: (n, names) => `${n} planet${n > 1 ? 's' : ''} in the habitable zone${names ? ': ' + names : ''}`, maybe: 'Has a habitable zone, no known planet in it', no: 'Unlikely: a giant, bright and evolving star', none: 'Not enough data', note: 'A habitable zone is not evidence of life.' };
+    let lv = 'none', lt = K.none;
+    if (lumClass && !lumClass.startsWith('dwarf')) { lv = 'no'; lt = K.no; }
+    else if (inZ.length) { lv = 'yes'; lt = K.yes(inZ.length, inZ.map((x) => esc(x.p.pl_name)).join(', ')); }
+    else if (zone) { lv = 'maybe'; lt = K.maybe; }
+    return `<div class="ky-life is-${lv}"><span>${K.life}</span><b>${lt}</b><small>${K.note}</small></div>`;
+  }
   function lifeHTML(d, D, T, g, lumClass) {
     const t = isNum(D.teff) ? D.teff : T, L = D.lum_lsun, zone = isNum(L) ? hzZone(t, L) : null, pls = isNum(L) ? planetsOf(d, D, t, L) : [], rows = [];
     if (lumClass) rows.push(lumClass.startsWith('dwarf') ? `<li>${IC.star}<span>${SVT.l1y}</span></li>` : `<li class="no">${IC.star}<span>${SVT.l1n}</span></li>`);
@@ -2468,7 +2514,7 @@ html.zoom-arrive::after { content: ''; position: fixed; inset: 0; z-index: 400; 
     const inZ = pls.filter((x) => x.v === 'in');
     rows.push(d.planets && d.planets.length ? `<li>${IC.planet}<span>${fx(SVT.l3y, { n: d.planets.length, k: inZ.length, names: inZ.length ? ': ' + inZ.map((x) => esc(x.p.pl_name)).join(', ') : '' })}</span></li>` : `<li class="no">${IC.planet}<span>${SVT.l3n}</span></li>`);
     if (d.phenomena && d.phenomena.length) rows.push(`<li class="no">${IC.flare}<span>${fx(SVT.l4, { t: esc(d.phenomena.slice(0, 2).join('; ')) })}</span></li>`);
-    return `<section class="sc-sec"><h4>${SVT.lifeH}</h4><ul class="life">${rows.join('')}</ul><p class="sc-honest">${SVT.honest}</p></section>`;
+    return `<section class="sc-sec sc-lifesec"><h4>${SVT.lifeH}</h4>${verdictHTML(d, D, T, lumClass)}<ul class="life">${rows.join('')}</ul><p class="sc-honest">${SVT.honest}</p></section>`;
   }
   function hrHTML(g, D, sw) {
     if (!isNum(g.bp_rp) || !isNum(D.abs_g)) return `<section class="sc-sec sc-chart"><h4>${SVT.hrH}</h4><p class="sc-cap">${SVT.hrNo}</p></section>`;
@@ -2695,6 +2741,22 @@ html.zoom-arrive::after { content: ''; position: fixed; inset: 0; z-index: 400; 
     drawOverlay();
   }
 
+  window.__spotLife = () => {             // scroll the star card down to its life section and pulse it
+    const el = document.querySelector('.sc-lifesec'), body = document.querySelector('.sc-body'); if (!el || !body) return false;
+    body.scrollTo({ top: Math.max(0, el.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop - 10), behavior: 'smooth' }); el.classList.add('is-spot'); setTimeout(() => el.classList.remove('is-spot'), 5200); return true;
+  };
+  window.__pinNearest = () => {           // the Gaia star closest to the middle of the photograph (whatever the target is)
+    const list = gaiaStars(); if (!list || !list.length) return false;
+    const t = viewTime(); let best = null, bd = 1e9;
+    for (const s of list) { const [dx, dy] = gaiaOffset(s, t), d = Math.hypot(dx, dy); if (d < bd) { bd = d; best = s; } }
+    if (!best || bd > 30) return false;
+    stars.pinned = best; stars.hover = best; renderStarCard(best); fetchStar(best.id); drawOverlay(); return true;
+  };
+  window.__pinStar = (id) => {            // used by the guided path: open the card of a known star
+    const list = gaiaStars(); const s = list && list.find((x) => String(x.id) === String(id));
+    if (!s) return false;
+    stars.pinned = s; stars.hover = s; renderStarCard(s); fetchStar(s.id); drawOverlay(); return true;
+  };
   function clickStar(x, y) {
     const s = pickStar(x, y);
     if (s) { stars.pinned = s; stars.hover = s; renderStarCard(s); fetchStar(s.id); drawOverlay(); }
@@ -3026,22 +3088,34 @@ html.zoom-arrive::after { content: ''; position: fixed; inset: 0; z-index: 400; 
   const geo = { W: 0, H: 0, cx: 0, cy: 0, dpr: 1 };
 
   function measure() {
-    const r = stage.getBoundingClientRect();
-    geo.W = r.width; geo.H = r.height;
+    let w = stage.clientWidth || stage.offsetWidth;
+    let h = stage.clientHeight || stage.offsetHeight;
+    if (!w || !h) {
+      const r = stage.getBoundingClientRect();
+      const isZooming = document.documentElement.classList.contains('zoom-arrive');
+      const scale = isZooming ? 1.5 : 1;
+      w = Math.round(r.width / scale) || window.innerWidth;
+      h = Math.round(r.height / scale) || window.innerHeight;
+    }
+    geo.W = w;
+    geo.H = h;
     geo.dpr = Math.min(window.devicePixelRatio || 1, 2);
-    geo.cx = geo.W / 2;
-    geo.cy = Math.max(110, (geo.H - 88) / 2 + 6);           // keep the image centred above the player bar
+    geo.cx = Math.round(geo.W / 2);
+    geo.cy = Math.round(Math.max(110, (geo.H - 88) / 2 + 6));           // keep the image centred above the player bar
     overlay.width = Math.round(geo.W * geo.dpr);
     overlay.height = Math.round(geo.H * geo.dpr);
   }
 
   function imageRect() {
-    const size = model.N * BANDS[state.band].ps * ppa();
-    return { x: geo.cx - size / 2, y: geo.cy - size / 2, size };
+    const size = Math.round(model.N * BANDS[state.band].ps * ppa());
+    return { x: Math.round(geo.cx - size / 2), y: Math.round(geo.cy - size / 2), size };
   }
 
+  let lastFramePos = { x: null, y: null, size: null };
   function positionFrame() {
     const r = imageRect();
+    if (r.x === lastFramePos.x && r.y === lastFramePos.y && r.size === lastFramePos.size) return;
+    lastFramePos = { x: r.x, y: r.y, size: r.size };
     frameEl.style.width = `${r.size}px`;
     frameEl.style.height = `${r.size}px`;
     frameEl.style.transform = `translate(${r.x}px, ${r.y}px)`;
@@ -3055,6 +3129,7 @@ html.zoom-arrive::after { content: ''; position: fixed; inset: 0; z-index: 400; 
   }
 
   function drawOverlay() {
+    positionFrame();
     const { W, H, cx, cy, dpr } = geo;
     const ctx = octx;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -3533,7 +3608,10 @@ html.zoom-arrive::after { content: ''; position: fixed; inset: 0; z-index: 400; 
   const formatCoords = (ra, dec) => `${ra.toFixed(6)} ${dec.toFixed(6)}`;
 
   function apply(key) {
-    if (FRAME_KEYS.has(key)) scheduleRebuild();
+    if (FRAME_KEYS.has(key)) {
+      if (key === 'fov') fitZoom(true);
+      scheduleRebuild();
+    }
     else if (STACK_KEYS.has(key)) { buildStack(); refresh(); }
     else if (SKY_KEYS.has(key)) { drawSky(); drawOverlay(); updateHud(); updateReadout(); }
     else if (OVERLAY_KEYS.has(key)) drawOverlay();
@@ -3820,10 +3898,17 @@ html.zoom-arrive::after { content: ''; position: fixed; inset: 0; z-index: 400; 
   }
 
   // Default zoom is 9.0; on small viewports start at the largest zoom that keeps the whole field visible.
-  function fitZoom() {
-    const room = Math.min(geo.W - 48, 2 * (geo.cy - 50));
-    const fit = Math.floor(((room * WISE_PS) / state.fov) * 2) / 2;
-    if (fit < state.zoom) { state.zoom = clamp(fit, 1, 24); syncSlider(SLIDERS[2]); }
+  function fitZoom(force = false) {
+    if (!geo.W || !geo.H || !state.fov) return;
+    const maxW = Math.max(80, geo.W - 64);
+    const maxH = Math.max(80, Math.min(geo.cy - 50, geo.H - geo.cy - 72) * 2);
+    const room = Math.min(maxW, maxH);
+    const fit = Math.floor(((room * 0.88 * WISE_PS) / state.fov) * 2) / 2;
+    const target = clamp(fit, 1.5, 22);
+    if (force || target < state.zoom) {
+      state.zoom = target;
+      syncSlider(SLIDERS[2]);
+    }
   }
 
   // --- toggles ---
@@ -3920,7 +4005,7 @@ html.zoom-arrive::after { content: ''; position: fixed; inset: 0; z-index: 400; 
     $('#apply-defaults').addEventListener('click', () => {
       Object.assign(state, DEFAULTS);
       state.frame = 0;
-      fitZoom();
+      fitZoom(true);
       syncControls();
       rebuild();
       toast('Defaults applied');
@@ -4078,16 +4163,40 @@ html.zoom-arrive::after { content: ''; position: fixed; inset: 0; z-index: 400; 
     buildStarLegend();
     bindCoords(); bindFov(); bindBand(); bindSliders(); bindToggles(); bindAdvanced(); bindDefaults();
     bindPlayer(); bindStage(); bindKeys(); bindPanels();
-    syncControls();
     measure();
-    fitZoom();
+    fitZoom(true);
+    syncControls();
     rebuild();
     setPlaying(state.playing);
     startClock();
-    new ResizeObserver(() => { measure(); positionFrame(); drawOverlay(); updateScalebar(); if (stars.pinned) placeStarCard(stars.pinned); }).observe(stage);
+    new ResizeObserver(() => {
+      measure();
+      fitZoom(false);
+      positionFrame();
+      drawOverlay();
+      updateScalebar();
+      if (stars.pinned) placeStarCard(stars.pinned);
+    }).observe(stage);
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawOverlay);
     requestAnimationFrame((t) => { lastTick = t + 700; loop(t); });   // let the frame "acquire" before blinking starts
     document.documentElement.classList.add('is-ready');
+
+    const appEl = $('#app');
+    function finalizeArrival() {
+      if (!document.documentElement.classList.contains('zoom-arrive')) return;
+      document.documentElement.classList.remove('zoom-arrive');
+      measure();
+      fitZoom(true);
+      refresh();
+    }
+    if (document.documentElement.classList.contains('zoom-arrive')) {
+      if (appEl) {
+        appEl.addEventListener('animationend', (e) => {
+          if (e.target === appEl) finalizeArrival();
+        }, { once: true });
+      }
+      setTimeout(finalizeArrival, 1150);
+    }
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
@@ -4432,13 +4541,29 @@ function init(THREE) {
   fetch('sky/targets.json').then((r) => (r.ok ? r.json() : null)).then((j) => { if (!j) return; j.targets.forEach((t) => { const m = TG.find((x) => x.id === t.id); if (m) Object.assign(m, { ra: t.ra, dec: t.dec, ra2000: t.ra2000, dec2000: t.dec2000, band: t.band, fov: t.fov, sp: t.sp_type }); }); EPOCH = j.epoch || EPOCH; TG.forEach((m) => window.__tm && window.__tm.track({ name: (T.tg[m.id] || [m.id])[0], ra: m.ra, dec: m.dec, ra2000: m.ra2000, dec2000: m.dec2000, epoch: EPOCH })); buildTargets(); }).catch(() => {});
 
   const fire = (el, type, init) => el.dispatchEvent(new (type.startsWith('key') ? KeyboardEvent : Event)(type, { bubbles: true, ...init }));
-  function setCoords(ra, dec) { const c = $('#coords'); if (!c) return; c.value = `${ra.toFixed(6)} ${dec.toFixed(6)}`; fire(c, 'keydown', { key: 'Enter' }); }
-  function setBand(n) { const o = document.getElementById(`band-opt-SD${n}`); if (o) o.click(); }
+  function setCoords(ra, dec) {
+    if (lastFly && Math.hypot(ra - lastFly.ra, dec - lastFly.dec) > 0.08) lastFly = null;
+    const c = $('#coords'); if (!c) return;
+    c.value = `${ra.toFixed(6)} ${dec.toFixed(6)}`;
+    fire(c, 'keydown', { key: 'Enter' });
+  }
+  let lastSpherexBand = 'SD2';
+  function setBand(n) {
+    lastSpherexBand = `SD${n}`;
+    const o = document.getElementById(`band-opt-SD${n}`);
+    if (o) o.click();
+  }
+  function setBandId(id) {
+    if (id && id.startsWith('SD')) lastSpherexBand = id;
+    const o = document.getElementById(`band-opt-${id}`);
+    if (o) o.click();
+  }
   /* the photo should fill the stage whatever the field of view: pick the zoom that fits */
   function autoZoom() {
     const st = $('#stage'), z = $('#s-zoom'), f = +($('#fov')?.value || 120); if (!st || !z || !st.clientWidth) return;
     const ps = 2.75;   // the viewer's zoom is expressed in WISE pixels whatever the band
-    const room = Math.min(st.clientWidth - 64, st.clientHeight - 190), best = Math.max(1, Math.min(24, Math.floor((room * ps / f) * 2) / 2));
+    const room = Math.min(Math.max(80, st.clientWidth - 64), Math.max(80, st.clientHeight - 160));
+    const best = Math.max(1.5, Math.min(22, Math.floor(((room * 0.88 * ps) / f) * 2) / 2));
     if (Math.abs(+z.value - best) > 0.01) { z.value = String(best); fire(z, 'input'); }
   }
   function setFov(v) { const f = $('#fov'); if (!f) return; f.value = String(v); fire(f, 'change'); setTimeout(autoZoom, 120); }
@@ -4446,14 +4571,27 @@ function init(THREE) {
      so the field is centred on where the star was mid-way (2017.5) and widened to hold its whole track. */
   const longSpan = () => /NEOWISE/.test($('#band-value')?.textContent || '');
   let EPOCH = 2026.87, lastFly = null;
-  function setBandId(id) { const o = document.getElementById(`band-opt-${id}`); if (o) o.click(); }
+  const coordsNow = () => { const m = ($('#coords')?.value || '').trim().split(/[\s,]+/).map(Number); return m.length >= 2 && m.every(Number.isFinite) ? m : null; };
+  function currentTarget() {
+    const c = coordsNow();
+    if (!c) return null;
+    return TG.find((t) => {
+      if (Math.hypot(c[0] - t.ra, c[1] - t.dec) < 0.05) return true;
+      if (lastFly && lastFly.id === t.id && Math.hypot(c[0] - lastFly.ra, c[1] - lastFly.dec) < 0.05) return true;
+      return false;
+    }) || null;
+  }
   function fly(t, force) {
+    if (!t) return;
     const long = force ? force === 'long' : longSpan();
     if (long && t.ra2000 != null) {
       const k = (2017.5 - EPOCH) / (EPOCH - 2000), cd = Math.cos(t.dec * Math.PI / 180);
       const ra = t.ra + (t.ra - t.ra2000) * k, dec = t.dec + (t.dec - t.dec2000) * k, mot = Math.hypot((t.ra - t.ra2000) * cd, t.dec - t.dec2000) * 3600 / (EPOCH - 2000);
       setBandId('NW2'); setFov(Math.max(160, Math.min(600, Math.round(2 * (mot * 9 + 45))))); setCoords(ra, dec); lastFly = { id: t.id, ra, dec };
-    } else { setBand(t.band.replace('SD', '')); setFov(t.fov); setCoords(t.ra, t.dec); lastFly = { id: t.id, ra: t.ra, dec: t.dec }; }
+    } else {
+      const b = (t.band || 'SD2').replace(/^S?D?/, '');
+      setBand(b || '2'); setFov(t.fov || 120); setCoords(t.ra, t.dec); lastFly = { id: t.id, ra: t.ra, dec: t.dec };
+    }
   }
   const SP = { en: ['1 year', 'SPHEREx · 6 colours', '14 years', 'WISE · 2010 to 2024'], vi: ['1 năm', 'SPHEREx · 6 màu', '14 năm', 'WISE · 2010 đến 2024'] }[lang];
   function buildSpan() {
@@ -4463,9 +4601,18 @@ function init(THREE) {
   function markSpan() { const l = longSpan(); document.querySelectorAll('#span button').forEach((b) => b.setAttribute('aria-checked', String((b.dataset.k === 'long') === l))); }
   $('#span').addEventListener('click', (e) => {
     const b = e.target.closest('button'); if (!b) return; const k = b.dataset.k;
-    const t = (lastFly && TG.find((x) => x.id === lastFly.id)) || TG[0];
-    if (k === 'long') fly(t, 'long'); else { setBand(2); setFov(120); setCoords(t.ra, t.dec); lastFly = { id: t.id, ra: t.ra, dec: t.dec }; }
+    const t = currentTarget();
+    if (t) {
+      fly(t, k);
+    } else {
+      if (k === 'long') {
+        setBandId('NW2');
+      } else {
+        setBandId(lastSpherexBand || 'SD2');
+      }
+    }
     setTimeout(markSpan, 80);
+    setTimeout(markBand, 80);
   });
 
   /* ---- 01 targets ---- */
@@ -4474,7 +4621,6 @@ function init(THREE) {
     markTarget();
   }
   $('#tg-list').addEventListener('click', (e) => { const b = e.target.closest('.tg'); if (b) fly(TG.find((t) => t.id === b.dataset.id)); });
-  const coordsNow = () => { const m = ($('#coords')?.value || '').trim().split(/[\s,]+/).map(Number); return m.length >= 2 && m.every(Number.isFinite) ? m : null; };
   function markTarget() { const c = coordsNow(); document.querySelectorAll('.tg').forEach((b) => { const t = TG.find((x) => x.id === b.dataset.id); b.classList.toggle('is-on', !!c && ((Math.abs(c[0] - t.ra) < 0.004 && Math.abs(c[1] - t.dec) < 0.004) || (!!lastFly && lastFly.id === t.id && Math.abs(c[0] - lastFly.ra) < 0.004 && Math.abs(c[1] - lastFly.dec) < 0.004))); }); }
 
   /* ---- 02 colour of light ---- */
@@ -4482,7 +4628,15 @@ function init(THREE) {
     $('#bb').innerHTML = BAND_COL.map((c, i) => `<button type="button" class="bb-seg" role="radio" aria-checked="false" data-n="${i + 1}" style="--c:${c};--w:${BAND_W[i]}" aria-label="D${i + 1} ${BAND_UM[i]} micrometres">D${i + 1}</button>`).join('');
     markBand();
   }
-  $('#bb').addEventListener('click', (e) => { const b = e.target.closest('.bb-seg'); if (b) { setBand(b.dataset.n); setTimeout(markBand, 50); } });
+  $('#bb').addEventListener('click', (e) => {
+    const b = e.target.closest('.bb-seg');
+    if (b) {
+      lastSpherexBand = `SD${b.dataset.n}`;
+      setBand(b.dataset.n);
+      setTimeout(markBand, 50);
+      setTimeout(markSpan, 50);
+    }
+  });
   function markBand() {
     const m = /D(\d)/.exec($('#band-value')?.textContent || ''), n = m ? +m[1] : 0;
     document.querySelectorAll('.bb-seg').forEach((b) => b.setAttribute('aria-checked', String(+b.dataset.n === n)));
@@ -4499,7 +4653,7 @@ function init(THREE) {
   $('#fr-bands-h .rail-sub').textContent = T.lightSub; $('#omni-input').placeholder = T.ph;
   /* the full hint names all three kinds of search; fall back to the short one when the box is narrow */
   { const inp = $('#omni-input'), full = lang === 'vi' ? 'Sao, chòm sao hoặc toạ độ' : 'Star, constellation or coordinates', short = T.ph;
-    const fit = () => { inp.placeholder = inp.clientWidth >= 330 ? full : short; };
+    const tiny = lang === 'vi' ? 'Tìm sao' : 'Search'; const fit = () => { inp.placeholder = inp.clientWidth >= 330 ? full : inp.clientWidth >= 200 ? short : tiny; };
     new ResizeObserver(fit).observe(inp); fit(); }
   buildTargets(); buildBands(); buildZoom(); buildSpan();
   setTimeout(autoZoom, 900); let rz = null; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(autoZoom, 250); });
@@ -4545,10 +4699,10 @@ function init(THREE) {
   }
   function choose(k) {
     if (k[0] === 't') { fly(TG[+k.slice(1)]); input.value = ''; }
-    else if (k[0] === 'r') { const r = recents()[+k.slice(1)]; setCoords(r.ra, r.dec); input.value = ''; }
-    else if (k === 'coord') { const c = parseCoords(input.value); if (c) { setCoords(c.ra, c.dec); remember({ name: `${c.ra.toFixed(3)}, ${c.dec.toFixed(3)}`, ra: c.ra, dec: c.dec }); input.value = ''; } }
-    else if (k[0] === 'c') { const [ci, si] = k.slice(1).split('.').map(Number), st = consHits[ci] && consHits[ci].stars[si]; if (st) { const n = window.SpaceConst.now(st); setCoords(n.ra, n.dec); remember({ name: st.name || 'HIP star', ra: n.ra, dec: n.dec }); input.value = ''; } }
-    else if (k === 'name' && lastHit) { window.__tm && window.__tm.track(lastHit); setCoords(lastHit.ra, lastHit.dec); remember({ name: lastHit.name, ra: lastHit.ra, dec: lastHit.dec }); input.value = ''; }
+    else if (k[0] === 'r') { const r = recents()[+k.slice(1)]; lastFly = null; setCoords(r.ra, r.dec); input.value = ''; }
+    else if (k === 'coord') { const c = parseCoords(input.value); if (c) { lastFly = null; setCoords(c.ra, c.dec); remember({ name: `${c.ra.toFixed(3)}, ${c.dec.toFixed(3)}`, ra: c.ra, dec: c.dec }); input.value = ''; } }
+    else if (k[0] === 'c') { const [ci, si] = k.slice(1).split('.').map(Number), st = consHits[ci] && consHits[ci].stars[si]; if (st) { lastFly = null; const n = window.SpaceConst.now(st); setCoords(n.ra, n.dec); remember({ name: st.name || 'HIP star', ra: n.ra, dec: n.dec }); input.value = ''; } }
+    else if (k === 'name' && lastHit) { lastFly = null; window.__tm && window.__tm.track(lastHit); setCoords(lastHit.ra, lastHit.dec); remember({ name: lastHit.name, ra: lastHit.ra, dec: lastHit.dec }); input.value = ''; }
     pop.hidden = true; input.setAttribute('aria-expanded', 'false'); input.blur();
   }
   let lastHit = null, timer = null;
@@ -4673,16 +4827,16 @@ function init(THREE) {
 /* Pro path: when the sky page sends you here in Pro mode, mark the whole main screen with four numbered points and one line each. */
 (() => {
   let m = null; try { m = sessionStorage.getItem('space-vi-vtour'); if (m) sessionStorage.removeItem('space-vi-vtour'); } catch (e) { /* ignore */ }
-  if (m !== 'pro') return;
+  if (m !== 'pro' && m !== 'starter') return;
   let vi = false; try { const l = localStorage.getItem('sky-lang'); vi = l === 'vi' || (l !== 'en' && (navigator.language || '').toLowerCase().startsWith('vi')); } catch (e) { /* ignore */ }
   const T = vi ? { h: 'Màn hình chính trong 30 giây', goal: 'Đề bài: Planet X và SPHEREx. Tìm thứ dịch chuyển giữa các lần chụp.', ok: 'Đã hiểu',
-      p: ['Ảnh thật của SPHEREx và toạ độ. Mỗi khung là một lần chụp thật từ NASA/IPAC.', 'Thanh thời gian. Bấm chạy: chấm nào nhảy vị trí là vật đang di chuyển.', 'Vòng màu là sao Gaia trong ảnh. Rê chuột vào để đọc thẻ thông tin.', 'Bảng bên phải: đổi mục tiêu, màu ánh sáng, chuyển sang 14 năm WISE, chỉnh độ sáng.'] }
+      key: 'Xem khả năng có sự sống', p: ['Ảnh thật của SPHEREx và toạ độ. Mỗi khung là một lần chụp thật từ NASA/IPAC.', 'Thanh thời gian. Bấm chạy: chấm nào nhảy vị trí là vật đang di chuyển.', 'Vòng màu là sao Gaia. Bấm một vòng để mở thẻ thông tin: chỉ số sống, vùng ở được, khả năng có sự sống.', 'Bảng bên phải: đổi mục tiêu, màu ánh sáng, chuyển sang 14 năm WISE, chỉnh độ sáng.'] }
     : { h: 'The main screen in 30 seconds', goal: 'The challenge: Planet X and SPHEREx. Find what shifts between photographs.', ok: 'Got it',
-      p: ['Real SPHEREx photograph and coordinates. Each frame is a real exposure from NASA/IPAC.', 'The time bar. Press play: a dot that jumps position is something moving.', 'Coloured rings are Gaia stars in the photo. Hover one to read its card.', 'Right panel: change target, colour of light, switch to 14 years of WISE, tune brightness.'] };
+      key: 'See the chance of life', p: ['Real SPHEREx photograph and coordinates. Each frame is a real exposure from NASA/IPAC.', 'The time bar. Press play: a dot that jumps position is something moving.', 'Coloured rings are Gaia stars. Tap one to open its card: vital signs, habitable zone, chance of life.', 'Right panel: change target, colour of light, switch to 14 years of WISE, tune brightness.'] };
   const $ = (s) => document.querySelector(s), esc = (x) => String(x).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const root = document.createElement('div'); root.id = 'vt'; root.innerHTML = '<div class="vt-pins"></div><aside class="vt-card"></aside>'; document.body.appendChild(root);
   const card = root.querySelector('.vt-card'), pins = root.querySelector('.vt-pins');
-  card.innerHTML = `<h3>${esc(T.h)}</h3><ol>${T.p.map((t, i) => `<li><i>${i + 1}</i><span>${esc(t)}</span></li>`).join('')}</ol><p class="vt-goal">${esc(T.goal)}</p><button type="button" class="vt-ok">${esc(T.ok)}</button>`;
+  card.innerHTML = `<h3>${esc(T.h)}</h3><ol>${T.p.map((t, i) => `<li><i>${i + 1}</i><span>${esc(t)}</span></li>`).join('')}</ol><p class="vt-goal">${esc(T.goal)}</p><div class="vt-btns"><button type="button" class="vt-key">${esc(T.key)}</button><button type="button" class="vt-ok">${esc(T.ok)}</button></div>`;
   const spot = [() => $('#sky-frame') || $('.stage'), () => $('.player') || $('#timeline'), () => $('#star-legend:not([hidden])') || $('#sky-frame'), () => $('#sidebar')];
   const place = () => {
     pins.innerHTML = '';
@@ -4692,6 +4846,9 @@ function init(THREE) {
   };
   const close = () => { root.remove(); removeEventListener('resize', place); };
   root.querySelector('.vt-ok').addEventListener('click', close);
+  root.querySelector('.vt-key').addEventListener('click', () => {      // open the target star's card, key numbers first
+    close(); let n = 0; const t = setInterval(() => { n++; if (window.__pinNearest && window.__pinNearest()) { clearInterval(t); let k = 0; const w = setInterval(() => { k++; if ((document.querySelector('.sc-lifesec') && window.__spotLife && window.__spotLife()) || k > 40) clearInterval(w); }, 300); } else if (n > 40) clearInterval(t); }, 250);
+  });
   addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); }, { once: true });
   addEventListener('resize', place);
   let tries = 0; const wait = setInterval(() => { tries++; const src = $('#hud-source'); if ((src && /Real/.test(src.textContent)) || tries > 28) { clearInterval(wait); setTimeout(() => { root.classList.add('is-on'); place(); }, 700); } }, 250);
@@ -4705,6 +4862,7 @@ function init(THREE) {
 .vt-card h3 { margin: 0 0 8px; font-size: 16px; font-weight: 800; } .vt-card ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .vt-card li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; font-size: 13px; line-height: 1.45; color: #cbd5e1; } .vt-card li i { width: 20px; height: 20px; border-radius: 50%; background: #38BDF8; color: #04121c; font: 800 11px "JetBrains Mono", monospace; font-style: normal; display: grid; place-items: center; }
 .vt-goal { margin: 10px 0 0; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, .1); font-size: 12.5px; color: #f5a54a; font-weight: 600; }
+.vt-btns { display: flex; gap: 8px; margin-top: 10px; } .vt-key { margin-top: 10px; height: 36px; padding: 0 18px; border-radius: 999px; border: 0; background: #38BDF8; color: #04121c; font-weight: 800; font-size: 13px; cursor: pointer; } .vt-btns .vt-ok, .vt-btns .vt-key { margin-top: 0; }
 .vt-ok { margin-top: 10px; height: 36px; padding: 0 18px; border-radius: 999px; border: 0; background: #fff; color: #05080f; font-weight: 700; font-size: 13px; cursor: pointer; }
 </style>
 <script id="col-js">

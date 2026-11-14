@@ -268,7 +268,7 @@ export function initPlan(api) {
   async function initMap() {
     const THREE = await import('three'); const data = await fetch('sky/vietnam.json').then((r) => r.json()); vn.T = THREE;
     const stage = $('.vn-stage', vn.el), canvas = $('.vn-cv', vn.el), labels = $('.vn-labels', vn.el);
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true }); renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true }); renderer.setPixelRatio(Math.min(devicePixelRatio, innerWidth < 900 ? 1.5 : 2));
     const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(38, 1, 0.1, 200), kx = Math.cos(15 * D2R);
     const P = (lon, lat) => [(lon - 110) * kx, -(lat - 14.5)];
     scene.add(new THREE.AmbientLight(0xaecbff, 0.9)); const sun = new THREE.DirectionalLight(0xffffff, 1.1); sun.position.set(-6, 12, 8); scene.add(sun);

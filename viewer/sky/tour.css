@@ -65,3 +65,8 @@ body.tour-on #coach, body.tour-on #start { display: none !important; }
 #star-hint::after { content: attr(data-name); position: absolute; left: 54px; top: 50%; transform: translateY(-50%); padding: 3px 9px; border-radius: 8px; background: rgba(3, 6, 12, .85); border: 1px solid var(--line); font: 700 12px var(--font-sans); white-space: nowrap; }
 @keyframes hint-pulse { 50% { width: 58px; height: 58px; opacity: .6; } }
 .tour-try { margin-top: 8px !important; font-weight: 700; color: var(--amber) !important; }
+
+.tour-targets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.tour-targets button { height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255, 255, 255, .05); font-size: 12px; font-weight: 700; }
+.tour-targets button:hover { background: rgba(255, 255, 255, .12); } .tour-targets button.is-on { background: var(--sky); color: #04121c; border-color: var(--sky); }
+.tour-primary:disabled { opacity: .45; cursor: not-allowed; }
