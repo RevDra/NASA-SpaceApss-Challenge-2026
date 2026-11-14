@@ -872,9 +872,9 @@ async function initSky() {
 
   /* ---- Milky Way, placed with the real galactic coordinate matrix ---- */
   const mw = new THREE.Mesh(new THREE.SphereGeometry(500, 48, 32), new THREE.ShaderMaterial({
-    side: THREE.BackSide, transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending, uniforms: { uVis },
+    side: THREE.BackSide, transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending, uniforms: { uVis, uBoost: { value: 1 } },
     vertexShader: `varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
-    fragmentShader: `varying vec3 vDir; uniform float uVis; ${NOISE}
+    fragmentShader: `varying vec3 vDir; uniform float uVis; uniform float uBoost; ${NOISE}
       ${innerWidth < 900 ? 'float fbmQ(vec3 p){ float a=.5, s=0.; for(int i=0;i<3;i++){ s+=a*vnoise(p); p=p*2.03+vec3(1.7,9.2,3.1); a*=.5; } return s*1.14; }' : 'float fbmQ(vec3 p){ return fbm(p); }'}   /* phones: three octaves, same look, a third cheaper */
       void main(){
         vec3 e = vec3(vDir.x, -vDir.z, vDir.y);
@@ -898,7 +898,7 @@ async function initSky() {
         vec3 c = mix(cool, warm, clamp(core*0.9 + bulge, 0., 1.));
         c = mix(c, pink, 0.22*smoothstep(0.62,0.85,fbmQ(vDir*11.+8.))*thin);
         vec3 col = c*max(I,0.)*0.68 + vec3(0.30,0.40,0.85)*halo*0.55 + vec3(0.035,0.05,0.11)*(0.55 + wide) + mix(vec3(0.85,0.9,1.), warm, core)*grain*0.55;
-        gl_FragColor = vec4(col*uVis, 1.);
+        gl_FragColor = vec4(col*uVis*uBoost, 1.);
       }`,
   }));
   mw.renderOrder = 1; celestial.add(mw);
@@ -1083,35 +1083,36 @@ async function initSky() {
         gl_FragColor = vec4(c*I*.85*uFade, 1.);
       }`,
   });
-  const neb = new THREE.Mesh(new THREE.PlaneGeometry(210, 125), nebMat); neb.position.copy(introDir).multiplyScalar(150); neb.lookAt(0, 0, 0); neb.renderOrder = 6; intro.add(neb);
+  const neb = new THREE.Mesh(new THREE.PlaneGeometry(210, 125), nebMat); neb.position.copy(introDir).multiplyScalar(150); neb.lookAt(0, 0, 0); neb.renderOrder = 6; neb.visible = false;   /* the cover is the Milky Way now, not a nebula */ intro.add(neb);
   const R = 40, H = 2.6, earth = new THREE.Group(); earth.position.set(0, -(R + H), 0); intro.add(earth);
   const fwd0 = new V3(...eq(75, -4.5)), right0 = new V3().crossVectors(fwd0, new V3(0, 1, 0)).normalize();
   const sunDir = fwd0.clone().add(right0.clone().multiplyScalar(-0.75)).add(new V3(0, 0.16, 0)).normalize();
   const earthMat = new THREE.ShaderMaterial({
-    uniforms: { uL: { value: sunDir }, uTime: { value: 0 } },
+    transparent: true,                                   /* drawn after the Milky Way and the stars, so the Earth stands in front of them */
+    uniforms: { uL: { value: sunDir }, uTime: { value: 0 }, uA: { value: 1 } },
     vertexShader: `varying vec3 vN; varying vec3 vW; void main(){ vN = normal; vec4 w = modelMatrix*vec4(position,1.); vW = w.xyz; gl_Position = projectionMatrix*viewMatrix*w; }`,
-    fragmentShader: `varying vec3 vN; varying vec3 vW; uniform vec3 uL; uniform float uTime; ${NOISE}
+    fragmentShader: `varying vec3 vN; varying vec3 vW; uniform vec3 uL; uniform float uTime; uniform float uA; ${NOISE}
       void main(){
         vec3 N = normalize(vN), V = normalize(cameraPosition - vW); float ndl = dot(N,uL); float day = smoothstep(-.08,.5,ndl);
         vec3 sp = N*5.0; float land = fbm(sp*.9+3.0); float cloud = smoothstep(.47,.78,fbm(sp*2.3+vec3(uTime*.012,0.,11.)));
-        float isLand = smoothstep(.54,.58,land); vec3 surf = mix(vec3(.012,.05,.15), vec3(.075,.10,.08), isLand);
-        vec3 lit = surf*(.05+1.7*day) + cloud*vec3(.85,.9,1.)*(.04+.9*day)*.75;
+        float isLand = smoothstep(.54,.58,land); vec3 surf = mix(vec3(.02,.07,.19), vec3(.085,.11,.09), isLand);
+        vec3 lit = surf*(.2+1.7*day) + cloud*vec3(.85,.9,1.)*(.04+.9*day)*.75;
         vec3 Hh = normalize(uL+V); lit += pow(max(dot(N,Hh),0.),70.)*(1.-isLand)*(1.-cloud)*vec3(1.,.72,.38)*2.4;
         float city = smoothstep(.62,.9,fbm(sp*8.))*isLand*(1.-day)*(1.-cloud); lit += city*vec3(1.,.7,.35)*.55;
         float fres = pow(1.-max(dot(N,V),0.),3.); lit += mix(vec3(.08,.32,.95), vec3(1.,.64,.3), smoothstep(0.,.7,ndl)*.8)*fres*(.3+1.3*day);
-        gl_FragColor = vec4(lit,1.);
+        gl_FragColor = vec4(lit*1.3, uA);                  /* uA falls to 0 as you scroll: the Earth melts away */
       }`,
   });
   const earthMesh = new THREE.Mesh(new THREE.SphereGeometry(R, 160, 96), earthMat); earthMesh.renderOrder = 10; earth.add(earthMesh);
   const atm = new THREE.Mesh(new THREE.SphereGeometry(R * 1.045, 96, 64), new THREE.ShaderMaterial({
-    side: THREE.BackSide, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, uniforms: { uL: { value: sunDir } },
+    side: THREE.BackSide, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, uniforms: { uL: { value: sunDir }, uA: { value: 1 } },
     vertexShader: `varying vec3 vN; varying vec3 vW; void main(){ vN = normal; vec4 w = modelMatrix*vec4(position,1.); vW = w.xyz; gl_Position = projectionMatrix*viewMatrix*w; }`,
-    fragmentShader: `varying vec3 vN; varying vec3 vW; uniform vec3 uL;
+    fragmentShader: `varying vec3 vN; varying vec3 vW; uniform vec3 uL; uniform float uA;
       void main(){ vec3 N = normalize(vN), V = normalize(cameraPosition-vW); float k = pow(abs(dot(N,V)),2.6); float sunSide = smoothstep(-.3,.8,dot(N,uL));
-        vec3 c = mix(vec3(.1,.36,1.), vec3(1.,.62,.28), sunSide*.85); gl_FragColor = vec4(c*k*(.55+1.4*sunSide), 1.); }`,
+        vec3 c = mix(vec3(.1,.36,1.), vec3(1.,.62,.28), sunSide*.85); gl_FragColor = vec4(c*k*(.9+1.7*sunSide)*uA, 1.); }`,
   })); atm.renderOrder = 11; earth.add(atm);
 
-  sky = { THREE, scene, camera, renderer, celestial, starMat, stars, mw, grid, lineGroup, figs, styleLines, intro, earth, neb, nebMat, glowTex: glowTexture(THREE), depth: null, dpr,
+  sky = { THREE, scene, camera, renderer, celestial, starMat, stars, mw, grid, lineGroup, figs, styleLines, intro, earth, earthMat, atm, neb, nebMat, glowTex: glowTexture(THREE), depth: null, dpr,
           cloudMat, hillMat, bodiesG, cometG, plGeo, sunMat, sunGeo, moonMat, moonGeo, cGeo, tails, cometKeys, metLines, metPos, metA, meteors, MET_N, MET_SEG, dome, domeMat, ground, uVis };
   applyToggles(); styleLines();
   const resize = () => { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); };
@@ -1329,7 +1330,7 @@ function enterIntro(instant) {
     vel = { ra: 0, dec: 0 };
     Object.assign(view, { ra: 75, dec: -4.5, fov: 60 });
     sky.intro.visible = true;
-    sky.earth.position.set(0, -(40 + 2.6), 0);
+    sky.earth.position.set(0, -(40 + 2.6), 0); sky.earthMat.uniforms.uA.value = 1; sky.atm.material.uniforms.uA.value = 1;
     sky.nebMat.uniforms.uFade.value = 1;
     if (sky.dome) sky.dome.visible = false;
     if (sky.ground) sky.ground.visible = false;
@@ -1425,15 +1426,17 @@ function frame(now) {
   if (sky.entering) {
     const e = sky.entering, k = clamp((now - e.t0) / e.dur, 0, 1), te = ease(k);
     view.ra = e.from.ra + (((e.target.ra - e.from.ra + 540) % 360) - 180) * te; view.dec = e.from.dec + (e.target.dec - e.from.dec) * te; view.fov = e.from.fov + (e.target.fov - e.from.fov) * te;
-    sky.earth.position.y = e.earthFrom - 90 * ease(clamp(k * 1.25, 0, 1)); sky.nebMat.uniforms.uFade.value = e.fadeFrom * (1 - clamp(k * 1.6, 0, 1));
+    sky.earth.position.y = e.earthFrom - 90 * ease(clamp(k * 1.25, 0, 1)); { const a = 1 - clamp(k * 1.6, 0, 1); sky.earthMat.uniforms.uA.value = a; sky.atm.material.uniforms.uA.value = a; } sky.nebMat.uniforms.uFade.value = e.fadeFrom * (1 - clamp(k * 1.6, 0, 1));
     if (k >= 1) { fovTarget = view.fov; sky.entering = null; e.done(); }
   } else if (state.mode === 'intro') {
     const k = reduce ? 1 : 1 - Math.pow(0.0004, dt / 1000);
     J.p += (J.target - J.p) * k; J.px += (J.tx - J.px) * k; J.py += (J.ty - J.py) * k;
     const drift = reduce ? 0 : Math.sin(secs * 0.06) * 1.2, p = J.p;
-    view.ra = 75 + p * 85 + drift + J.px * 1.6; view.dec = -4.5 + p * 36 - J.py * 1.1; view.fov = 60 + p * 14;
+    view.ra = 268 + p * 42 + drift * 0.4 + J.px * 1.6; view.dec = -27 + p * 66 - J.py * 1.1;   /* the cover looks at the galactic centre; scrolling follows the Milky Way toward Cygnus */ view.fov = 60 + p * 14;
     sky.earth.position.y = -(40 + 2.6) - clamp(p * 6, 0, 1) * 90;                       // the Earth sinks away as you start reading
+    { const a = 1 - clamp(p * 5, 0, 1); sky.earthMat.uniforms.uA.value = a; sky.atm.material.uniforms.uA.value = a; }   /* ...and fades with it */
     sky.nebMat.uniforms.uFade.value = 1 - clamp(p * 4.5, 0, 1);
+    sky.mw.material.uniforms.uBoost.value = 1 + 0.45 * sky.nebMat.uniforms.uFade.value;   /* a brighter, richer Milky Way on the cover */
     sky.nebMat.uniforms.uTime.value = secs; sky.earth.children[0].material.uniforms.uTime.value = secs;
   } else if (state.mode === 'sky') {
     if (tween) {
