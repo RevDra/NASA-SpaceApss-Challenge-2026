@@ -1,0 +1,71 @@
+{
+ "source": "SIMBAD (CDS), moved to the current epoch with SIMBAD proper motions",
+ "epoch": 2026.87,
+ "targets": [
+  {
+   "id": "barnard",
+   "simbad": "Barnard's star",
+   "ra": 269.446074,
+   "dec": 4.770706,
+   "ra2000": 269.452077,
+   "dec2000": 4.693365,
+   "pm_mas_yr": 10393.3,
+   "sp_type": "M4V",
+   "otype": "BY*",
+   "band": "SD2",
+   "fov": 120
+  },
+  {
+   "id": "wise0855",
+   "simbad": "WISEA J085510.74-071442.5",
+   "ra": 133.757788,
+   "dec": -7.242024,
+   "ra2000": 133.818908,
+   "dec2000": -7.247048,
+   "pm_mas_yr": 8151.5,
+   "sp_type": "Y2",
+   "otype": "BD*",
+   "band": "SD6",
+   "fov": 120
+  },
+  {
+   "id": "epsindib",
+   "simbad": "eps Ind B",
+   "ra": 331.098398,
+   "dec": -56.801256,
+   "ra2000": 331.044147,
+   "dec2000": -56.782844,
+   "pm_mas_yr": 4684.2,
+   "sp_type": "T1V+T6V",
+   "otype": "BD*",
+   "band": "SD2",
+   "fov": 120
+  },
+  {
+   "id": "rwaur",
+   "simbad": "RW Aur",
+   "ra": 76.956589,
+   "dec": 30.401286,
+   "ra2000": 76.956526,
+   "dec2000": 30.401438,
+   "pm_mas_yr": 21.6,
+   "sp_type": "K1/5e+K5e",
+   "otype": "TT*",
+   "band": "SD2",
+   "fov": 120
+  },
+  {
+   "id": "rdra",
+   "simbad": "R Dra",
+   "ra": 248.16722,
+   "dec": 66.755025,
+   "ra2000": 248.167611,
+   "dec2000": 66.754979,
+   "pm_mas_yr": 21.5,
+   "sp_type": "M4.5-6+e",
+   "otype": "Mi*",
+   "band": "SD3",
+   "fov": 120
+  }
+ ]
+}

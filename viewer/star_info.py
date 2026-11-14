@@ -359,6 +359,48 @@ def image_urls(ra: float, dec: float) -> list[dict]:
     return out
 
 
+# --------------------------------------------------------------------------- name resolver
+def resolve_name(name: str) -> dict | None:
+    """Turn what a person types ("Barnard's star", "HD 10700", "M31", "eps Ind") into coordinates, using SIMBAD.
+
+    The catalogue position is for epoch J2000. For fast movers that is minutes of arc away from where the star is
+    now, so the answer also carries the position moved to the current epoch with SIMBAD's proper motion."""
+    import re
+    n = " ".join(str(name).strip().split())[:80]
+    if not n:
+        return None
+    forms = {n, "NAME " + n, "* " + n, "V* " + n, "** " + n}
+    m = re.match(r"^(M|NGC|IC|HD|HIP|HR|GJ|TYC|LHS|LTT|WISE|2MASS|PSR)\s*([0-9J].*)$", n, re.I)
+    if m:
+        forms.add(f"{m.group(1).upper()} {m.group(2)}")
+    ids = ", ".join("'" + f.replace("'", "''") + "'" for f in forms)
+    rows = simbad_tap(f"""
+        SELECT TOP 1 b.main_id, b.ra, b.dec, b.pmra, b.pmdec, b.plx_value, b.sp_type, b.otype
+        FROM ident i JOIN basic b ON b.oid = i.oidref WHERE i.id IN ({ids})""")
+    if not rows:   # short survey names such as "WISE 0855-0714": match the full J-designation by its first digits
+        m = re.match(r"^(WISE|2MASS)\s*J?\s*(\d{4})\s*([+\u2212-])\s*(\d{4})$", n, re.I)
+        if m:
+            sign = "-" if m.group(3) in "-\u2212" else "+"
+            rows = simbad_tap(f"""
+                SELECT TOP 1 b.main_id, b.ra, b.dec, b.pmra, b.pmdec, b.plx_value, b.sp_type, b.otype
+                FROM ident i JOIN basic b ON b.oid = i.oidref
+                WHERE i.id LIKE '{m.group(1).upper()} J{m.group(2)}%{sign}{m.group(4)}%'""")
+    if not rows:
+        return None
+    r = rows[0]
+    ra0, dec0 = float(r["ra"]), float(r["dec"])
+    pmra = float(r["pmra"]) if r.get("pmra") not in (None, "") else 0.0
+    pmdec = float(r["pmdec"]) if r.get("pmdec") not in (None, "") else 0.0
+    years = (time.time() - 946728000.0) / (365.25 * 86400.0)          # J2000.0 to now
+    cosd = max(math.cos(math.radians(dec0)), 1e-6)
+    ra = (ra0 + pmra * years / 3.6e6 / cosd) % 360.0
+    dec = max(-90.0, min(90.0, dec0 + pmdec * years / 3.6e6))
+    main = re.sub(r"^(NAME |V\* |\*\* |\* )", "", str(r["main_id"]).strip())
+    return {"query": n, "name": " ".join(main.split()), "ra": round(ra, 6), "dec": round(dec, 6), "ra2000": round(ra0, 6), "dec2000": round(dec0, 6),
+            "pm_mas_yr": round(math.hypot(pmra, pmdec), 1), "sp_type": (r.get("sp_type") or "").strip() or None, "otype": (r.get("otype") or "").strip() or None,
+            "epoch": round(2000.0 + years, 2)}
+
+
 # --------------------------------------------------------------------------- public entry
 def star_details(source_id: str) -> dict:
     source_id = str(int(source_id))

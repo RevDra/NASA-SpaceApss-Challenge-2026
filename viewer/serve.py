@@ -16,6 +16,7 @@ CORS headers and the browser cannot call it directly:
         optional: limit=400, refresh=1
     GET /api/star?id=<Gaia DR3 source_id>             -> identity card: Gaia + SIMBAD + exoplanets + constellation
                                                          (see star_info.py)
+    GET /api/resolve?name=<text>                      -> SIMBAD name -> coordinates, moved to the current epoch
 
 Standard library only (Python 3.8+). Keep this file next to index.html, spherex_live.py, gaia_live.py,
 star_info.py and constellation_bounds.tsv.
@@ -97,6 +98,18 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             return
         if path == "/api/star":
             self.handle_star_api(arg)
+            return
+        if path == "/api/resolve":
+            name = (arg("name") or "").strip()
+            if not name:
+                self.send_json(400, {"error": "name is required"})
+                return
+            try:
+                hit = star_info.resolve_name(name)
+            except Exception as exc:
+                self.send_json(502, {"error": f"SIMBAD did not answer ({exc})"})
+                return
+            self.send_json(200, {"ok": True, **hit} if hit else {"ok": False, "error": f"No object called \u201c{name}\u201d in SIMBAD"})
             return
         if path != "/api/spherex":
             self.send_json(404, {"error": f"unknown endpoint {path}"})

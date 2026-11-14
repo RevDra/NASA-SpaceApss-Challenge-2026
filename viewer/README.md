@@ -1,5 +1,25 @@
 # SPHEREx & Planet X Viewer (live IRSA data)
 
+## Space_VI redesign: journey, sky, viewer
+
+The product is now one path: **journey** (`welcome.html`, scroll story) then **sky** (3D, real time) then **viewer** (`index.html`, real SPHEREx photographs).
+
+- **Journey:** six chapters (the brief, the instrument, five targets, the tool, Space_VI) over a 3D scene that follows how far you have read: Earth sinks away, the camera lifts into the real star field. Chapter 1 draws the real planetary orbits at their true periods on a log axis, with the hypothetical Planet Nine dashed. Chapter 2 is the SPHEREx spectrum to scale (D1 to D6, 17 channels each, next to the range of the human eye). Chapter 3 animates the targets from their real proper motions (Barnard 10.3 arcsec/yr, WISE 0855 8.1) and R Draconis' 246-day period. Chapter 4 shows live numbers from the loaded data.
+- **Viewer, simplified:** three choices as buttons (a target, one of the six real SPHEREx bands drawn as a colour bar, a zoom) plus one search box that takes a star's name (resolved through SIMBAD, moved to today's epoch with its proper motion) or coordinates in decimal or sexagesimal. Coordinates, display and analysis controls are still there under **Advanced controls**. The photo auto-fits the stage.
+- **Real data by default:** the viewer now opens on a real SPHEREx band (Barnard's Star, D2). The simulated WISE and "SPHEREx sim" bands and the injected synthetic movers are hidden from the interface (the code is still there). The Gaia star rings are on by default and coloured by each star's measured temperature.
+- **Star card, visual:** vital signs (temperature on a blackbody colour bar, size against the Sun, distance on a log scale with the year its light left, brightness), proper motion as a compass arrow with "one Moon-width every N years", a real Hertzsprung-Russell diagram (3,168 stars within 100 pc and 900 bright giants from Gaia DR3, the star highlighted at its own BP-RP and absolute G), the habitable zone with the confirmed planets of the NASA Exoplanet Archive (each planet coloured by an estimated equilibrium temperature and judged "in the zone / too hot / too cold"), and a plain ledger of what the data says about life, ending with the reminder that a habitable zone is not evidence of life. The zone uses Kopparapu et al. (2013) and reproduces the published Sun values (0.75, 0.99, 1.70, 1.77 AU). The long list of facts moved under "All the details".
+
+### Targets are resolved, not copied
+
+`sky/targets.json` (from `python tools/build_targets.py`) holds where the five targets are **now**, taken from SIMBAD and moved to the current epoch. Two corrections to the research notes came out of this: WISE 0855-0714 moves 8.1 arcsec a year, so its notes coordinate (epoch about 2014) is about 100 arcsec from where SPHEREx saw it in 2025-26, outside a 120 arcsec field; and the notes' "Epsilon Indi B" coordinates are those of the primary, Epsilon Indi A (B lies about 8 arcmin away). `server /api/resolve?name=` exposes the same resolver to the search box.
+
+Data for the demo can be fetched once and then works offline: open each target once (about 20 s per SPHEREx field) and it is cached in `spherex_cache/`.
+
+```bash
+python tools/build_targets.py      # five targets at the current epoch (SIMBAD)
+python tools/build_hr_data.py      # Gaia DR3 background for the HR diagram
+```
+
 ## Welcome sky (front door)
 
 `python serve.py` now opens `welcome.html` at `/`: a 3D night sky built from real star data. The blink viewer is still at `/index.html`.
@@ -11,7 +31,38 @@
 - **Accessibility:** every label is a real button, the Sky guide lists everything without dragging, Esc closes panels, `prefers-reduced-motion` skips the flights, and the guide and panels still work if WebGL cannot start. English and Vietnamese (button top right).
 - **Deep links accepted by `index.html`:** `?ra=<deg>&dec=<deg>&band=SD2&fov=<arcsec>` (band ids `W1 W2 W12 SPX SD1..SD6`). `welcome.html#sky` skips the intro.
 
-Files: `welcome.html`, `sky/welcome.js`, `sky/welcome.css`, `sky/content.js` (all copy, EN/VI), `sky/sky-data.json` (generated).
+Files: `welcome.html`, `sky/welcome.js` (scene and UI), `sky/astro.js` (pure astronomy, tested), `sky/welcome.css`, `sky/content.js` (all copy, EN/VI), `sky/sky-data.json` and `sky/ephemeris.json` (generated).
+
+### The sky is a function of a clock
+
+The bar at the bottom is the clock. Everything below is computed from it, not animated:
+
+| Thing | Source | How it moves |
+|---|---|---|
+| Sun, Moon, Mercury to Neptune | NASA JPL Horizons, geocentric J2000, daily (Moon every 6 h), 1 Jan 2025 to 31 Dec 2027 | Catmull-Rom interpolation of the table |
+| Moon phase and tilt | Sun and Moon positions | Lit fraction from elongation; bright limb from the position angle, rotated to the screen |
+| Comets (3I/ATLAS, C/2025 A6, C/2025 R2, C/2026 A1) | JPL Horizons | Position, magnitude and distances from the table. Tail points away from the Sun (real); its length is illustrative. "Closest to Sun / Earth" and "brightest" are computed from the table |
+| Meteor showers | IMO working list (rounded radiant, peak, ZHR, speed) | Activity profile around the peak date; streaks fan out from the radiant. Rate is the real ZHR times 10 so they are visible; the panel shows the true rate |
+| 3,187 stars | SIMBAD: position, V, B-V, parallax, proper motion, spectral type, name | Fixed to the celestial sphere |
+| Star colour and temperature | B-V colour index | Ballesteros (2012) temperature, then blackbody colour |
+| **My sky** | Observer latitude/longitude and the clock | Greenwich sidereal time rotates the sphere, the horizon and compass appear, and the sky brightens through twilight by the Sun's real altitude. Positions are J2000, so absolute altitudes can be off by up to about 0.4 degrees (no precession applied) |
+
+Controls: play, pause, reverse, speed from live to one month per second, a date and time field, and **Now**. Space pauses. Outside 2025 to 2027 the clock stops and says why (no ephemeris beyond that).
+
+Hover any star for name, type, brightness, distance and temperature. Click for the full card: true luminosity, drift across the sky ("one Moon-width every N years"), and two real sky photographs of the same patch about 40 years apart (NASA SkyView, DSS1 and DSS2). The infrared SkyView surveys (2MASS, WISE) were failing on NASA's side when this was written, so only the DSS plates are used.
+
+Rebuild or extend the data (needs network, standard library only):
+
+```bash
+python tools/build_sky_data.py     # stars and constellation figures from SIMBAD
+python tools/build_ephemeris.py    # Sun, Moon, planets, comets from JPL Horizons
+node tools/test_astro.mjs          # checks astro.js against Horizons rows, real new and full moons, the local-sky maths
+```
+
+### Friendly layer in the viewer
+
+`index.html` now opens with a plain-language "What you are looking at" card (first visit, or the **Start here** button) with one-click jumps to the five movers, a one-line hint under the HUD that changes with the data source, the real calendar date under each frame's decimal year, and a **Sky map** button that opens the 3D sky at the coordinates the viewer is pointed at (`welcome.html?ra=&dec=#sky`).
+
 To change the stars or constellation figures, edit `tools/build_sky_data.py` and run `python tools/build_sky_data.py` (needs network; the output is committed so the demo works offline). Three.js loads from the CDN, like the viewer's backdrop.
 
 A WiseView-style blink viewer. The **SPHEREx D1–D6** bands show real SPHEREx Level-2 exposures
