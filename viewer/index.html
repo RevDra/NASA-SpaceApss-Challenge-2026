@@ -1276,7 +1276,7 @@ kbd {
       <section class="about-block about-viewer">
         <h3 class="section-title">This viewer</h3>
         <p>The <strong>SPHEREx D1–D6</strong> bands show real data. When the page is served by <span class="mono">serve.py</span>, it asks NASA/IPAC IRSA (SIA v2, collections <span class="mono">spherex_dr1</span> and <span class="mono">spherex_qr3</span>) for every Level-2 exposure covering the position, keeps a few per visit, downloads small cutouts, resamples each onto a common north-up 6.15″/px grid with its own TAN-SIP WCS and subtracts the background. Frames are then grouped by the time window, so the default shows one co-added frame per visit, about six months apart. SPHEREx uses linear variable filters, so a source is seen at a slightly different wavelength in each exposure, and some brightness change between frames is expected. Loaded fields are cached in <span class="mono">spherex_cache/</span> and still work offline.</p>
-        <p>The WISE bands and “SPHEREx sim” are simulated in your browser: a deterministic star field with WISE-like 2.75″ pixels, fresh noise per epoch, and one injected high-proper-motion test object, PX-1, near the default coordinates. The Gaia overlay and synthetic objects only apply to simulated imagery. The controls follow the conventions of WiseView, the Backyard Worlds blink tool.</p>
+        <p>The WISE bands and “SPHEREx sim” are simulated in your browser from the real Gaia DR3 stars of the field you are looking at: true positions, brightness, colour, proper motion and parallax, rendered with WISE-like 2.75″ pixels (6.15″ for SPHEREx) and fresh noise per epoch. A fast mover therefore really moves when you blink: Barnard’s star crosses about 145″ between 2010 and 2024. If Gaia cannot be reached, a random star field is used instead and the status bar says so. One injected high-proper-motion test object, PX-1, sits near the default coordinates, and synthetic objects can be added. The controls follow the conventions of WiseView, the Backyard Worlds blink tool.</p>
         <p class="version mono">v1.0, November 2026</p>
       </section>
     </div>
@@ -1459,6 +1459,20 @@ kbd {
     return { W2: w2, W1: w2 * 0.2, SPX: w2 * 0.12 };
   }
 
+  // Brightness of a real Gaia star in the simulator's units. W2 comes from G and BP−RP: G−W2 ≈ 1.75·(BP−RP) up to
+  // BP−RP = 1, then +1.3 per magnitude of colour (≈1.4 for the Sun, ≈4.1 for an M4 dwarf such as Barnard's star).
+  // W1 ≈ W2 except for very red stars; the broad SPHEREx-like channel follows the random model's 0.3 × W2.
+  function gaiaPeak(G, bpRp) {
+    const c = clamp(Number.isFinite(bpRp) ? bpRp : 0.8, -0.3, 4.5);
+    const gMinusW2 = c <= 1 ? 1.75 * c : 1.75 + 1.3 * (c - 1);
+    const w2 = Math.min(1500 * Math.pow(10, -0.4 * (G - gMinusW2 - 14)), 60000);
+    const w1MinusW2 = 0.06 * Math.max(0, c - 2);
+    return { W2: w2, W1: w2 * Math.pow(10, -0.4 * w1MinusW2), SPX: w2 * 0.3 };
+  }
+
+  // Sky model for the simulated bands. When the Gaia DR3 stars of this field have loaded, the simulator draws those
+  // real stars (positions, brightness, colour, proper motion, parallax), so a fast mover such as Barnard's star really
+  // moves across the WISE and SPHEREx epochs. Until then, or offline, it falls back to the random star field.
   function buildSources() {
     const cosd = Math.cos(state.dec * D2R);
     const half = state.fov / 2 + 70;
@@ -1468,7 +1482,21 @@ kbd {
       if (dra < -180) dra += 360;
       return { ...s, x0: dra * 3600 * cosd, y0: (s.dec - state.dec) * 3600 };
     };
-    const list = catalogFor(state.ra, state.dec, half).map(local).filter((s) => Math.abs(s.x0) < half && Math.abs(s.y0) < half);
+    let list;
+    if (gaiaReadyHere()) {
+      list = gaiaStars().filter((g) => Number.isFinite(g.g)).map((g) => {
+        const s = local(g);
+        return {
+          kind: 'star', id: g.id, x0: s.x0, y0: s.y0, tref: GAIA_EPOCH,
+          pmRA: g.pmra / 1000, pmDec: g.pmdec / 1000,                        // mas/yr → arcsec/yr (pmra already includes cos δ)
+          plx: Number.isFinite(g.plx) && g.plx > 0 ? g.plx / 1000 : 0,
+          peak: gaiaPeak(g.g, g.bp_rp), gaia: true,
+          reach: (Math.hypot(g.pmra, g.pmdec) / 1000) * 12,                 // how far it can wander over the 2010–2026 epochs
+        };
+      }).filter((s) => Math.abs(s.x0) < half + s.reach && Math.abs(s.y0) < half + s.reach);
+    } else {
+      list = catalogFor(state.ra, state.dec, half).map(local).filter((s) => Math.abs(s.x0) < half && Math.abs(s.y0) < half);
+    }
     const cand = local(CANDIDATE);
     if (Math.abs(cand.x0) < half + 40 && Math.abs(cand.y0) < half + 40) list.push(cand);
     const syn = (name, on, pmRA, pmDec, mag, fx, fy) => on && list.push({
@@ -1523,7 +1551,6 @@ kbd {
         epoch: { id: 1000 + i, mission: 'SPHEREx', survey: u.visit + 1, obsid: u.obsid, date: u.date, collection: u.collection },
       }));
       live.status = 'ready';
-      if (!live.autoGaia) { live.autoGaia = true; if (!state.gaia) setToggle('gaia', true); }   // first real field: show the coloured star rings
       toast(`${live.units.length} SPHEREx exposures in ${body.visits} visits (${body.source}). Hover a star for its card.`);
     } catch (err) {
       if (err.name === 'AbortError' || live.key !== key) return;
@@ -1545,14 +1572,15 @@ kbd {
     gaiaLive.key = key;
     gaiaLive.status = 'loading';
     try {
-      const q = new URLSearchParams({ ra, dec, fov });
+      const q = new URLSearchParams({ ra, dec, fov, limit: 800 });          // deep enough for the simulated WISE images too
       const res = await fetch(`/api/gaia?${q}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const body = await res.json();
       if (gaiaLive.key !== key) return;                                    // the user moved on to another field meanwhile
       gaiaLive.sources = body.sources || [];
       gaiaLive.status = 'ready';
-      drawOverlay();
+      if (!gaiaLive.auto) { gaiaLive.auto = true; if (!state.gaia) setToggle('gaia', true); }   // first field: show the coloured star rings
+      scheduleRebuild();                                                   // simulated bands now draw the real Gaia stars
     } catch (err) {
       if (gaiaLive.key !== key) return;
       gaiaLive.status = 'error';
@@ -1565,8 +1593,13 @@ kbd {
     const statusEl = $('#data-status'), noteEl = $('#hud-source');
     let status, note;
     if (!liveActive()) {
-      status = 'Simulated data (WISE bands and SPHEREx sim). Pick SPHEREx D1–D6 for real IRSA data.';
-      note = 'Simulated imagery';
+      if (gaiaReadyHere()) {
+        status = `Simulated images of the real Gaia DR3 stars here (${gaiaLive.sources.length} stars: true positions, brightness, colour and proper motion). Pick SPHEREx D1–D6 for real SPHEREx data.`;
+        note = 'Simulated from real Gaia DR3 stars';
+      } else {
+        status = 'Simulated random star field (Gaia DR3 not loaded yet or unavailable). Pick SPHEREx D1–D6 for real IRSA data.';
+        note = 'Simulated imagery';
+      }
     } else if (live.status === 'loading') {
       status = 'Fetching SPHEREx exposures from NASA/IPAC IRSA…';
       note = 'Loading IRSA data…';
@@ -1588,6 +1621,8 @@ kbd {
   // the Gaia overlay draws. The card code reads a normalised copy: { id, ra, dec, pmra, pmdec, plx, g, bp_rp } at J2016.0.
   const GAIA_EPOCH = 2016.0;
   const gaia = { key: '', from: null, sources: [] };
+  // True when the Gaia list on hand belongs to the field on screen (it is reloaded whenever ra/dec/fov change).
+  const gaiaReadyHere = () => gaiaLive.status === 'ready' && gaiaLive.key === gaiaKey();
   function gaiaStars() {
     if (gaiaLive.status !== 'ready') return null;
     if (gaia.from !== gaiaLive.sources) {
@@ -1632,7 +1667,7 @@ kbd {
     return v.frame ? v.frame.data[0] : v.imgs[0];                          // raw frame even in difference mode; stack in shift-and-add
   }
   function visibleStars() {
-    const list = liveReady() ? gaiaStars() : null;
+    const list = gaiaReadyHere() ? gaiaStars() : null;                 // real SPHEREx frames or frames simulated from Gaia
     const img = frameImage();
     if (!list || !img || img.length !== model.N * model.N) return [];
     const t = viewTime();
@@ -1694,7 +1729,7 @@ kbd {
       <div class="sl-ends"><span>Hot</span><span>Cool</span></div>
       <div class="sl-bar" style="background:linear-gradient(90deg, ${stops.join(', ')})"></div>
       <div class="sl-ticks">${LEGEND_T.filter((T) => names[T]).map((T) => `<span style="left:${(legendPos(T) * 100).toFixed(1)}%">${T.toLocaleString()} K<b>${names[T]}</b></span>`).join('')}</div>
-      <p class="sl-note">Colour comes from surface temperature. Only stars SPHEREx sees in this frame are ringed; hover one for its card.</p>`;
+      <p class="sl-note">Colour comes from surface temperature. Only stars visible in this frame are ringed; hover one for its card.</p>`;
   }
   function updateStarLegend(show) {
     const el = $('#star-legend');
@@ -2017,6 +2052,7 @@ kbd {
 
   function fieldKey() {
     return [state.ra.toFixed(6), state.dec.toFixed(6), state.fov, state.band,
+      gaiaReadyHere() ? `gaia${gaiaLive.sources.length}` : 'random',       // re-render once the real Gaia stars arrive
       state.synA ? [state.synAPmRA, state.synAPmDec, state.synAMag].join(',') : '-',
       state.synB ? [state.synBPmRA, state.synBPmDec, state.synBMag].join(',') : '-'].join('|');
   }
@@ -2145,12 +2181,11 @@ kbd {
       }
     }
     updateSource();
-    if (liveReady() && gaia.key !== gaiaKey()) {                          // new field: fetch its Gaia stars, drop the old card
+    if (gaia.key !== gaiaKey()) {                                         // new field: fetch its Gaia stars, drop the old card
       gaia.key = gaiaKey();
       hideStarCard(true);
       requestGaia(state.ra, state.dec, state.fov);
     }
-    if (!liveReady() && (stars.hover || stars.pinned)) hideStarCard(true);
     model.N = liveReady() ? live.N : clamp(Math.round(state.fov / band.ps), 8, 256);
     model.channels = band.channels;
     const key = `${fieldKey()}|${model.N}`;
@@ -2434,7 +2469,7 @@ kbd {
     // Real SPHEREx bands: a ring around every Gaia star visible in this frame, in the star's own colour (same scale as
     // the legend and the card); fast movers (> 100 mas/yr) also get an arrow from their 2016 Gaia position to now.
     // Simulated bands: the simulated matches only, because the real catalogue does not line up with a simulated sky.
-    const showLiveStars = state.gaia && liveReady() && !!gaiaStars();
+    const showLiveStars = state.gaia && gaiaReadyHere() && !!gaiaStars();
     updateStarLegend(showLiveStars);
     if (showLiveStars) {
       const ps = BANDS[state.band].ps;
@@ -2507,7 +2542,7 @@ kbd {
     }
 
     // --- star-card highlight: the hovered / pinned Gaia star (the catalogue circles are drawn by the Gaia overlay above) ---
-    if (liveReady() && gaiaStars()) {
+    if (gaiaReadyHere() && gaiaStars()) {
       const inImg = (x, y) => x >= img.x && x <= img.x + img.size && y >= img.y && y <= img.y + img.size;
       for (const s of [stars.pinned, stars.hover]) {
         if (!s) continue;

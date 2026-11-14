@@ -24,15 +24,16 @@ D2R = math.pi / 180.0
 _memory: dict[str, list[dict]] = {}
 
 
-def _cache_key(ra: float, dec: float, fov_arcsec: float) -> str:
-    raw = f"v2_{ra:.5f}_{dec:.5f}_{fov_arcsec:.1f}"   # v2: wider search radius (see below)
+def _cache_key(ra: float, dec: float, fov_arcsec: float, limit: int) -> str:
+    raw = f"v2_{ra:.5f}_{dec:.5f}_{fov_arcsec:.1f}_{limit}"   # v2: wider search radius (see below)
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
 
 
 def load_gaia_sources(root_dir: Path, ra: float, dec: float, fov_arcsec: float = 120.0,
                       limit: int = 400, refresh: bool = False) -> list[dict]:
     """Query real Gaia DR3 sources within the FOV with epoch shifting to 2026."""
-    key = _cache_key(ra, dec, fov_arcsec)
+    limit = max(1, min(int(limit), 2000))
+    key = _cache_key(ra, dec, fov_arcsec, limit)
     
     # 1. Check memory cache
     if not refresh and key in _memory:
