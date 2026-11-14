@@ -48,9 +48,7 @@ These results establish multiple successful approaches—not one universally sta
 
 Define total proper motion as
 
-$
-\mu=\sqrt{(\mu_\alpha\cos\delta)^2+\mu_\delta^2}.
-$
+$\mu=\sqrt{(\mu_\alpha\cos\delta)^2+\mu_\delta^2}.$
 
 A useful local astrometric model is
 
