@@ -36,7 +36,7 @@ from pathlib import Path
 # --- Hook pipeline lọc nhiễu 3 tầng (ZODI + 18 flags) ---
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "backend"))
 try:
-    from fits_pipeline import process_single_fits
+    from fits_pipeline import process_single_fits # type: ignore
     HAS_DENOISE = True
 except Exception:
     HAS_DENOISE = False

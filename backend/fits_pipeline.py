@@ -97,6 +97,9 @@ def process_single_fits(cutout_uri: str):
         date_obs = str(header.get("DATE-OBS", "2025-05-01"))[:10]
         exptime = float(header.get("EXPTIME", 25.0))
 
+        # here: in xem hàm này có chạy không
+        print(f"[DENOISE OK] Max SNR: {max_snr:.1f} | Lỗi đã vá: {bad_ratio*100:.2f}%")
+                
         return {
             "header": header,
             "visual_data": repaired,
