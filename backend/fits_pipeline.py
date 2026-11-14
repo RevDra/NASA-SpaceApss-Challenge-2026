@@ -199,13 +199,14 @@ def run_full_sky_pipeline(
         'https://irsa.ipac.caltech.edu/' || a.uri || '?center={coord.ra.deg},{coord.dec.deg}d&size={size_deg}' AS uri,
         a.uri AS raw_uri,
         p.time_bounds_lower,
-        p.obs_collection
+        p.energy_bandpassname
     FROM spherex.artifact a
     JOIN spherex.plane p ON a.planeid = p.planeid
     WHERE 1 = CONTAINS(POINT('ICRS', {coord.ra.deg}, {coord.dec.deg}), p.poly)
       AND p.energy_bandpassname = '{bandpass}'
     ORDER BY p.time_bounds_lower
     """
+    
     tap_res = Irsa.query_tap(query)
     if len(tap_res) == 0:
         return {"epochs": [], "gaiaStars": [], "error": "Không tìm thấy dữ liệu SPHEREx tại tọa độ này."}
