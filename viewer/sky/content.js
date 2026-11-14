@@ -99,6 +99,62 @@ export const UI = {
 
 /* Constellations: the stars and lines come from sky-data.json, this is only what to say about them. */
 export const CONSTELLATIONS = {
+  Ari: {
+    name: { en: 'Aries', vi: 'Bạch Dương' }, nick: { en: 'The Ram', vi: 'Con cừu đực' },
+    find: { en: 'A short bent line of three stars north of the Pleiades: Hamal, Sheratan and Mesarthim.',
+            vi: 'Một đường cong ngắn gồm ba ngôi sao ở phía bắc cụm Pleiades: Hamal, Sheratan và Mesarthim.' },
+    fact: { en: 'On the March equinox the Sun no longer sits in Aries. Earth\u2019s slow wobble has carried that point into Pisces, though it is still called the first point of Aries.',
+            vi: 'Vào ngày xuân phân, Mặt Trời không còn ở trong Bạch Dương nữa. Trục Trái Đất lắc chậm đã đưa điểm đó sang Song Ngư, dù nó vẫn được gọi là điểm đầu tiên của Bạch Dương.' },
+  },
+  Cnc: {
+    name: { en: 'Cancer', vi: 'Cự Giải' }, nick: { en: 'The Crab', vi: 'Con cua' },
+    find: { en: 'The faintest zodiac constellation: a dim upside-down Y between Gemini and Leo. On a dark night look for a hazy patch in the middle, the Beehive Cluster.',
+            vi: 'Cung hoàng đạo mờ nhất: một chữ Y ngược lờ mờ giữa Song Tử và Sư Tử. Đêm tối trời, hãy tìm một mảng sương mờ ở giữa: cụm Tổ Ong.' },
+    fact: { en: 'The Beehive Cluster, M44, holds around a thousand stars. Galileo was among the first to split it into single stars with a telescope, in 1610.',
+            vi: 'Cụm Tổ Ong, M44, có chừng một nghìn ngôi sao. Galileo là một trong những người đầu tiên tách nó thành từng ngôi sao bằng kính thiên văn, năm 1610.' },
+  },
+  Vir: {
+    name: { en: 'Virgo', vi: 'Xử Nữ' }, nick: { en: 'The Maiden', vi: 'Thiếu nữ' },
+    find: { en: 'Follow the curve of the Big Dipper\u2019s handle to Arcturus, then keep going to Spica, the bright blue-white star of Virgo.',
+            vi: 'Đi theo đường cong cán Bắc Đẩu tới Arcturus, rồi đi tiếp tới Spica, ngôi sao xanh trắng sáng của Xử Nữ.' },
+    fact: { en: 'Virgo is the second largest constellation. Spica is really two hot stars so close that they circle each other in about four days.',
+            vi: 'Xử Nữ là chòm sao lớn thứ hai. Spica thực ra là hai ngôi sao nóng gần nhau đến mức chúng quay quanh nhau trong khoảng bốn ngày.' },
+  },
+  Lib: {
+    name: { en: 'Libra', vi: 'Thiên Bình' }, nick: { en: 'The Scales', vi: 'Cái cân' },
+    find: { en: 'A lopsided box of four stars between Virgo and Scorpius.',
+            vi: 'Một hình hộp lệch gồm bốn ngôi sao nằm giữa Xử Nữ và Thiên Yết.' },
+    fact: { en: 'Its two brightest stars are named the southern claw and the northern claw, because long ago Libra was part of Scorpius. It is the only zodiac constellation that is an object, not a creature.',
+            vi: 'Hai ngôi sao sáng nhất mang tên càng nam và càng bắc, vì ngày xưa Thiên Bình là một phần của Thiên Yết. Đây là cung hoàng đạo duy nhất là một vật chứ không phải sinh vật.' },
+  },
+  Sgr: {
+    name: { en: 'Sagittarius', vi: 'Nhân Mã' }, nick: { en: 'The Archer', vi: 'Cung thủ' },
+    find: { en: 'A teapot of eight stars. Its spout points toward Scorpius and its steam is the bright band of the Milky Way.',
+            vi: 'Một chiếc ấm trà gồm tám ngôi sao. Vòi ấm hướng về Thiên Yết và hơi nước của nó là dải Ngân Hà sáng.' },
+    fact: { en: 'The centre of our galaxy lies in the direction of Sagittarius, about 26,000 light-years away, hidden behind dust that infrared light can see through.',
+            vi: 'Tâm thiên hà của chúng ta nằm theo hướng Nhân Mã, cách khoảng 26.000 năm ánh sáng, bị bụi che khuất mà ánh sáng hồng ngoại có thể xuyên qua.' },
+  },
+  Cap: {
+    name: { en: 'Capricornus', vi: 'Ma Kết' }, nick: { en: 'The Sea-Goat', vi: 'Dê biển' },
+    find: { en: 'A wide, dim triangle of stars like a smile, south-east of the bright star Altair.',
+            vi: 'Một tam giác rộng, mờ, như nụ cười, nằm về phía đông nam ngôi sao sáng Altair.' },
+    fact: { en: 'It is one of the oldest named constellations: Babylonian star lists drew a goat-fish here more than 3,000 years ago.',
+            vi: 'Đây là một trong những chòm sao được đặt tên sớm nhất: danh sách sao của người Babylon đã vẽ một con dê-cá ở đây hơn 3.000 năm trước.' },
+  },
+  Aqr: {
+    name: { en: 'Aquarius', vi: 'Bảo Bình' }, nick: { en: 'The Water Bearer', vi: 'Người mang nước' },
+    find: { en: 'A faint, Y-shaped water jar south of Pegasus. Its brightest stars, Sadalsuud and Sadalmelik, are both named for luck.',
+            vi: 'Một chiếc bình nước hình chữ Y mờ nhạt ở phía nam Phi Mã. Hai ngôi sao sáng nhất, Sadalsuud và Sadalmelik, đều có tên liên quan đến may mắn.' },
+    fact: { en: 'Meteors of the Eta Aquariids, made of dust from Halley\u2019s Comet, seem to fly out of Aquarius in early May.',
+            vi: 'Sao băng Eta Aquariids, làm từ bụi của sao chổi Halley, dường như bay ra từ Bảo Bình vào đầu tháng Năm.' },
+  },
+  Psc: {
+    name: { en: 'Pisces', vi: 'Song Ngư' }, nick: { en: 'The Fishes', vi: 'Hai con cá' },
+    find: { en: 'Two faint cords of stars forming a V, tied together at Alrescha, below the Square of Pegasus. Best seen from a dark place.',
+            vi: 'Hai sợi dây sao mờ tạo thành chữ V, buộc lại ở Alrescha, bên dưới Hình vuông Phi Mã. Nhìn rõ nhất ở nơi tối.' },
+    fact: { en: 'The March equinox, where the Sun crosses the celestial equator heading north, lies in Pisces today.',
+            vi: 'Điểm xuân phân, nơi Mặt Trời cắt xích đạo thiên cầu đi lên phía bắc, ngày nay nằm trong Song Ngư.' },
+  },
   Ori: {
     name: { en: 'Orion', vi: 'Orion' }, nick: { en: 'The Hunter', vi: 'Thợ săn' },
     find: { en: 'Look for three bright stars in a straight row. That is the Belt, and everything else hangs off it.',
@@ -170,7 +226,7 @@ export const CONSTELLATIONS = {
             vi: 'Sirius chỉ cách khoảng 8,6 năm ánh sáng, là một trong những láng giềng gần nhất. Vì thế nó sáng hơn mọi ngôi sao khác.' },
   },
   Sco: {
-    name: { en: 'Scorpius', vi: 'Thiên Hạt' }, nick: { en: 'The Scorpion', vi: 'Bọ cạp' },
+    name: { en: 'Scorpius', vi: 'Thiên Yết' }, nick: { en: 'The Scorpion', vi: 'Bọ cạp' },
     find: { en: 'A red star for the heart, then a long curving tail ending in a hooked stinger. Low in the south from the northern hemisphere.',
             vi: 'Một ngôi sao đỏ là trái tim, rồi cái đuôi dài cong kết thúc bằng ngòi độc. Từ bắc bán cầu, chòm này nằm thấp về phía nam.' },
     fact: { en: 'The name Antares means "rival of Mars" in Greek, because its red colour looks so much like the planet.',

@@ -93,13 +93,53 @@ FIGURES = {
                   ("Epsilon Sco", "Mu Sco"), ("Mu Sco", "Zeta Sco"), ("Zeta Sco", "Eta Sco"), ("Eta Sco", "Theta Sco"),
                   ("Theta Sco", "Iota Sco"), ("Iota Sco", "Kappa Sco"), ("Kappa Sco", "Shaula")],
     },
+    # The other eight zodiac constellations (simplified figures, drawn from the usual IAU-style charts).
+    "Ari": {
+        "stars": {"41 Ari": "* 41 Ari", "Hamal": "* alf Ari", "Sheratan": "* bet Ari", "Mesarthim": "* gam01 Ari"},
+        "lines": [("41 Ari", "Hamal"), ("Hamal", "Sheratan"), ("Sheratan", "Mesarthim")],
+    },
+    "Cnc": {
+        "stars": {"Acubens": "* alf Cnc", "Altarf": "* bet Cnc", "Asellus Australis": "* del Cnc", "Asellus Borealis": "* gam Cnc", "Iota Cnc": "* iot Cnc"},
+        "lines": [("Altarf", "Asellus Australis"), ("Asellus Australis", "Asellus Borealis"), ("Asellus Australis", "Acubens"), ("Asellus Borealis", "Iota Cnc")],
+    },
+    "Vir": {
+        "stars": {"Spica": "* alf Vir", "Porrima": "* gam Vir", "Vindemiatrix": "* eps Vir", "Zavijava": "* bet Vir", "Heze": "* zet Vir",
+                  "Zaniah": "* eta Vir", "Minelauva": "* del Vir"},
+        "lines": [("Zavijava", "Zaniah"), ("Zaniah", "Porrima"), ("Porrima", "Heze"), ("Heze", "Spica"), ("Porrima", "Minelauva"), ("Minelauva", "Vindemiatrix")],
+    },
+    "Lib": {
+        "stars": {"Zubenelgenubi": "* alf02 Lib", "Zubeneschamali": "* bet Lib", "Zubenelhakrabi": "* gam Lib", "Brachium": "* sig Lib"},
+        "lines": [("Zubenelgenubi", "Zubeneschamali"), ("Zubeneschamali", "Zubenelhakrabi"), ("Zubenelhakrabi", "Brachium"), ("Brachium", "Zubenelgenubi")],
+    },
+    "Sgr": {
+        "stars": {"Alnasl": "* gam02 Sgr", "Kaus Australis": "* eps Sgr", "Kaus Media": "* del Sgr", "Kaus Borealis": "* lam Sgr", "Phi Sgr": "* phi Sgr",
+                  "Nunki": "* sig Sgr", "Tau Sgr": "* tau Sgr", "Ascella": "* zet Sgr"},
+        "lines": [("Alnasl", "Kaus Media"), ("Alnasl", "Kaus Australis"), ("Kaus Australis", "Kaus Media"), ("Kaus Media", "Kaus Borealis"), ("Kaus Borealis", "Phi Sgr"),
+                  ("Phi Sgr", "Nunki"), ("Nunki", "Tau Sgr"), ("Tau Sgr", "Ascella"), ("Ascella", "Kaus Australis")],
+    },
+    "Cap": {
+        "stars": {"Algedi": "* alf02 Cap", "Dabih": "* bet01 Cap", "Theta Cap": "* tet Cap", "Iota Cap": "* iot Cap", "Nashira": "* gam Cap",
+                  "Deneb Algedi": "* del Cap", "Zeta Cap": "* zet Cap", "Omega Cap": "* ome Cap", "Psi Cap": "* psi Cap"},
+        "lines": [("Algedi", "Dabih"), ("Dabih", "Theta Cap"), ("Theta Cap", "Iota Cap"), ("Iota Cap", "Nashira"), ("Nashira", "Deneb Algedi"),
+                  ("Deneb Algedi", "Zeta Cap"), ("Zeta Cap", "Omega Cap"), ("Omega Cap", "Psi Cap"), ("Psi Cap", "Algedi")],
+    },
+    "Aqr": {
+        "stars": {"Sadalmelik": "* alf Aqr", "Sadalsuud": "* bet Aqr", "Sadachbia": "* gam Aqr", "Albali": "* eps Aqr", "Zeta Aqr": "* zet01 Aqr", "Eta Aqr": "* eta Aqr"},
+        "lines": [("Albali", "Sadalsuud"), ("Sadalsuud", "Sadalmelik"), ("Sadalmelik", "Sadachbia"), ("Sadachbia", "Zeta Aqr"), ("Zeta Aqr", "Eta Aqr")],
+    },
+    "Psc": {
+        "stars": {"Alrescha": "* alf Psc", "Omicron Psc": "* omi Psc", "Eta Psc": "* eta Psc", "Epsilon Psc": "* eps Psc", "Delta Psc": "* del Psc",
+                  "Omega Psc": "* ome Psc", "Iota Psc": "* iot Psc", "Theta Psc": "* tet Psc", "Gamma Psc": "* gam Psc", "Beta Psc": "* bet Psc"},
+        "lines": [("Alrescha", "Omicron Psc"), ("Omicron Psc", "Eta Psc"), ("Alrescha", "Epsilon Psc"), ("Epsilon Psc", "Delta Psc"), ("Delta Psc", "Omega Psc"),
+                  ("Omega Psc", "Iota Psc"), ("Iota Psc", "Theta Psc"), ("Theta Psc", "Gamma Psc"), ("Gamma Psc", "Beta Psc")],
+    },
 }
 
 LY_PER_PARSEC = 3.26156
 
 # SIMBAD has no parallax / magnitude on these multiple-star components; values from the Hipparcos new reduction
 # (van Leeuwen 2007), rounded. Only fills gaps, never overrides SIMBAD.
-FALLBACK = {"Acrux": {"ly": 321}, "Mizar": {"ly": 83, "mag": 2.04, "sp": "A2V"}}
+FALLBACK = {"Acrux": {"ly": 321}, "Mizar": {"ly": 83, "mag": 2.04, "sp": "A2V"}, "Alrescha": {"mag": 3.8}}
 SELECT_STAR = """
 SELECT b.main_id, b.ra, b.dec, b.plx_value, b.sp_type, f.V
 FROM ident i JOIN basic b ON b.oid = i.oidref LEFT JOIN allfluxes f ON f.oidref = b.oid
