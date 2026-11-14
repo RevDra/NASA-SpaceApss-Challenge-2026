@@ -390,7 +390,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 .epoch-count { font-size: 11px; color: var(--silver); }
 
 /* ---------- 9. Sidebar & controls ---------- */
-.sidebar { display: flex; flex-direction: column; min-height: 0; overflow: hidden; border-radius: var(--r-panel); }
+.sidebar { display: flex; flex-direction: column; min-height: 0; overflow: hidden; overflow: clip; border-radius: var(--r-panel); }
 .sidebar-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 18px 20px 14px; border-bottom: 1px solid var(--line-soft); }
 .sidebar-head h2 { font-size: 17px; font-weight: 700; letter-spacing: -.01em; }
 .sidebar-head p { font-size: 12px; color: var(--silver); }
@@ -597,13 +597,13 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 .is-auto .dual input[type=range]::-moz-range-thumb { pointer-events: none; }
 
 /* toggles */
-.toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 2px; cursor: pointer; border-top: 1px solid rgba(255, 255, 255, .05); }
+.toggle-row { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 2px; cursor: pointer; border-top: 1px solid rgba(255, 255, 255, .05); }
 .toggle-list li:first-child .toggle-row { border-top: 0; padding-top: 2px; }
 .toggle-list li:last-child .toggle-row { padding-bottom: 0; }
 .toggle-text { font-size: 13px; color: var(--text-2); transition: color .2s; }
 .toggle-row:hover .toggle-text, .toggle-row:has(:checked) .toggle-text { color: #fff; }
-.switch-input { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
-.switch-wrap { display: inline-flex; cursor: pointer; }
+.switch-input { position: absolute; top: 0; left: 0; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.switch-wrap { position: relative; display: inline-flex; cursor: pointer; }
 .switch {
   position: relative; flex: none; width: 38px; height: 22px; border-radius: 999px;
   background: rgba(148, 163, 184, .16); border: 1px solid rgba(255, 255, 255, .12);
@@ -1547,6 +1547,7 @@ body.tm-on .snap-btn { bottom: 170px; }
               <tr><td><kbd>+</kbd> <kbd>−</kbd></td><td>Zoom in or out</td></tr>
               <tr><td><kbd>I</kbd></td><td>Invert pixel values</td></tr>
               <tr><td><kbd>G</kbd></td><td>Gaia DR3 overlay</td></tr>
+              <tr><td><kbd>X</kbd></td><td>Show or hide the focus crosshair</td></tr>
               <tr><td><kbd>D</kbd></td><td>Difference imaging</td></tr>
               <tr><td><kbd>?</kbd></td><td>Open this help</td></tr>
               <tr><td><kbd>Esc</kbd></td><td>Close a panel</td></tr>
@@ -1643,7 +1644,7 @@ body.tm-on .snap-btn { bottom: 170px; }
     ra: 269.446074, dec: 4.770706, fov: 120, band: 'SD2',
     window: 0.5, blink: 500, zoom: 9, min: -50, max: 500, sigLo: -3, sigHi: 25, linearity: 1,
     invert: false, maxDynamic: false, separateScan: false, neowiseOnly: false,
-    skipMiddle: false, skipDuplicates: true, smoothScan: false, borderEpoch0: false, gaia: true,
+    skipMiddle: false, skipDuplicates: true, smoothScan: false, borderEpoch0: false, gaia: true, crosshair: true,
     diff: false, diffRef: 'first',
     shiftAdd: false, saPmRA: 0, saPmDec: 0,
     synA: false, synAPmRA: 0.8, synAPmDec: -1.2, synAMag: 15.5,
@@ -1678,6 +1679,7 @@ body.tm-on .snap-btn { bottom: 170px; }
     ['smoothScan', 'Smooth by scan direction'],
     ['borderEpoch0', 'Border epoch 0'],
     ['gaia', 'Gaia DR3 overlay'],
+    ['crosshair', 'Show the focus crosshair'],
   ];
   const ADVANCED_KEYS = ['diff', 'shiftAdd', 'synA', 'synB'];
 
@@ -1686,7 +1688,7 @@ body.tm-on .snap-btn { bottom: 170px; }
     'synA', 'synAPmRA', 'synAPmDec', 'synAMag', 'synB', 'synBPmRA', 'synBPmDec', 'synBMag']);
   const STACK_KEYS = new Set(['shiftAdd', 'saPmRA', 'saPmDec']);
   const SKY_KEYS = new Set(['invert', 'maxDynamic', 'min', 'max', 'sigLo', 'sigHi', 'linearity', 'diff', 'diffRef']);
-  const OVERLAY_KEYS = new Set(['gaia', 'borderEpoch0']);
+  const OVERLAY_KEYS = new Set(['gaia', 'borderEpoch0', 'crosshair']);
 
   // Survey epochs (decimal years). WISE 2010–11, NEOWISE Dec 2013 – Aug 2024, SPHEREx all-sky surveys from May 2025.
   const WISE_EPOCHS = [
@@ -2156,8 +2158,7 @@ body.tm-on .snap-btn { bottom: 170px; }
     const rows = [
       [ic('<circle cx="12" cy="12" r="7" fill="none" stroke="#fdba74" stroke-width="2.2"/>'), 'A star in this photo, ringed in its real colour. Hover for its card.', ''],
       [ic('<circle cx="12" cy="12" r="5.5" fill="none" stroke="#5eead4" stroke-width="2"/><circle cx="12" cy="12" r="9.5" fill="none" stroke="#5eead4" stroke-width="1.4" stroke-dasharray="2 3"/>'), 'Too faint for Gaia: placed from SIMBAD, with a dot per year.', ''],
-      [ic('<path d="M3 18 L17 8" stroke="#fbbf24" stroke-width="2" stroke-dasharray="3 3"/><path d="M21 6 L14 6.5 L17.5 12 Z" fill="#fbbf24"/>'), 'Moves fast: the arrow starts at its 2016 position.', ''],
-      ['<i class="sl-hatch"></i>', 'Too bright for the detector. NASA gives no value, so we show the brightest edge value (the real light is at least that).', 'sl-mask" id="sl-mask" hidden="']
+      [ic('<path d="M3 18 L17 8" stroke="#fbbf24" stroke-width="2" stroke-dasharray="3 3"/><path d="M21 6 L14 6.5 L17.5 12 Z" fill="#fbbf24"/>'), 'Moves fast: the arrow starts at its 2016 position.', '']
     ];
     el.innerHTML = `<div class="sl-head"><p class="sl-title">Key to the picture</p><button type="button" class="sl-toggle" id="sl-toggle" aria-expanded="true" aria-label="Shrink the key" title="Shrink / open"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></div>
       <div class="sl-body">
@@ -3080,45 +3081,6 @@ body.tm-on .snap-btn { bottom: 170px; }
     strokeGrid(state.invert && !(model.view && model.view.diff) ? 0.34 : 0.24);
     ctx.restore();
 
-    // --- pixels the mission itself flagged (a star too bright for the detector): hatched, never passed off as a measurement ---
-    const mk = model.view && model.view.frame && !state.shiftAdd ? frameMask(model.view.frame) : null;
-    const note = document.getElementById('sl-mask');
-    if (note) note.hidden = !mk;
-    if (mk && mk.length === model.N * model.N) {
-      const cell = img.size / model.N;
-      ctx.save();
-      ctx.beginPath(); ctx.rect(img.x, img.y, img.size, img.size); ctx.clip();
-      ctx.fillStyle = hatchPattern();
-      for (let i = 0; i < mk.length; i++) if (mk[i]) ctx.fillRect(img.x + (i % model.N) * cell, img.y + Math.floor(i / model.N) * cell, cell + 0.5, cell + 0.5);
-      ctx.restore();
-      // Call out each overflowed star so it cannot be overlooked: a dashed box and a small label.
-      const N = model.N, seen = new Uint8Array(N * N), blobs = [];
-      for (let i0 = 0; i0 < mk.length; i0++) {
-        if (!mk[i0] || seen[i0]) continue;
-        const stack = [i0]; seen[i0] = 1; let n = 0, k0 = N, k1 = -1, r0 = N, r1 = -1;
-        while (stack.length) {
-          const i = stack.pop(), r = (i / N) | 0, k = i % N; n++;
-          k0 = Math.min(k0, k); k1 = Math.max(k1, k); r0 = Math.min(r0, r); r1 = Math.max(r1, r);
-          for (let rr = r - 1; rr <= r + 1; rr++) for (let kk = k - 1; kk <= k + 1; kk++) {
-            const j = rr * N + kk; if (rr >= 0 && kk >= 0 && rr < N && kk < N && mk[j] && !seen[j]) { seen[j] = 1; stack.push(j); }
-          }
-        }
-        if (n >= 3) blobs.push({ n, k0, k1, r0, r1 });
-      }
-      blobs.sort((a, b) => b.n - a.n);
-      ctx.save();
-      ctx.font = '600 10px "JetBrains Mono", ui-monospace, monospace';
-      for (const b of blobs.slice(0, 4)) {
-        const x0 = img.x + b.k0 * cell - 5, y0 = img.y + b.r0 * cell - 5, w = (b.k1 - b.k0 + 1) * cell + 10, h = (b.r1 - b.r0 + 1) * cell + 10;
-        ctx.strokeStyle = '#ff7a5c'; ctx.lineWidth = 1.6; ctx.setLineDash([5, 4]); ctx.strokeRect(x0, y0, w, h); ctx.setLineDash([]);
-        const label = 'TOO BRIGHT · value is a lower limit', tw = ctx.measureText(label).width + 12;
-        const lx = Math.min(Math.max(x0, 6), Math.max(6, W - tw - 6)), ly = y0 - 12 < 14 ? y0 + h + 12 : y0 - 12;
-        ctx.fillStyle = 'rgba(3,5,8,.82)'; ctx.beginPath(); ctx.roundRect(lx, ly - 9, tw, 18, 5); ctx.fill();
-        ctx.fillStyle = '#ffb4a1'; ctx.fillText(label, lx + 6, ly + 1);
-      }
-      ctx.restore();
-    }
-
     // --- grid labels, pinned to the inside edges of the image ---
     ctx.font = '500 10px "JetBrains Mono", ui-monospace, monospace';
     ctx.textBaseline = 'middle';
@@ -3309,7 +3271,8 @@ body.tm-on .snap-btn { bottom: 170px; }
       ctx.restore();
     }
 
-    // --- crosshair on the target ---
+    // --- crosshair on the target (can be hidden: Layers, "Show the focus crosshair", or press X) ---
+    if (state.crosshair) {
     ctx.save();
     ctx.strokeStyle = '#38BDF8';
     ctx.shadowColor = 'rgba(56,189,248,0.85)';
@@ -3329,6 +3292,7 @@ body.tm-on .snap-btn { bottom: 170px; }
     ctx.fillStyle = '#38BDF8';
     ctx.beginPath(); ctx.arc(cx, cy, 1.4, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
+    }
 
     // --- compass (north up, east left) ---
     const kx = W - 40, ky = Math.min(H - 130, 150);
@@ -3537,10 +3501,9 @@ body.tm-on .snap-btn { bottom: 170px; }
       const k = Math.floor((pointer.x - img.x) / cell), r = Math.floor((pointer.y - img.y) / cell);
       if (view && k >= 0 && r >= 0 && k < model.N && r < model.N) {
         const i = r * model.N + k;
-        const mk = view.frame && !state.shiftAdd ? frameMask(view.frame) : null;
         px = view.imgs.length === 2
           ? `(${k}, ${r})  ${fmt(view.imgs[0][i], 0)} / ${fmt(view.imgs[1][i], 0)}`
-          : mk && mk[i] ? `(${k}, ${r})  ≥ ${fmt(view.imgs[0][i], 0)} · too bright` : `(${k}, ${r})  ${fmt(view.imgs[0][i], 1)}`;
+          : `(${k}, ${r})  ${fmt(view.imgs[0][i], 1)}`;
       }
     }
     $('#ro-title').textContent = pointer.inside ? 'Cursor' : 'Crosshair';
@@ -4014,6 +3977,7 @@ body.tm-on .snap-btn { bottom: 170px; }
         case '-': case '_': setZoom(state.zoom - 0.5); break;
         case 'i': case 'I': setToggle('invert', !state.invert); break;
         case 'g': case 'G': setToggle('gaia', !state.gaia); break;
+        case 'x': case 'X': setToggle('crosshair', !state.crosshair); break;
         case 'd': case 'D': setToggle('diff', !state.diff); break;
         case '?': case 'h': case 'H': openPanel('help'); break;
         default: break;
