@@ -94,6 +94,11 @@ python serve.py
 This needs Python 3.8 or newer and nothing else (standard library only). It opens http://127.0.0.1:8000.
 Enter RA/Dec in decimal degrees, then pick a band from **SPHEREx D1** to **D6**.
 
+If archive requests fail with `CERTIFICATE_VERIFY_FAILED` (common with python.org builds on macOS), install a CA bundle
+with `pip install certifi` (or run *Install Certificates.command* from the Python folder on macOS); the server picks it
+up automatically and keeps certificate checks on. As a last resort, `SPHEREX_INSECURE_SSL=1 python serve.py` turns
+checks off for that run and prints a warning.
+
 Example: Barnard's Star at its current position, `269.4466 4.7680`, FOV `120`, band **SPHEREx D2**.
 You get three frames (2025.7, 2026.2, 2026.7) and the star moves about 1.3 px (~8″) north.
 
