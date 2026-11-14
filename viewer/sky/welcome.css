@@ -529,3 +529,10 @@ body:not(.is-intro) .jrail { display: none; }
 /* constellation search: the constellation row that opens its calendar */
 .sr-head { margin-top: 4px; border-top: 1px solid rgba(255, 255, 255, .1) !important; border-radius: 0 0 10px 10px !important; }
 .sr-head span { color: var(--sky) !important; }
+
+/* zoom into the viewer */
+.zoom-veil { position: fixed; inset: 0; z-index: 90; pointer-events: none; opacity: 0; background: radial-gradient(circle at 50% 50%, #eaf5ff 0, #7cc4ff 14%, #0a1730 48%, #030508 78%); transition: opacity 1s cubic-bezier(.5, 0, .9, .4) .25s; }
+.zoom-veil.is-on { opacity: 1; }
+.zoom-ring { position: fixed; z-index: 91; left: 50%; top: 50%; width: 36px; height: 36px; margin: -18px 0 0 -18px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .85); pointer-events: none; opacity: 0; box-shadow: 0 0 24px rgba(56, 189, 248, .7); }
+.zoom-ring.is-on { animation: zoom-ring 1.2s cubic-bezier(.3, 0, .2, 1) forwards; }
+@keyframes zoom-ring { 0% { opacity: 0; transform: scale(.4); } 25% { opacity: 1; } 100% { opacity: 0; transform: scale(34); } }

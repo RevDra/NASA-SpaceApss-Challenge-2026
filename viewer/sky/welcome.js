@@ -729,6 +729,25 @@ function flyTo(ra, dec, fov, panelAware) {
   tween = { t0: performance.now(), dur: reduce ? 1 : 1500, from, dRa, dDec: clamp(toP, -84, 84) - from.dec, dFov: fov - from.fov };
   fovTarget = fov; vel = { ra: 0, dec: 0 };
 }
+/* Zoom transition into the viewer: the camera dives toward the star while a bright veil grows, then the viewer opens with the matching zoom-out. */
+let leaving = false;
+function zoomIntoViewer(url) {
+  if (leaving) return; leaving = true;
+  const q = new URL(url, location.href).searchParams, ra = parseFloat(q.get('ra')), dec = parseFloat(q.get('dec'));
+  const go = () => { try { sessionStorage.setItem('space-vi-zoom', '1'); } catch { /* ignore */ } location.href = url; };
+  if (reduce || !sky || !Number.isFinite(ra) || !Number.isFinite(dec) || state.mode !== 'sky') { go(); return; }
+  const veil = document.createElement('div'); veil.className = 'zoom-veil'; document.body.appendChild(veil);
+  const ring = document.createElement('div'); ring.className = 'zoom-ring'; document.body.appendChild(ring);
+  flyTo(ra, dec, 2.2, false); if (tween) tween.dur = 1250;
+  requestAnimationFrame(() => { veil.classList.add('is-on'); ring.classList.add('is-on'); });
+  setTimeout(go, 1300);
+}
+document.addEventListener('click', (e) => {
+  const a = e.target.closest && e.target.closest('a[href^="index.html?ra="]');
+  if (!a || e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
+  e.preventDefault(); zoomIntoViewer(a.getAttribute('href'));
+}, true);
+addEventListener('pageshow', (e) => { if (e.persisted) { leaving = false; document.querySelectorAll('.zoom-veil, .zoom-ring').forEach((n) => n.remove()); } });
 function fallback() { document.body.classList.add('no-webgl'); const n = $('#nowebgl'); n.textContent = T('noWebgl'); n.hidden = false; }
 
 async function initSky() {

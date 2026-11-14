@@ -1034,6 +1034,13 @@ body.tm-on .snap-btn { bottom: 170px; }
 @keyframes wdot { 40% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .wait .w-spin { animation-duration: 14s; } .wait .w-flame, .wait .w-planet { animation: none; } }
 </style>
+<script>try { if (sessionStorage.getItem('space-vi-zoom') === '1') { sessionStorage.removeItem('space-vi-zoom'); if (!matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('zoom-arrive'); } } catch (e) { /* ignore */ }</script>
+<style id="zoom-css">
+html.zoom-arrive .app, html.zoom-arrive .nav { animation: zoom-arrive 1.05s cubic-bezier(.16, .8, .2, 1) both; transform-origin: 40% 45%; }
+html.zoom-arrive::after { content: ''; position: fixed; inset: 0; z-index: 400; pointer-events: none; background: radial-gradient(circle at 40% 45%, #eaf5ff 0, #7cc4ff 14%, #0a1730 48%, #030508 78%); animation: zoom-veil 1s cubic-bezier(.2, .7, .3, 1) forwards; }
+@keyframes zoom-arrive { from { transform: scale(1.5); filter: blur(10px); opacity: 0; } 55% { opacity: 1; } to { transform: none; filter: none; opacity: 1; } }
+@keyframes zoom-veil { from { opacity: 1; } to { opacity: 0; visibility: hidden; } }
+</style>
 </head>
 <body class="bg-void font-sans text-white antialiased">
 
