@@ -10,3 +10,8 @@ pillow>=10.2.0
 # Notebook & Interactivity
 jupytext>=1.16.0
 ipykernel>=6.29.0
+
+
+reproject
+fastapi
+uvicorn
