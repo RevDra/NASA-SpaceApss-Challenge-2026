@@ -5,6 +5,7 @@
    The text/panel/guide layer does not depend on WebGL, so the page still works if the 3D sky cannot start. */
 import { UI, CONSTELLATIONS, MOVERS, BODIES } from './content.js';
 import * as A from './astro.js';
+import { initPlan } from './plan.js';
 
 const $ = (s, el = document) => el.querySelector(s);
 const { D2R, clamp, wrap360 } = A;
@@ -234,7 +235,9 @@ function applyLang() {
   buildLayers(); buildSpeed(); buildSites(); buildStart(); renderGuide(); buildLabels(); renderCoach(); syncTimeUI(true); buildJourney();
   if (state.sel) renderPanel();
   if (sky && sky.depth) rebuildDepthLabels();
+  if (planApi) planApi.refresh();
 }
+let planApi = null;
 
 /* ================================================================== layers */
 function buildLayers() {
@@ -464,6 +467,7 @@ function renderPanel() {
   }
   html += `<div class="p-cta">${cta}${COL ? `<button class="btn btn-solid btn-wide" type="button" id="p-save">${T('saveBtn')}</button>` : ''}</div>`;
   panel.innerHTML = html; panel.hidden = false; panel.scrollTop = 0;
+  if (planApi) planApi.mountPanel(panel, state.sel);
   $('#p-save')?.addEventListener('click', saveCurrent);
   $('#panel-close').addEventListener('click', closePanel);
   const g = $('#go-3d'); if (g) g.addEventListener('click', () => enterDepth(id));
@@ -596,13 +600,13 @@ function searchAll(q) {
   const hits = window.SpaceConst ? window.SpaceConst.search(q, 10) : [];
   if (hits.length) {
     const c = hits[0], list = out.slice(0, 3).filter((x) => x.kind !== 'star');
-    out.length = 0; out.push(...list, { kind: 'head', t: `${c.name} · ${c.count} ${lang === 'vi' ? 'sao' : 'stars'}`, s: lang === 'vi' ? 'sáng nhất trước' : 'brightest first' });
+    out.length = 0; out.push(...list.filter((x) => x.kind !== 'const'), { kind: 'cons', id: c.code, t: `${c.name} · ${c.count} ${lang === 'vi' ? 'sao' : 'stars'}`, s: lang === 'vi' ? 'Xem lịch ngắm' : 'When to watch' });
     for (const s of c.stars) out.push({ kind: 'star', id: s.i, t: s.name || 'HIP star', s: `${T('starLabel')} · ${T('magShort')} ${nf(s.mag, 1)}${s.ly ? ' · ' + nf(s.ly, 0) + (lang === 'vi' ? ' nas' : ' ly') : ''}` });
     return out;
   }
   return out.slice(0, 10);
 }
-const pickResult = (b) => (b.dataset.kind === 'simbad' ? simbadLookup(b.dataset.q) : select(b.dataset.kind, b.dataset.kind === 'star' ? +b.dataset.id : b.dataset.id));
+const pickResult = (b) => (b.dataset.kind === 'cons' ? (planApi && planApi.openConst(b.dataset.id)) : b.dataset.kind === 'simbad' ? simbadLookup(b.dataset.q) : select(b.dataset.kind, b.dataset.kind === 'star' ? +b.dataset.id : b.dataset.id));
 function parseCoordsText(q) {
   const p = q.replace(/[,;]/g, ' ').trim().split(/\s+/).map((x) => Number(x.replace('\u2212', '-')));
   return p.length === 2 && p.every(Number.isFinite) && p[0] >= 0 && p[0] <= 360 && Math.abs(p[1]) <= 90 ? { ra: p[0], dec: p[1] } : null;
@@ -619,7 +623,7 @@ $('#search').addEventListener('input', (e) => {
   const r = searchAll(e.target.value), box = $('#search-results');
   box.hidden = !e.target.value.trim();
   const q = e.target.value.trim();
-  box.innerHTML = r.map((x) => x.kind === 'head' ? `<p class="sr-head"><b>${esc(x.t)}</b><span>${esc(x.s)}</span></p>` : `<button type="button" role="option" class="sr-item" data-kind="${x.kind}" data-id="${x.id}"><b>${esc(x.t)}</b><span>${esc(x.s)}</span></button>`).join('') +
+  box.innerHTML = r.map((x) => `<button type="button" role="option" class="sr-item${x.kind === 'cons' ? ' sr-head' : ''}" data-kind="${x.kind}" data-id="${x.id}"><b>${esc(x.t)}</b><span>${esc(x.s)}</span></button>`).join('') +
     (q.length >= 2 ? `<button type="button" role="option" class="sr-item sr-simbad" data-kind="simbad" data-q="${esc(q)}"><b>${esc(fmt(T('simbadFor'), { q }))}</b><span>SIMBAD</span></button>` : '');
 });
 $('#search').addEventListener('keydown', (e) => { if (e.key === 'Enter') { const b = $('#search-results .sr-item'); if (b) { e.preventDefault(); pickResult(b); } } });
@@ -1400,6 +1404,11 @@ bindJourney();
     console.error(e); $('#nowebgl').textContent = 'Could not load the sky data. Start the page through serve.py.'; $('#nowebgl').hidden = false; return;
   }
   updatePositions(); applyLang();
+  try {   // when to watch a constellation, overview calendar, 3D map of Vietnam, trending card
+    if (window.SpaceConst && await window.SpaceConst.load(state.stars.f)) {
+      window.SpacePlan = planApi = initPlan({ A, lang: () => lang, eph: () => state.eph, state, setSite, setSkyMode, setTime, select, toast });
+    }
+  } catch (e) { console.warn('[plan]', e); }
   await initSky();
   $('#enter').disabled = false; $('#skip-sky').disabled = false; $('#loading').classList.add('is-done'); $('#journey').focus({ preventScroll: true });
   if (location.hash === '#sky') enterSky(true);
