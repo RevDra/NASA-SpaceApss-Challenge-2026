@@ -197,7 +197,7 @@ function saveCurrent() {
   const t = targetEq(state.sel), name = $('#panel h2')?.textContent || '', facts = [...$('#panel').querySelectorAll('dl.facts dt')].map((dt) => [dt.textContent.trim(), (dt.nextElementSibling?.textContent || '').trim().replace(/\s+/g, ' ')]).filter(([k, v]) => k && v).slice(0, 5);
   let image = null; if (sky) { try { sky.renderer.render(sky.scene, sky.camera); image = COL.snapshot([{ canvas: sky.renderer.domElement, x: 0, y: 0, w: innerWidth, h: innerHeight }], innerWidth, innerHeight); } catch { /* ignore */ } }
   const summary = [$('#panel .p-nick')?.textContent, ...[...$('#panel').querySelectorAll('.p-sec > p')].slice(0, 2).map((p) => p.textContent)].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
-  const r = COL.add({ kind: state.sel.kind === 'star' ? 'star' : 'obj', name, ra: t ? t.ra : 0, dec: t ? t.dec : 0, facts, summary, image, source: 'Space_VI sky: SIMBAD, JPL Horizons, IMO, NASA SkyView' });
+  const r = COL.add({ kind: state.sel.kind === 'star' ? 'star' : 'obj', name, ra: t ? t.ra : 0, dec: t ? t.dec : 0, facts, summary, image, source: 'NODIXHI sky map: SIMBAD, JPL Horizons, IMO, NASA SkyView' });
   toast(r.trimmed ? COL.S.full : T('savedOk'));
   const b = $('#p-save'); if (b) { b.classList.add('is-done'); b.textContent = T('savedOk'); }
 }

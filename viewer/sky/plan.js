@@ -44,7 +44,7 @@ const G = {
     wellPlaced: 'High in the sky at 9 pm', noEph: 'Moon data covers 2025 to 2027.', dayNames: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'], months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
     mapTitle: 'Where to watch in Vietnam', mapNote: 'Land outline: Natural Earth. Bar height = how high the constellation climbs tonight (grey = not visible). Colour = sky darkness, a demo estimate.',
     mapNone: 'No constellation chosen: bar height shows darkness only.', dark: 'dark', mid: 'middling', bright: 'bright', pick: 'Use this place', top: 'Best places', drag: 'Drag to turn, scroll to zoom', mainland: 'mainland',
-    evTitle: 'Watch {n} from {p}', evBody: 'Best time {t} (altitude {a}°). Moon {m}% lit. Planned with Space_VI Sky.', hotH: 'Trending stars', hotSub: 'Demo ranking', views: 'views', like: 'Like', more: 'Show 10', less: 'Show 5', close: 'Close',
+    evTitle: 'Watch {n} from {p}', evBody: 'Best time {t} (altitude {a}°). Moon {m}% lit. Planned with NODIXHI.', hotH: 'Trending stars', hotSub: 'Demo ranking', views: 'views', like: 'Like', more: 'Show 10', less: 'Show 5', close: 'Close',
   },
   vi: {
     when: 'Khi nào ngắm', place: 'Nơi ngắm', map3d: 'Bản đồ 3D', best: 'Tháng đẹp nhất', bestSub: 'lên cao nhất lúc 21 giờ', moon: 'Trăng', lit: 'sáng', to: 'đến', darkWin: 'khi trời tối', peak: 'cao nhất', never: 'Từ đây không lên đủ cao', noWin: 'Đêm này không có lúc nào vừa tối vừa đủ cao',
@@ -54,7 +54,7 @@ const G = {
     wellPlaced: 'Đang lên cao lúc 21 giờ', noEph: 'Dữ liệu Mặt Trăng chỉ có năm 2025 đến 2027.', dayNames: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'], months: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'],
     mapTitle: 'Nơi ngắm đẹp ở Việt Nam', mapNote: 'Đường bờ: Natural Earth. Cột càng cao là đêm nay chòm sao lên càng cao (xám = không thấy). Màu = độ tối của bầu trời, là ước tính demo.',
     mapNone: 'Chưa chọn chòm sao: độ cao cột chỉ thể hiện độ tối.', dark: 'tối', mid: 'vừa', bright: 'sáng', pick: 'Chọn nơi này', top: 'Nơi đẹp nhất', drag: 'Kéo để xoay, cuộn để phóng to', mainland: 'đất liền',
-    evTitle: 'Ngắm {n} tại {p}', evBody: 'Giờ đẹp nhất {t} (độ cao {a}°). Trăng sáng {m}%. Lên kế hoạch bằng Space_VI Sky.', hotH: 'Sao đang hot', hotSub: 'Xếp hạng demo', views: 'lượt xem', like: 'Thích', more: 'Xem 10', less: 'Xem 5', close: 'Đóng',
+    evTitle: 'Ngắm {n} tại {p}', evBody: 'Giờ đẹp nhất {t} (độ cao {a}°). Trăng sáng {m}%. Lên kế hoạch bằng NODIXHI.', hotH: 'Sao đang hot', hotSub: 'Xếp hạng demo', views: 'lượt xem', like: 'Thích', more: 'Xem 10', less: 'Xem 5', close: 'Đóng',
   },
 };
 
@@ -129,8 +129,8 @@ export function initPlan(api) {
   }
   const gcalUrl = (e) => `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(e.title)}&dates=${icsDate(e.start)}/${icsDate(e.end)}&details=${encodeURIComponent(e.body || '')}&location=${encodeURIComponent((e.place || 'Vietnam'))}&ctz=Asia%2FHo_Chi_Minh`;
   function icsText(list) {
-    const cl = (s) => String(s || '').replace(/[,;\n]/g, ' '), lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Space_VI Sky//EN', 'CALSCALE:GREGORIAN'];
-    list.forEach((e, i) => { lines.push('BEGIN:VEVENT', `UID:${e.start}-${i}@space-vi-sky`, `DTSTAMP:${icsDate(Date.now())}`, `DTSTART:${icsDate(e.start)}`, `DTEND:${icsDate(e.end)}`, `SUMMARY:${cl(e.title)}`, `DESCRIPTION:${cl(e.body)}`, `LOCATION:${cl(e.place || 'Vietnam')}`);
+    const cl = (s) => String(s || '').replace(/[,;\n]/g, ' '), lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//NODIXHI//EN', 'CALSCALE:GREGORIAN'];
+    list.forEach((e, i) => { lines.push('BEGIN:VEVENT', `UID:${e.start}-${i}@nodixhi`, `DTSTAMP:${icsDate(Date.now())}`, `DTSTART:${icsDate(e.start)}`, `DTEND:${icsDate(e.end)}`, `SUMMARY:${cl(e.title)}`, `DESCRIPTION:${cl(e.body)}`, `LOCATION:${cl(e.place || 'Vietnam')}`);
       if (e.lat != null) lines.push(`GEO:${e.lat};${e.lon}`); lines.push('BEGIN:VALARM', 'TRIGGER:-PT1H', 'ACTION:DISPLAY', `DESCRIPTION:${cl(e.title)}`, 'END:VALARM', 'END:VEVENT'); });
     lines.push('END:VCALENDAR'); return lines.join('\r\n');
   }
@@ -242,7 +242,7 @@ export function initPlan(api) {
     if (b.dataset.code) { calOpen(false); openConst(b.dataset.code); return; }
     if (b.dataset.a === 'close') calOpen(false);
     else if (b.dataset.a === 'today') { st.month = null; st.day = null; renderCal(); }
-    else if (b.dataset.a === 'icsAll') download('space-vi-plan.ics', icsText(plans));
+    else if (b.dataset.a === 'icsAll') download('nodixhi-plan.ics', icsText(plans));
   });
 
   /* ---------------------------------------------------------------- 3. 3D map of Vietnam */

@@ -28,8 +28,8 @@
   /** A readable text version of one saved item: what it is, the numbers, the sources, and where to open it again. */
   function toText(it) {
     const date = new Date(it.saved).toLocaleDateString(lang === 'vi' ? 'vi-VN' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-    const L = lang === 'vi' ? { head: 'Space_VI: mục đã lưu', saved: 'Đã lưu', pos: 'Vị trí (RA, Dec, độ)', facts: 'Thông tin', planets: 'Hành tinh đã xác nhận', src: 'Nguồn dữ liệu', link: 'Mở lại', rad: 'bán kính', per: 'chu kỳ', d: 'ngày', er: 'lần Trái Đất' }
-      : { head: 'Space_VI: saved item', saved: 'Saved', pos: 'Position (RA, Dec in degrees)', facts: 'Facts', planets: 'Confirmed planets', src: 'Data sources', link: 'Open again', rad: 'radius', per: 'period', d: 'days', er: 'x Earth' };
+    const L = lang === 'vi' ? { head: 'NODIXHI: mục đã lưu', saved: 'Đã lưu', pos: 'Vị trí (RA, Dec, độ)', facts: 'Thông tin', planets: 'Hành tinh đã xác nhận', src: 'Nguồn dữ liệu', link: 'Mở lại', rad: 'bán kính', per: 'chu kỳ', d: 'ngày', er: 'lần Trái Đất' }
+      : { head: 'NODIXHI: saved item', saved: 'Saved', pos: 'Position (RA, Dec in degrees)', facts: 'Facts', planets: 'Confirmed planets', src: 'Data sources', link: 'Open again', rad: 'radius', per: 'period', d: 'days', er: 'x Earth' };
     const lines = [L.head, '='.repeat(L.head.length), '', it.name, `${L.saved}: ${date}`, '', `${L.pos}: ${Number(it.ra).toFixed(5)}, ${Number(it.dec).toFixed(5)}`];
     if (it.summary) lines.push('', it.summary);
     if ((it.facts || []).length) lines.push('', L.facts + ':', ...it.facts.map(([k, v]) => `  - ${k}: ${v}`));
@@ -48,8 +48,8 @@
     },
     remove(id) { write(read().filter((x) => x.id !== id)); },
     clear() { write([]); },
-    exportText() { download('space-vi-collection.txt', read().map(toText).join('\n' + '-'.repeat(60) + '\n\n'), 'text/plain'); },
-    exportAll() { download('space-vi-collection.json', JSON.stringify({ app: 'Space_VI', exported: new Date().toISOString(), items: read() }, null, 1), 'application/json'); },
+    exportText() { download('nodixhi-collection.txt', read().map(toText).join('\n' + '-'.repeat(60) + '\n\n'), 'text/plain'); },
+    exportAll() { download('nodixhi-collection.json', JSON.stringify({ app: 'NODIXHI', exported: new Date().toISOString(), items: read() }, null, 1), 'application/json'); },
     downloadItem(it, what) {
       if (what === 'txt') download(`${slug(it.name)}.txt`, toText(it), 'text/plain');
       else if (what === 'png' && it.image) download(`${slug(it.name)}.jpg`, it.image);

@@ -1,6 +1,6 @@
 # Đánh giá Cụm Tài nguyên Đối tác CSA (Space Agency Partner Resources)
 
-Tài liệu này tóm tắt thực chất 4 đường link của **Cơ quan Vũ trụ Canada (CSA)** nằm ở phần dưới cùng trang *Resources* của đề bài **Planet X and SPHEREx**, giúp team `Space_VI` quyết định nhanh nên dùng hay bỏ qua.
+Tài liệu này tóm tắt thực chất 4 đường link của **Cơ quan Vũ trụ Canada (CSA)** nằm ở phần dưới cùng trang *Resources* của đề bài **Planet X and SPHEREx**, giúp team `NODIXHI` quyết định nhanh nên dùng hay bỏ qua.
 
 ---
 

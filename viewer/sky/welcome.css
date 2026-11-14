@@ -45,6 +45,8 @@ body.is-hover #sky { cursor: pointer; }
 .brand:hover { opacity: .85; }
 .brand:active { transform: scale(.98); }
 .brand b { font-weight: 800; }
+/* NODIXHI logo (white on transparent, 935x188): height sets the size, width follows the aspect ratio */
+.brand-logo { display: block; height: 19px; width: auto; }
 .bar-actions { display: flex; gap: 8px; align-items: center; }
 .chip {
   height: 36px; padding: 0 14px; display: inline-flex; align-items: center; border-radius: 999px; text-decoration: none;
@@ -355,6 +357,7 @@ body.is-local .seg { box-shadow: 0 0 0 1px rgba(56, 189, 248, .25); }
 @media (max-width: 520px) {
   .bar { padding: 12px; gap: 8px; }
   .brand span { display: none; }
+  .brand-logo { height: 14px; }
   .bar-actions { gap: 6px; margin-left: auto; }
   .chip { padding: 0 11px; font-size: 12px; height: 34px; }
   .seg button { padding: 0 10px; font-size: 12px; height: 28px; }
@@ -480,6 +483,7 @@ body:not(.is-intro) .jrail { display: none; }
 /* chapter 5 */
 .chap-end::before { background: radial-gradient(60% 70% at 30% 55%, rgba(2, 4, 10, .78), transparent 80%); }
 .wordmark-big { font-size: clamp(60px, 13vw, 176px) !important; line-height: .9 !important; letter-spacing: -.055em !important; font-weight: 800; margin: 2px 0 0 -.04em !important; }
+.wordmark-big img { display: block; height: clamp(40px, 9vw, 124px); width: auto; max-width: 100%; margin: 6px 0 4px; }
 .chap-end .body.mono { font-size: 13px; letter-spacing: .04em; color: var(--silver); margin-top: 22px; }
 
 @media (max-width: 860px) {

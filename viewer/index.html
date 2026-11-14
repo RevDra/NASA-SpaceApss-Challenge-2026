@@ -731,6 +731,19 @@
       white-space: nowrap;
     }
 
+    .wordmark {
+      display: inline-flex;
+      align-items: center;
+    }
+
+    /* NODIXHI logo, white on transparent: height sets the size, width follows the aspect ratio */
+    .wordmark-logo {
+      display: block;
+      height: 17px;
+      width: auto;
+      max-width: none;
+    }
+
     .wordmark-sep {
       color: var(--sky);
       font-weight: 600;
@@ -3292,7 +3305,7 @@
   </style>
 
   <style id="space-skin">
-    /* ====================================================================== Space_VI skin: instrument panels, not frosted cards ====================================================================== */
+    /* ====================================================================== NODIXHI skin: instrument panels, not frosted cards ====================================================================== */
     :root {
       --nav-h: 56px;
       --amber: #f5a54a;
@@ -5197,7 +5210,7 @@
 
   <!-- ============ Top floating navbar (kept above the panel layer so tabs stay usable) ============ -->
   <header class="nav" id="nav">
-    <a class="brand" href="welcome.html" aria-label="Space_VI, return to landing page"
+    <a class="brand" href="welcome.html" aria-label="NODIXHI, return to landing page"
       title="Về trang chủ / Return to landing page">
       <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
         <circle cx="16" cy="16" r="10.5" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".55" />
@@ -5206,7 +5219,8 @@
         <circle cx="16" cy="16" r="3" fill="currentColor" />
         <circle cx="27.2" cy="10.4" r="1.9" fill="var(--amber)" />
       </svg>
-      <span class="wordmark">Space_VI<span class="wordmark-sep">/</span><span class="wordmark-tail">Planet X &middot;
+      <span class="wordmark"><img class="wordmark-logo" src="sky/nodixhi-logo.png" alt="NODIXHI" width="935"
+          height="188"><span class="wordmark-sep">/</span><span class="wordmark-tail">Planet X &middot;
           SPHEREx</span></span>
     </a>
 
@@ -5407,7 +5421,7 @@
 
         <div class="sidebar-scroll">
 
-          <!-- Space_VI: the three choices that matter, as buttons. Everything else lives under Advanced. -->
+          <!-- NODIXHI: the three choices that matter, as buttons. Everything else lives under Advanced. -->
           <section class="rail-sec" id="fr-targets" aria-labelledby="fr-targets-h">
             <h3 class="rail-h" id="fr-targets-h"><b>01</b><span>Targets</span></h3>
             <ul class="tg-list" id="tg-list"></ul>
