@@ -360,6 +360,22 @@ def image_urls(ra: float, dec: float) -> list[dict]:
 
 
 # --------------------------------------------------------------------------- name resolver
+def _fold(text: str) -> str:
+    """Lower-case and strip accents, so 'Thiên Lang' and 'thien lang' meet."""
+    import unicodedata
+    t = unicodedata.normalize("NFD", text.replace("\u0111", "d").replace("\u0110", "D"))
+    return "".join(c for c in t if unicodedata.category(c) != "Mn").lower().strip()
+
+
+# Nicknames SIMBAD does not know (Vietnamese star names follow the traditional Chinese-Vietnamese names).
+ALIASES = {
+    "tabby's star": "KIC 8462852", "boyajian's star": "KIC 8462852", "tabbys star": "KIC 8462852",
+    "sao bac cuc": "Polaris", "bac cuc": "Polaris", "thien lang": "Sirius", "sao thien lang": "Sirius",
+    "chuc nu": "Vega", "sao chuc nu": "Vega", "nguu lang": "Altair", "sao nguu lang": "Altair",
+    "sao barnard": "Barnard's star", "barnard": "Barnard's star", "proxima": "Proxima Centauri",
+}
+
+
 def resolve_name(name: str) -> dict | None:
     """Turn what a person types ("Barnard's star", "HD 10700", "M31", "eps Ind") into coordinates, using SIMBAD.
 
@@ -369,6 +385,7 @@ def resolve_name(name: str) -> dict | None:
     n = " ".join(str(name).strip().split())[:80]
     if not n:
         return None
+    n = ALIASES.get(_fold(n), n)
     forms = {n, "NAME " + n, "* " + n, "V* " + n, "** " + n}
     m = re.match(r"^(M|NGC|IC|HD|HIP|HR|GJ|TYC|LHS|LTT|WISE|2MASS|PSR)\s*([0-9J].*)$", n, re.I)
     if m:

@@ -16,6 +16,7 @@ CORS headers and the browser cannot call it directly:
         optional: limit=400, refresh=1
     GET /api/star?id=<Gaia DR3 source_id>             -> identity card: Gaia + SIMBAD + exoplanets + constellation
                                                          (see star_info.py)
+    GET /api/wise?ra=..&dec=..&fov=300&band=W2        -> real WISE/NEOWISE frames 2010-2024 (see wise_live.py)
     GET /api/resolve?name=<text>                      -> SIMBAD name -> coordinates, moved to the current epoch
 
 Standard library only (Python 3.8+). Keep this file next to index.html, spherex_live.py, gaia_live.py,
@@ -37,6 +38,7 @@ from pathlib import Path
 
 import gaia_live
 import spherex_live
+import wise_live
 import star_info
 
 ROOT = Path(__file__).resolve().parent
@@ -98,6 +100,21 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             return
         if path == "/api/star":
             self.handle_star_api(arg)
+            return
+        if path == "/api/wise":
+            try:
+                ra, dec = float(arg("ra")), float(arg("dec"))
+                fov = float(arg("fov", 300))
+            except (TypeError, ValueError):
+                self.send_json(400, {"error": "ra, dec (degrees) and fov (arcsec) must be numbers"})
+                return
+            try:
+                self.send_json(200, wise_live.load_epochs(ROOT, ra, dec, fov, arg("band", "W2"), refresh=arg("refresh") == "1"))
+            except spherex_live.LiveError as exc:
+                self.send_json(502, {"error": str(exc)})
+            except Exception as exc:
+                traceback.print_exc()
+                self.send_json(500, {"error": f"{type(exc).__name__}: {exc}"})
             return
         if path == "/api/resolve":
             name = (arg("name") or "").strip()

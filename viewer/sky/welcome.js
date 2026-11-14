@@ -26,7 +26,18 @@ const nf = (n, d = 0) => Number(n).toLocaleString(lang === 'vi' ? 'vi-VN' : 'en-
 const SITES = [
   { name: 'Hà Nội', lat: 21.03, lon: 105.85 }, { name: 'TP. Hồ Chí Minh', lat: 10.78, lon: 106.7 }, { name: 'Đà Nẵng', lat: 16.05, lon: 108.22 },
   { name: 'Greenwich', lat: 51.48, lon: 0 }, { name: 'New York', lat: 40.71, lon: -74.0 }, { name: 'Sydney', lat: -33.87, lon: 151.21 },
-  { name: 'Atacama (ESO)', lat: -24.63, lon: -70.4 }, { name: 'Mauna Kea', lat: 19.82, lon: -155.47 },
+];
+/* Places known for very dark skies: observatory sites and IDA / Starlight protected reserves. Coordinates rounded.
+   Whether a place is dark RIGHT NOW (Sun below -18 degrees, Moon down or thin) is computed from the clock, not stored. */
+const DARK_SITES = [
+  { name: 'Doi Inthanon (Thai National Observatory)', lat: 18.59, lon: 98.48, kind: 'obs' },
+  { name: 'Mauna Kea, Hawaii', lat: 19.82, lon: -155.47, kind: 'obs' },
+  { name: 'La Palma, Roque de los Muchachos', lat: 28.76, lon: -17.89, kind: 'starlight' },
+  { name: 'NamibRand Nature Reserve, Namibia', lat: -24.98, lon: 16.0, kind: 'ida' },
+  { name: 'Atacama (ESO Paranal), Chile', lat: -24.63, lon: -70.4, kind: 'obs' },
+  { name: 'Aoraki Mackenzie, New Zealand', lat: -43.99, lon: 170.46, kind: 'ida' },
+  { name: 'Pic du Midi, France', lat: 42.94, lon: 0.14, kind: 'ida' },
+  { name: 'Cherry Springs, Pennsylvania', lat: 41.66, lon: -77.82, kind: 'ida' },
 ];
 const SPEEDS = [1, 60, 3600, 86400, 604800, 2592000];
 const BODY_KEYS = ['mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune'];
@@ -35,7 +46,7 @@ const TAIL_SEG = 14;
 
 const state = {
   data: null, eph: null, cons: {}, stars: null, sel: null, mode: 'intro', skyMode: 'map',
-  show: { lines: true, names: true, grid: false, bodies: true, comets: true, meteors: true, movers: true },
+  show: { lines: true, names: true, grid: false, bodies: true, comets: true, meteors: true, movers: true, clouds: true },
   site: SITES[0], t: { ms: Date.now(), speed: 1, dir: 1, playing: true, live: true },
   coach: 0, coachDone: false, track: null, M: [1, 0, 0, 0, 1, 0, 0, 0, 1], pos: {}, lastShowers: [], outOfRangeToast: false, skyLabels: [],
 };
@@ -138,18 +149,60 @@ function setSite(site) {
   try { localStorage.setItem('sky-site', JSON.stringify(site)); } catch { /* ignore */ }
   renderGuide(); renderLive();
 }
+const ALL_SITES = () => [...SITES, ...DARK_SITES];
+/** How good the sky is at a place at the clock time: Sun altitude and the Moon's altitude and phase. */
+function darkness(site) {
+  const P = state.pos; if (!state.eph || !P.sun || !P.moon) return null;
+  const jd = jdNow(), l = A.lstDeg(jd, site.lon), sun = A.altAz(P.sun.ra, P.sun.dec, l, site.lat).alt, moon = A.altAz(P.moon.ra, P.moon.dec, l, site.lat).alt, lit = P.phase.fraction;
+  const phase = sun < -18 ? 'night' : sun < -12 ? 'nautical' : sun < 0 ? 'twilight' : 'day';
+  const moonUp = moon > 0 && lit > 0.25;
+  return { phase, moonUp, moonAlt: moon, lit, best: phase === 'night' && !moonUp, score: (phase === 'night' ? 2 : phase === 'nautical' ? 1 : 0) + (moonUp ? 0 : 1) };
+}
+function darkChip(d) {
+  if (!d) return '';
+  const cls = d.best ? 'best' : d.phase === 'day' ? 'day' : 'mid', txt = T('dk')[d.phase] + (d.phase === 'night' || d.phase === 'nautical' ? ` · ${d.moonUp ? T('dkMoonUp') : T('dkMoonDown')}` : '');
+  return `<i class="dk ${cls}">${esc(txt)}</i>`;
+}
 function buildSites() {
-  $('#site-list').innerHTML = SITES.map((s, i) => `<button type="button" class="site-item" data-i="${i}">${esc(s.name)}<span>${Math.abs(s.lat).toFixed(1)}°${s.lat >= 0 ? 'N' : 'S'} ${Math.abs(s.lon).toFixed(1)}°${s.lon >= 0 ? 'E' : 'W'}</span></button>`).join('');
+  const row = (s, i) => `<button type="button" class="site-item" data-i="${i}">${esc(s.name)}<span>${Math.abs(s.lat).toFixed(1)}°${s.lat >= 0 ? 'N' : 'S'} ${Math.abs(s.lon).toFixed(1)}°${s.lon >= 0 ? 'E' : 'W'}</span></button>`;
+  const dark = DARK_SITES.map((s, i) => ({ s, i: SITES.length + i, d: darkness(s) })).sort((a, b) => (b.d?.score ?? 0) - (a.d?.score ?? 0));
+  $('#site-list').innerHTML = SITES.map(row).join('') +
+    `<p class="site-h">${esc(T('dkTitle'))}</p><p class="site-sub">${esc(T('dkSub'))}</p>` +
+    dark.map(({ s, i, d }) => `<button type="button" class="site-item dark" data-i="${i}"><b>${esc(s.name)}</b><small>${esc(T('dkKind')[s.kind])}</small>${darkChip(d)}</button>`).join('');
   $('#site-name').textContent = state.site.name;
 }
-$('#site-list').addEventListener('click', (e) => { const b = e.target.closest('.site-item'); if (!b) return; setSite(SITES[+b.dataset.i]); setPop('#site-pop', false); });
+$('#site-list').addEventListener('click', (e) => { const b = e.target.closest('.site-item'); if (!b) return; setSite(ALL_SITES()[+b.dataset.i]); setPop('#site-pop', false); });
 $('#site-geo').addEventListener('click', () => {
   if (!navigator.geolocation) { toast(T('geoDenied')); return; }
   navigator.geolocation.getCurrentPosition(
     (p) => { setSite({ name: T('siteHere'), lat: p.coords.latitude, lon: p.coords.longitude }); setPop('#site-pop', false); },
     () => toast(T('geoDenied')), { timeout: 10000, maximumAge: 600000 });
 });
-$('#site-btn').addEventListener('click', () => setPop('#site-pop', $('#site-pop').hidden));
+$('#site-btn').addEventListener('click', () => { buildSites(); setPop('#site-pop', $('#site-pop').hidden); });
+
+/* ================================================================== My collection (shared with the viewer) */
+const COL = window.SpaceCollection;
+if (COL) {
+  COL.mount($('#col-pop'), (it) => ({ viewer: `index.html?ra=${it.ra}&dec=${it.dec}&band=SD2&fov=120`, sky: `welcome.html?ra=${it.ra}&dec=${it.dec}#sky` }));
+  const cnt = () => { const n = COL.count(), b = $('#col-n'); b.textContent = n || ''; b.hidden = !n; };
+  COL.onChange(cnt); cnt();
+  $('#col-open').addEventListener('click', () => { const o = $('#col-pop').hidden; $('#col-pop').hidden = !o; $('#col-open').setAttribute('aria-expanded', String(o)); if (o) { setPop('#layers', false); setPop('#site-pop', false); } });
+  document.addEventListener('pointerdown', (e) => { if (!$('#col-pop').hidden && !e.target.closest('#col-pop, #col-open, #p-save')) { $('#col-pop').hidden = true; $('#col-open').setAttribute('aria-expanded', 'false'); } });
+} else $('#col-open').hidden = true;
+function saveCurrent() {
+  if (!COL || !state.sel) return;
+  const t = targetEq(state.sel), name = $('#panel h2')?.textContent || '', facts = [...$('#panel').querySelectorAll('dl.facts dt')].map((dt) => [dt.textContent.trim(), (dt.nextElementSibling?.textContent || '').trim().replace(/\s+/g, ' ')]).filter(([k, v]) => k && v).slice(0, 5);
+  let image = null; if (sky) { try { sky.renderer.render(sky.scene, sky.camera); image = COL.snapshot([{ canvas: sky.renderer.domElement, x: 0, y: 0, w: innerWidth, h: innerHeight }], innerWidth, innerHeight); } catch { /* ignore */ } }
+  const summary = [$('#panel .p-nick')?.textContent, ...[...$('#panel').querySelectorAll('.p-sec > p')].slice(0, 2).map((p) => p.textContent)].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+  const r = COL.add({ kind: state.sel.kind === 'star' ? 'star' : 'obj', name, ra: t ? t.ra : 0, dec: t ? t.dec : 0, facts, summary, image, source: 'Space_VI sky: SIMBAD, JPL Horizons, IMO, NASA SkyView' });
+  toast(r.trimmed ? COL.S.full : T('savedOk'));
+  const b = $('#p-save'); if (b) { b.classList.add('is-done'); b.textContent = T('savedOk'); }
+}
+
+/* decorative clouds: a gentle drifting deck, not weather data */
+const CLOUDS = { cover: 0.42, wind: 7, wdir: 250 };
+const wx = { off: [0, 0] };
+const cloudNow = () => (state.show.clouds ? CLOUDS : null);
 
 /* ================================================================== popovers, toast */
 function setPop(sel, open) {
@@ -282,6 +335,10 @@ function buildLabels() {
     }
   }
   const near = state.arrive && MOVERS.some((m) => Math.hypot((m.ra - state.arrive.ra) * Math.cos(m.dec * D2R), m.dec - state.arrive.dec) < 0.5);   // a named target already marks this spot
+  if (state.found) {
+    const b = Object.assign(document.createElement('div'), { className: 'lbl lbl-here is-found' });
+    b.innerHTML = `<span class="ring"></span><span class="tag">${esc(state.found.name)}</span>`; const v = eq(state.found.ra, state.found.dec, 10); add(b, () => v);
+  }
   if (state.arrive && !near) {
     const b = Object.assign(document.createElement('div'), { className: 'lbl lbl-here' });
     b.innerHTML = `<span class="ring"></span><span class="tag">${esc(T('here'))}</span>`; const v = eq(state.arrive.ra, state.arrive.dec, 10); add(b, () => v);
@@ -292,7 +349,7 @@ function buildLabels() {
     b.setAttribute('aria-label', `${s.name}: ${T('fRadiant')}`); b.addEventListener('click', () => select('shower', s.id));
     const v = eq(s.ra, s.dec, 10); add(b, () => v, { show: () => state.lastShowers.some((x) => x.id === s.id) });
   }
-  for (const [k, w] of [['N', [0, 0, -10]], ['E', [10, 0, 0]], ['S', [0, 0, 10]], ['W', [-10, 0, 0]]]) {
+  for (const [k, w] of [['N', [0, 1.25, -10]], ['E', [10, 1.25, 0]], ['S', [0, 1.25, 10]], ['W', [-10, 1.25, 0]]]) {
     const el = Object.assign(document.createElement('div'), { className: 'lbl lbl-compass' }); el.textContent = T('compass')[k];
     add(el, () => w, { world: true, show: () => isLocal() });
   }
@@ -380,6 +437,11 @@ function renderPanel() {
       row(T('fMotion'), pm > 0.005 ? `${nf(pm, 2)}″ / ${T('yr')}<small>${moonYears ? fmt(T('moonWidth'), { n: nf(moonYears) }) : ''}</small>` : T('noMotion')) +
       row(T('fPos'), raDecText(s.ra, s.dec)) + `</dl><div id="live"></div></div>` + plates(s.ra, s.dec, 0.15);
     cta = `<a class="btn btn-primary btn-wide" href="${viewerUrl(s.ra, s.dec)}">${T('openViewer')}</a><p class="p-note">${T('viewerNote')}</p>`;
+  } else if (kind === 'point') {
+    const o = id, mu = o.pm_mas_yr;
+    html += `<p class="p-eyebrow">${T('foundLabel')}</p><h2>${esc(o.name)}</h2><p class="p-nick">${esc([o.sp_type, o.otype].filter(Boolean).join(' · '))}</p>` +
+      `<div class="p-sec"><dl class="facts">${row(T('fPos'), raDecText(o.ra, o.dec))}${mu ? row(T('foundDist'), `${nf(mu / 1000, 2)}″ / ${T('yr')}`) : ''}</dl></div>` + plates(o.ra2000, o.dec2000, 0.15);
+    cta = `<a class="btn btn-primary btn-wide" href="${viewerUrl(o.ra, o.dec)}">${T('openViewer')}</a>`;
   } else if (kind === 'body') {
     const b = BODIES[id];
     html += `<p class="p-eyebrow">${id === 'sun' ? T('starLabel') : id === 'moon' ? T('moonLabel') : T('planetLabel')}</p><h2>${esc(pick(b.name))}</h2><p class="p-nick" id="live-nick"></p>` +
@@ -399,8 +461,9 @@ function renderPanel() {
     html += `<p class="p-eyebrow">${T('showerLabel')}</p><h2>${esc(s.name)}</h2><p class="p-nick" id="live-nick"></p>` +
       `<div class="p-sec"><p>${T('showerWhat')}</p></div><div class="p-sec"><dl class="facts" id="live"></dl></div>`;
   }
-  html += `<div class="p-cta">${cta}</div>`;
+  html += `<div class="p-cta">${cta}${COL ? `<button class="btn btn-solid btn-wide" type="button" id="p-save">${T('saveBtn')}</button>` : ''}</div>`;
   panel.innerHTML = html; panel.hidden = false; panel.scrollTop = 0;
+  $('#p-save')?.addEventListener('click', saveCurrent);
   $('#panel-close').addEventListener('click', closePanel);
   const g = $('#go-3d'); if (g) g.addEventListener('click', () => enterDepth(id));
   panel.querySelectorAll('img.sv').forEach((img) => {
@@ -444,7 +507,7 @@ function renderLive() {
     else live.innerHTML = '';
   }
 }
-setInterval(() => { renderLive(); if (!$('#guide').hidden) renderGuideLive(); }, 1000);
+setInterval(() => { renderLive(); if (!$('#site-pop').hidden) buildSites(); if (!$('#guide').hidden) renderGuideLive(); }, 1000);
 function closePanel() { state.sel = null; state.track = null; $('#panel').hidden = true; $('#star-ring').hidden = true; markSelected(); if (sky) sky.styleLines(); }
 
 /* ================================================================== select + fly */
@@ -456,18 +519,23 @@ function targetEq(sel) {
   if (kind === 'body') return state.pos[id] || null;
   if (kind === 'comet') return (state.pos.comets && state.pos.comets[id]) || null;
   if (kind === 'shower') { const s = A.SHOWERS.find((x) => x.id === id); return { ra: s.ra, dec: s.dec }; }
+  if (kind === 'point') return { ra: id.ra, dec: id.dec };
   return null;
 }
 function select(kind, id) {
   if (state.mode === 'depth') exitDepth(true);
   if (state.mode === 'intro') return;
   closeStart(true); setGuide(false); setPop('#layers', false);
+  if (kind === 'point') { state.found = id; buildLabels(); }
   state.sel = { kind, id };
   renderPanel(); markSelected(); coachAdvance(2);
   if (!sky) return;
   sky.styleLines();
   const t = targetEq(state.sel); if (!t) return;
-  const fov = kind === 'const' ? clamp(state.cons[id].radius * 2.7 + 14, 24, 80) : kind === 'mover' ? 22 : kind === 'star' ? 18 : kind === 'shower' ? 55 : id === 'moon' || id === 'sun' ? 12 : 20;
+  if (isLocal() && A.altAz(t.ra, t.dec, lst(), state.site.lat).alt < 1) {
+    const nm = $('#panel h2')?.textContent || ''; setSkyMode('map'); toast(fmt(T('belowNow'), { n: nm }));
+  }
+  const fov = kind === 'const' ? clamp(state.cons[id].radius * 2.7 + 14, 24, 80) : kind === 'mover' ? 22 : kind === 'point' ? 16 : kind === 'star' ? 18 : kind === 'shower' ? 55 : id === 'moon' || id === 'sun' ? 12 : 20;
   flyTo(t.ra, t.dec, fov, true);
   state.track = (isLocal() || kind === 'body' || kind === 'comet') ? () => targetEq(state.sel) : null;
 }
@@ -525,11 +593,25 @@ function searchAll(q) {
   stars.sort((a, b) => a[0] - b[0]).slice(0, 8).forEach(([, i]) => { const s = starOf(i); out.push({ kind: 'star', id: i, t: s.name, s: `${T('starLabel')} · ${T('magShort')} ${nf(s.mag, 1)}` }); });
   return out.slice(0, 10);
 }
-const pickResult = (b) => select(b.dataset.kind, b.dataset.kind === 'star' ? +b.dataset.id : b.dataset.id);
+const pickResult = (b) => (b.dataset.kind === 'simbad' ? simbadLookup(b.dataset.q) : select(b.dataset.kind, b.dataset.kind === 'star' ? +b.dataset.id : b.dataset.id));
+function parseCoordsText(q) {
+  const p = q.replace(/[,;]/g, ' ').trim().split(/\s+/).map((x) => Number(x.replace('\u2212', '-')));
+  return p.length === 2 && p.every(Number.isFinite) && p[0] >= 0 && p[0] <= 360 && Math.abs(p[1]) <= 90 ? { ra: p[0], dec: p[1] } : null;
+}
+async function simbadLookup(q) {
+  const c = parseCoordsText(q); if (c) { select('point', { name: `${c.ra.toFixed(3)}, ${c.dec.toFixed(3)}`, ra: c.ra, dec: c.dec, ra2000: c.ra, dec2000: c.dec }); return; }
+  toast(fmt(T('simbadWait'), { q }));
+  try {
+    const r = await fetch(`/api/resolve?name=${encodeURIComponent(q)}`).then((x) => x.json());
+    if (r.ok) select('point', r); else toast(fmt(T('simbadNone'), { q }));
+  } catch { toast(fmt(T('simbadNone'), { q })); }
+}
 $('#search').addEventListener('input', (e) => {
   const r = searchAll(e.target.value), box = $('#search-results');
   box.hidden = !e.target.value.trim();
-  box.innerHTML = r.length ? r.map((x) => `<button type="button" role="option" class="sr-item" data-kind="${x.kind}" data-id="${x.id}"><b>${esc(x.t)}</b><span>${esc(x.s)}</span></button>`).join('') : `<p class="sr-none">${T('searchNone')}</p>`;
+  const q = e.target.value.trim();
+  box.innerHTML = r.map((x) => `<button type="button" role="option" class="sr-item" data-kind="${x.kind}" data-id="${x.id}"><b>${esc(x.t)}</b><span>${esc(x.s)}</span></button>`).join('') +
+    (q.length >= 2 ? `<button type="button" role="option" class="sr-item sr-simbad" data-kind="simbad" data-q="${esc(q)}"><b>${esc(fmt(T('simbadFor'), { q }))}</b><span>SIMBAD</span></button>` : '');
 });
 $('#search').addEventListener('keydown', (e) => { if (e.key === 'Enter') { const b = $('#search-results .sr-item'); if (b) { e.preventDefault(); pickResult(b); } } });
 $('#search-results').addEventListener('click', (e) => { const b = e.target.closest('.sr-item'); if (b) pickResult(b); });
@@ -601,16 +683,22 @@ function buildJourney() {
 function markChapter(i) { J.chap = i; document.querySelectorAll('#jrail button').forEach((b) => { if (+b.dataset.i === i) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current'); }); }
 function bindJourney() {
   const jr = $('#journey'), chaps = [...document.querySelectorAll('.chap')];
-  const upd = () => { const max = jr.scrollHeight - jr.clientHeight; J.target = max > 0 ? clamp(jr.scrollTop / max, 0, 1) : 0; };
-  jr.addEventListener('scroll', upd, { passive: true }); upd();
-  const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-in'); if (e.intersectionRatio > 0.5) markChapter(+e.target.dataset.chap); } }), { root: jr, threshold: [0.25, 0.55] });
+  const upd = () => {
+    const max = jr.scrollHeight - jr.clientHeight; J.target = max > 0 ? clamp(jr.scrollTop / max, 0, 1) : 0;
+    const mid = jr.scrollTop + jr.clientHeight * 0.45;   // the chapter under the middle of the screen is the current one, however tall it is
+    let cur = 0; chaps.forEach((c, i) => { if (c.offsetTop <= mid) cur = i; });
+    if (cur !== J.chap) markChapter(cur);
+  };
+  jr.addEventListener('scroll', upd, { passive: true }); addEventListener('resize', upd); upd();
+  // reveal as soon as any part of a chapter is on screen (a ratio threshold never fires for chapters taller than the window)
+  const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) e.target.classList.add('is-in'); }), { root: jr, threshold: 0, rootMargin: '0px 0px -6% 0px' });
   chaps.forEach((c) => io.observe(c));
+  setTimeout(() => chaps.forEach((c) => { const b = c.getBoundingClientRect(); if (b.top < innerHeight && b.bottom > 0) c.classList.add('is-in'); }), 600);
   $('#jrail').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) chaps[+b.dataset.i].scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' }); });
   $('#begin').addEventListener('click', () => $('#c1').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' }));
   $('#skip-sky').addEventListener('click', () => enterSky(false));
   addEventListener('pointermove', (e) => { if (state.mode === 'intro') { J.tx = (e.clientX / innerWidth - 0.5) * 2; J.ty = (e.clientY / innerHeight - 0.5) * 2; } }, { passive: true });
 }
-
 /* ================================================================== 3D runtime */
 const view = { ra: 75, dec: -4.5, fov: 60 };
 let tween = null, vel = { ra: 0, dec: 0 }, fovTarget = null, dragging = false;
@@ -825,6 +913,41 @@ async function initSky() {
   const ground = new THREE.Mesh(new THREE.SphereGeometry(470, 48, 12, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2),
     new THREE.MeshBasicMaterial({ color: 0x06080d, side: THREE.BackSide, transparent: true, depthTest: false, depthWrite: false }));
   ground.renderOrder = 20; ground.visible = false; scene.add(ground);
+  const cloudMat = new THREE.ShaderMaterial({
+    side: THREE.BackSide, transparent: true, depthWrite: false, depthTest: false,
+    uniforms: { uCover: { value: 0 }, uOff: { value: new THREE.Vector2() }, uT: { value: 0 }, uDay: { value: 0 }, uTw: { value: 0 } },
+    vertexShader: `varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+    fragmentShader: `varying vec3 vDir; uniform float uCover, uT, uDay, uTw; uniform vec2 uOff; ${NOISE}
+      void main(){
+        if (vDir.y < 0.0 || uCover < 0.01) discard;
+        vec2 uv = vDir.xz/(vDir.y+0.2)*3.4 + uOff;                       // a flat cloud deck seen from below
+        float n = 0.62*fbm(vec3(uv*1.3, uT*0.02)) + 0.38*fbm(vec3(uv*3.1+7.0, uT*0.03));
+        float lo = mix(0.61, 0.30, uCover);                                // the noise clusters around 0.48 (+-0.08), so this threshold covers roughly uCover of the sky
+        float a = max(smoothstep(lo, lo+0.07, n), smoothstep(0.9, 1.0, uCover))*smoothstep(0.0, 0.12, vDir.y)*0.94;
+        vec3 day = vec3(0.90,0.93,0.97)*(0.72+0.45*n), night = vec3(0.055,0.07,0.105)*(0.8+0.5*n);
+        gl_FragColor = vec4(mix(night, day, uDay) + uTw*vec3(0.34,0.15,0.07), a);
+      }`,
+  });
+  const clouds = new THREE.Mesh(new THREE.SphereGeometry(455, 48, 24), cloudMat); clouds.renderOrder = 15; clouds.frustumCulled = false; ground.add(clouds);
+  /* a strip of hills and pines on the horizon: decoration only, it carries no data */
+  const hillMat = new THREE.ShaderMaterial({
+    side: THREE.BackSide, transparent: true, depthWrite: false, depthTest: false, uniforms: { uDay: { value: 0 }, uTw: { value: 0 } },
+    vertexShader: `varying vec3 vP; void main(){ vP = position; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+    fragmentShader: `varying vec3 vP; uniform float uDay, uTw;
+      float h1(float n){ return fract(sin(n*91.345)*47453.5453); }
+      void main(){
+        float az = atan(vP.z, vP.x), el = degrees(atan(vP.y, length(vP.xz)));
+        float hill = 1.9 + 1.2*sin(az*3.0+1.0) + 0.7*sin(az*7.0+2.3) + 0.35*sin(az*17.0+0.6);
+        float far = 3.4 + 1.5*sin(az*2.0+4.0) + 0.6*sin(az*5.0+1.1);
+        float t = (az+3.14159265)/6.2831853*110.0, cell = fract(t), id = floor(t), r = h1(id);
+        float tree = r > 0.5 ? (1.3+2.2*h1(id+7.0))*max(0.0, 1.0-abs(cell-0.5)/(0.16+0.1*r)) : 0.0;
+        float near = hill + tree;
+        if (el > max(near, far)) discard;
+        vec3 cNear = mix(vec3(0.016,0.022,0.034), vec3(0.06,0.10,0.09), uDay) , cFar = mix(vec3(0.035,0.05,0.085), vec3(0.20,0.30,0.38), uDay) + uTw*vec3(0.10,0.05,0.03);
+        gl_FragColor = vec4(el <= near ? cNear : cFar, 1.0);
+      }`,
+  });
+  const hills = new THREE.Mesh(new THREE.CylinderGeometry(440, 440, 120, 96, 1, true), hillMat); hills.position.y = 20; hills.renderOrder = 21; hills.frustumCulled = false; ground.add(hills);
 
   /* ---- intro: nebula + Earth limb (procedural, no image files) ---- */
   const intro = new THREE.Group(); scene.add(intro);
@@ -871,7 +994,7 @@ async function initSky() {
   })); atm.renderOrder = 11; earth.add(atm);
 
   sky = { THREE, scene, camera, renderer, celestial, starMat, stars, mw, grid, lineGroup, figs, styleLines, intro, earth, neb, nebMat, glowTex: glowTexture(THREE), depth: null, dpr,
-          bodiesG, cometG, plGeo, sunMat, sunGeo, moonMat, moonGeo, cGeo, tails, cometKeys, metLines, metPos, metA, meteors, MET_N, MET_SEG, dome, domeMat, ground, uVis };
+          cloudMat, hillMat, bodiesG, cometG, plGeo, sunMat, sunGeo, moonMat, moonGeo, cGeo, tails, cometKeys, metLines, metPos, metA, meteors, MET_N, MET_SEG, dome, domeMat, ground, uVis };
   applyToggles(); styleLines();
   const resize = () => { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); };
   addEventListener('resize', resize); resize();
@@ -1119,6 +1242,16 @@ function frame(now) {
     sky.uVis.value = 1 - clamp((sunAlt + 14) / 11, 0, 1);   // stars fade between -14 and -3 degrees of solar altitude
   } else sky.uVis.value = 1;
 
+  if (local) {
+    const c = cloudNow(), cm = sky.cloudMat.uniforms, day = clamp((sunAlt + 8) / 14, 0, 1), tw = clamp((sunAlt + 14) / 13, 0, 1) * (1 - clamp((sunAlt + 1) / 10, 0, 1));
+    cm.uCover.value += ((c ? c.cover : 0) - cm.uCover.value) * 0.05;
+    if (c && state.t.playing) {   // clouds drift downwind (wind direction is where it blows FROM); x = east, z = south
+      const th = c.wdir * D2R, k = c.wind * Math.min(Math.abs(state.t.speed), 600) * state.t.dir * (rawDt / 1000) * 0.00035;
+      wx.off[0] += -Math.sin(th) * k; wx.off[1] += Math.cos(th) * k;
+    }
+    cm.uOff.value.set(wx.off[0], wx.off[1]); cm.uT.value = secs; cm.uDay.value = day; cm.uTw.value = tw;
+    sky.hillMat.uniforms.uDay.value = day; sky.hillMat.uniforms.uTw.value = tw;
+  }
   if (state.mode !== 'depth') { updateBodies(); updateMeteors(dt, sunAlt, local); }
   renderer.render(scene, camera);
   updateLabels(); updateRing();
@@ -1220,7 +1353,7 @@ function updateLabels() {
     const g = it.get(); let vis = !!g && (!it.show || it.show());
     if (vis) {
       v.set(g[0], g[1], g[2]);
-      if (!it.world) { const r = A.applyRows(M, g); v.set(r[0], r[1], r[2]); if (local && r[1] < -0.02) vis = false; }
+      if (!it.world) { const r = A.applyRows(M, g); v.set(r[0], r[1], r[2]); if (local && r[1] < 0.75) vis = false; /* under the horizon or behind the hills */ }
       const ahead = v.clone().sub(camera.position).dot(fwd) > 0.01; v.project(camera);
       vis = vis && ahead && Math.abs(v.x) < 1.1 && Math.abs(v.y) < 1.1;
     }
@@ -1240,6 +1373,7 @@ function updateRing() {
   const fwd = new THREE.Vector3(); camera.getWorldDirection(fwd); const ahead = v.dot(fwd) > 0; v.project(camera);
   if (!ahead || Math.abs(v.x) > 1.05 || Math.abs(v.y) > 1.05 || (isLocal() && r[1] < 0)) { ring.hidden = true; return; }
   ring.hidden = false; ring.classList.toggle('is-sel', !!state.sel && state.sel.kind === 'star');
+  ring.dataset.name = state.sel && state.sel.kind === 'star' ? s.name : '';
   ring.style.transform = `translate(${((v.x + 1) / 2 * innerWidth).toFixed(1)}px, ${((1 - v.y) / 2 * innerHeight).toFixed(1)}px) translate(-50%, -50%)`;
 }
 

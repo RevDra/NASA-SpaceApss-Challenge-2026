@@ -1,0 +1,16 @@
+/* shared look of the collection list (used inside each page's own drawer) */
+.col-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 4px 0 12px; font-size: 15px; }
+.col-head span { font: 400 12px "JetBrains Mono", monospace; color: #94a3b8; }
+.col-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.col-it { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 12px; padding: 10px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, .09); background: rgba(255, 255, 255, .025); }
+.col-img { width: 84px; height: 84px; border-radius: 10px; object-fit: cover; background: #05080f; border: 1px solid rgba(255, 255, 255, .08); display: block; }
+.col-noimg { background: radial-gradient(circle at 35% 30%, #fff 0 3%, #38bdf8 14%, #0b1220 60%); }
+.col-b b { font-size: 14px; } .col-b small { display: block; margin-top: 1px; font-size: 11.5px; color: #94a3b8; }
+.col-f { list-style: none; margin: 6px 0 0; padding: 0; font-size: 12px; color: #cbd5e1; line-height: 1.5; } .col-f b { font-family: "JetBrains Mono", monospace; font-weight: 500; color: #fff; }
+.col-a { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.col-a a, .col-a button, .col-foot button { height: 28px; padding: 0 10px; display: inline-flex; align-items: center; border-radius: 8px; border: 1px solid rgba(255, 255, 255, .16); background: rgba(255, 255, 255, .04); color: #e2e8f0; font: 600 11.5px "Plus Jakarta Sans", sans-serif; text-decoration: none; cursor: pointer; }
+.col-a a:hover, .col-a button:hover, .col-foot button:hover:not(:disabled) { border-color: #38bdf8; color: #fff; }
+.col-del:hover { border-color: #f5a54a !important; }
+.col-foot { margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, .09); } .col-foot p { margin: 0 0 8px; font-size: 11.5px; color: #94a3b8; line-height: 1.45; } .col-foot > div { display: flex; gap: 6px; flex-wrap: wrap; }
+.col-foot button:disabled { opacity: .4; cursor: default; }
+.col-empty { margin: 14px 0; font-size: 13px; line-height: 1.55; color: #94a3b8; }
