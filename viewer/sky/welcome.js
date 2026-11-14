@@ -6,6 +6,7 @@
 import { UI, CONSTELLATIONS, MOVERS, BODIES } from './content.js';
 import * as A from './astro.js';
 import { initPlan } from './plan.js';
+import { initTour } from './tour.js';
 
 const $ = (s, el = document) => el.querySelector(s);
 const { D2R, clamp, wrap360 } = A;
@@ -236,8 +237,9 @@ function applyLang() {
   if (state.sel) renderPanel();
   if (sky && sky.depth) rebuildDepthLabels();
   if (planApi) planApi.refresh();
+  if (tourApi) tourApi.refresh();
 }
-let planApi = null;
+let planApi = null, tourApi = null;
 
 /* ================================================================== layers */
 function buildLayers() {
@@ -688,7 +690,7 @@ function buildJourney() {
     `<li data-n="${i + 1}"><h3>${esc(h)}</h3><p>${esc(fmt(p, { n: state.stars ? nf(state.stars.n) : '' }).replace('  ', ' '))}</p>${i === 0 && live.length ? `<span class="live">${live.map(esc).join(' · ')}</span>` : ''}</li>`).join('');
 
   // chapter rail
-  const names = [lang === 'vi' ? 'Mở đầu' : 'Start', T('jK1'), T('jK2'), T('jK3'), T('jK4'), T('jK5')];
+  const names = [lang === 'vi' ? 'Mở đầu' : 'Start', T('jK1'), T('jK2'), T('jK3'), T('jK4'), lang === 'vi' ? 'Bạn làm được gì' : 'What you can do', T('jK5')];
   $('#jrail').setAttribute('aria-label', T('jRail'));
   $('#jrail').innerHTML = names.map((n, i) => `<button type="button" data-i="${i}" aria-label="${esc(n)}"><span>${esc(n)}</span></button>`).join('');
   markChapter(J.chap || 0);
@@ -1428,6 +1430,7 @@ bindJourney();
       window.SpacePlan = planApi = initPlan({ A, lang: () => lang, eph: () => state.eph, state, setSite, setSkyMode, setTime, select, toast });
     }
   } catch (e) { console.warn('[plan]', e); }
+  try { tourApi = initTour({ A, lang: () => lang, state, enter: () => { if (state.mode === 'intro') enterSky(false); }, setSkyMode, select, closePanel }); } catch (e) { console.warn('[tour]', e); }
   await initSky();
   $('#enter').disabled = false; $('#skip-sky').disabled = false; $('#loading').classList.add('is-done'); $('#journey').focus({ preventScroll: true });
   if (location.hash === '#sky') enterSky(true);

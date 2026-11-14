@@ -362,5 +362,6 @@ export function initPlan(api) {
   addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (vn.el && !vn.el.hidden) { vn.el.hidden = true; vn.stop && vn.stop(); } else if (!cal.hidden) calOpen(false); } });
   const refresh = () => { calBtn.lastElementChild.textContent = t().cal; renderHot(); remount(); if (!cal.hidden) renderCal(); if (vn.el && !vn.el.hidden) { layoutMapText(); vn.refresh && vn.refresh(); } };
   refresh();
-  return { refresh, mountPanel, openConst, centre, windowFor, bestMonth, constellations: allCodes };
+  const closeModals = () => { cal.hidden = true; if (vn.el) { vn.el.hidden = true; vn.stop && vn.stop(); } };
+  return { refresh, mountPanel, openConst, centre, windowFor, bestMonth, constellations: allCodes, openCalendar: () => calOpen(true), openMap, closeModals, setConst: (c) => { st.code = c; } };
 }
