@@ -14,5 +14,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Live SPHEREx cutout cache (viewer/serve.py)
+# Live SPHEREx & Gaia cutout cache (viewer/serve.py)
 spherex_cache/
+gaia_cache/
+viewer/gaia_cache/

@@ -29,6 +29,7 @@ import urllib.parse
 import webbrowser
 from pathlib import Path
 
+import gaia_live
 import spherex_live
 
 ROOT = Path(__file__).resolve().parent
@@ -68,7 +69,22 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def handle_api(self, path: str, query: dict) -> None:
         arg = lambda name, default=None: query.get(name, [default])[0]
         if path == "/api/status":
-            self.send_json(200, {"ok": True, "live": True})
+            self.send_json(200, {"ok": True, "live": True, "gaia": True})
+            return
+        if path == "/api/gaia":
+            try:
+                ra, dec = float(arg("ra")), float(arg("dec"))
+                fov = float(arg("fov", 120))
+                limit = int(arg("limit", 150))
+            except (TypeError, ValueError):
+                self.send_json(400, {"error": "ra, dec and fov must be numbers"})
+                return
+            try:
+                sources = gaia_live.load_gaia_sources(ROOT, ra, dec, fov, limit, refresh=arg("refresh") == "1")
+                self.send_json(200, {"ok": True, "ra": ra, "dec": dec, "fov": fov, "sources": sources})
+            except Exception as exc:
+                traceback.print_exc()
+                self.send_json(500, {"error": f"{type(exc).__name__}: {exc}"})
             return
         if path != "/api/spherex":
             self.send_json(404, {"error": f"unknown endpoint {path}"})

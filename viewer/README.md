@@ -31,19 +31,25 @@ API:
 
 | Endpoint | Returns |
 |---|---|
-| `GET /api/status` | `{"ok": true, "live": true}` |
+| `GET /api/status` | `{"ok": true, "live": true, "gaia": true}` |
 | `GET /api/spherex?ra=&dec=&fov=120&band=D2` | frames + metadata. Optional `per_visit=6`, `refresh=1` |
+| `GET /api/gaia?ra=&dec=&fov=120` | Real Gaia DR3 catalog sources, parallax, proper motion, and 2026 projected position |
 
 Self-test without the browser:
 
 ```bash
 python spherex_live.py 269.4466 4.7680 D2
+python -c "import gaia_live, pathlib; print(gaia_live.load_gaia_sources(pathlib.Path('.'), 269.4466, 4.7680))"
 ```
+
+## Features & Scientific Capabilities
+
+- **Real Gaia DR3 overlay.** Press `G` to overlay real stars from ESA Gaia DR3. High-proper-motion stars show yellow motion vector arrows from epoch J2016 to J2026.
+- **Offline cache.** Live exposures are cached in `spherex_cache/` and Gaia DR3 records in `gaia_cache/` for instant zero-latency demo.
 
 ## Limitations
 
 - **Wavelength changes between exposures.** SPHEREx uses linear variable filters, so a source is imaged at a slightly different wavelength in each exposure. Some brightness change between frames is expected.
-- **Simulation-only features.** The Gaia overlay and synthetic movers apply to simulated imagery only.
 - **Brightness controls.** Live frames are always auto-scaled; the Min/Max sliders do not apply.
 - **Use current coordinates.** For high-proper-motion stars, enter their current position. J2000 coordinates of Barnard's Star are about 4.5′ off.
 - **First load is slow.** The first request for a field takes about 20–30 s. Cached fields load instantly.

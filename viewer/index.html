@@ -1458,6 +1458,28 @@ kbd {
     scheduleRebuild();
   }
 
+  /* ---------- 4b. Live Gaia DR3 catalog (ESA/STScI TAP through serve.py) ---------- */
+  const gaiaLive = { key: '', status: 'idle', sources: [] };
+
+  async function requestGaia(ra, dec, fov) {
+    const key = [ra.toFixed(5), dec.toFixed(5), fov].join('|');
+    if (gaiaLive.key === key && (gaiaLive.status === 'ready' || gaiaLive.status === 'loading')) return;
+    gaiaLive.key = key;
+    gaiaLive.status = 'loading';
+    try {
+      const q = new URLSearchParams({ ra, dec, fov });
+      const res = await fetch(`/api/gaia?${q}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const body = await res.json();
+      gaiaLive.sources = body.sources || [];
+      gaiaLive.status = 'ready';
+      drawOverlay();
+    } catch (err) {
+      gaiaLive.status = 'error';
+      console.warn('[gaia] request failed:', err);
+    }
+  }
+
   // Status bar + HUD note: say plainly whether the pixels on screen are real or simulated.
   function updateSource() {
     const statusEl = $('#data-status'), noteEl = $('#hud-source');
@@ -1885,19 +1907,72 @@ kbd {
     const scan = view && view.frame ? view.frame.scan : null;
     const toScreen = (s) => { const [dx, dy] = sourceOffset(s, t, scan); return [cx - dx * p, cy - dy * p]; };
 
-    // --- Gaia DR3 overlay (simulated catalogue, so only drawn over simulated imagery) ---
-    if (state.gaia && !liveReady()) {
+    // --- Gaia DR3 overlay (Live real catalogue from ESA/STScI TAP) ---
+    if (state.gaia) {
+      requestGaia(state.ra, state.dec, state.fov);
       const r = clamp(4.4 * p, 6, 24);
       ctx.strokeStyle = 'rgba(56,189,248,0.95)';
       ctx.lineWidth = 1.3;
-      ctx.beginPath();
-      for (const s of cache.sources) {
-        if (!s.gaia) continue;
-        const [x, y] = toScreen(s);
-        if (x < img.x || x > img.x + img.size || y < img.y || y > img.y + img.size) continue;
-        ctx.moveTo(x + r, y); ctx.arc(x, y, r, 0, Math.PI * 2);
+
+      if (gaiaLive.sources && gaiaLive.sources.length > 0) {
+        ctx.beginPath();
+        for (const s of gaiaLive.sources) {
+          const dt = (t || 2026.0) - 2016.0;
+          const s_ra = s.ra + (s.pmra * dt) / (cosd * 3600000.0);
+          const s_dec = s.dec + (s.pmdec * dt) / 3600000.0;
+          const dx = (s_ra - state.ra) * 3600 * cosd;
+          const dy = (s_dec - state.dec) * 3600;
+          const x = cx - dx * p;
+          const y = cy - dy * p;
+
+          if (x < img.x - 20 || x > img.x + img.size + 20 || y < img.y - 20 || y > img.y + img.size + 20) continue;
+          ctx.moveTo(x + r, y);
+          ctx.arc(x, y, r, 0, Math.PI * 2);
+
+          // If fast proper motion, draw motion vector arrow
+          if (s.motion_arcsec_10yr && s.motion_arcsec_10yr > 1.0) {
+            const dx16 = (s.ra - state.ra) * 3600 * cosd;
+            const dy16 = (s.dec - state.dec) * 3600;
+            const x16 = cx - dx16 * p;
+            const y16 = cy - dy16 * p;
+            const dx26 = (s.ra_2026 - state.ra) * 3600 * cosd;
+            const dy26 = (s.dec_2026 - state.dec) * 3600;
+            const x26 = cx - dx26 * p;
+            const y26 = cy - dy26 * p;
+
+            ctx.save();
+            ctx.strokeStyle = 'rgba(251,191,36,0.9)';
+            ctx.fillStyle = 'rgba(251,191,36,0.9)';
+            ctx.lineWidth = 1.8;
+            ctx.beginPath();
+            ctx.moveTo(x16, y16);
+            ctx.lineTo(x26, y26);
+            ctx.stroke();
+
+            const angle = Math.atan2(y26 - y16, x26 - x16);
+            const headLen = 6;
+            ctx.beginPath();
+            ctx.moveTo(x26, y26);
+            ctx.lineTo(x26 - headLen * Math.cos(angle - Math.PI / 6), y26 - headLen * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(x26 - headLen * Math.cos(angle + Math.PI / 6), y26 - headLen * Math.sin(angle + Math.PI / 6));
+            ctx.fill();
+
+            ctx.font = '600 10px "JetBrains Mono", ui-monospace, monospace';
+            ctx.fillText(`Gaia ${s.source_id.slice(-6)} (μ=${Math.round(s.motion_arcsec_10yr * 100)} mas/y)`, x26 + 8, y26 + 3);
+            ctx.restore();
+          }
+        }
+        ctx.stroke();
+      } else if (!liveReady()) {
+        ctx.beginPath();
+        for (const s of cache.sources) {
+          if (!s.gaia) continue;
+          const [x, y] = toScreen(s);
+          if (x < img.x || x > img.x + img.size || y < img.y || y > img.y + img.size) continue;
+          ctx.moveTo(x + r, y); ctx.arc(x, y, r, 0, Math.PI * 2);
+        }
+        ctx.stroke();
       }
-      ctx.stroke();
     }
 
     // --- synthetic object labels ---
