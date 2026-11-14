@@ -33,6 +33,23 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+# --- Hook pipeline lọc nhiễu 3 tầng (ZODI + 18 flags) ---
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "backend"))
+try:
+    from fits_pipeline import process_single_fits
+    HAS_DENOISE = True
+except Exception:
+    HAS_DENOISE = False
+    
+    
+import ssl
+try:
+    import certifi
+    ssl._create_default_https_context = lambda: ssl.create_default_context(cafile=certifi.where())
+except Exception:
+    ssl._create_default_https_context = ssl._create_unverified_context
+    
+    
 SIA_URL = "https://irsa.ipac.caltech.edu/SIA"
 COLLECTIONS = ("spherex_dr1", "spherex_qr3")
 DETECTORS = {
@@ -321,7 +338,7 @@ def load_epochs(root: Path, ra: float, dec: float, fov: float, detector: str,
     per_visit = max(1, min(12, per_visit))
     N = grid_size(fov)
 
-    key = f"{ra:.5f}_{dec:+.5f}_{fov:.0f}_{detector}_{per_visit}"
+    key = f"clean_{ra:.5f}_{dec:+.5f}_{fov:.0f}_{detector}_{per_visit}"
     cache_file = _cache_dir(root) / (hashlib.sha1(key.encode()).hexdigest()[:16] + ".json")
     if not refresh:
         if key in _memory:
@@ -343,7 +360,11 @@ def load_epochs(root: Path, ra: float, dec: float, fov: float, detector: str,
     def work(exp: dict):
         url = f"{exp['url']}?center={ra},{dec}&size={size_deg:.5f}"
         try:
-            h, pix = read_image_extension(url)
+            if HAS_DENOISE:
+                proc = process_single_fits(url)
+                h, pix = proc["header"], proc["visual_data"].astype("float32").ravel()
+            else:
+                h, pix = read_image_extension(url)
             img, cov = _finish(resample(h, pix, ra, dec, N))
         except Exception as exc:
             return {"error": f"{exp['obsid']}: {exc}"}

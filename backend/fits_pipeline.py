@@ -98,6 +98,7 @@ def process_single_fits(cutout_uri: str):
         exptime = float(header.get("EXPTIME", 25.0))
 
         return {
+            "header": header,
             "visual_data": repaired,
             "snr_map": snr_map,
             "variance": variance,
