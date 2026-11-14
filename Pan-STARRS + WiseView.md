@@ -80,9 +80,7 @@ Nor are brown dwarfs universally invisible optically: PS1 detected 494 L dwarfs 
 
 For independent, comparable exposures,
 
-${\rm SNR}_{\rm stack}\approx\sqrt{N}\,{\rm SNR}_{\rm single},
-\qquad
-\Delta m\approx1.25\log_{10}N.$
+${\rm SNR}_{\rm stack}\approx\sqrt{N}\,{\rm SNR}_{\rm single},\qquad\Delta m\approx1.25\log_{10}N.$
 
 Typical WISE visits contain approximately 12 exposures over one day, recurring roughly every six months (Meisner et al., 2018). Epochal stacking gains approximately 1.3 magnitudes but averages away variability on timescales shorter than about one day (Meisner et al., 2018).
 
