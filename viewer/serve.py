@@ -72,11 +72,14 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     def send_json(self, status: int, payload: dict) -> None:
         body = json.dumps(payload).encode("utf-8")
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
+        try:
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+            pass    # the page moved on (another target or band) and cancelled this request: nothing to deliver
 
     def handle_api(self, path: str, query: dict) -> None:
         arg = lambda name, default=None: query.get(name, [default])[0]

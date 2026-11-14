@@ -22,17 +22,25 @@ import json
 import math
 import sys
 import time
+import urllib.parse
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
 from pathlib import Path
 
 from spherex_live import (LiveError, _cache_dir, _encode, _finish, _open, _read_exact, _read_header, _tangent_to_sky, TanSipWcs, mjd_to_year, repair_masked)
 import array
 
 IBE = "https://irsa.ipac.caltech.edu/ibe"
+SIA_URL = "https://irsa.ipac.caltech.edu/SIA"
 TABLES = ("wise/neowiser/p1bm_frm", "wise/allsky/4band_p1bm_frm")   # NEOWISE 2014-2024, WISE cryogenic 2010
+SIA_COLLECTIONS = ("neowiser", "wise_allsky")                       # the same single-exposure frames, listed through SIA v2
 BANDS = {"W1": (1, 3.4), "W2": (2, 4.6)}
+BAND_RANGE_M = {1: (3.2e-6, 3.6e-6), 2: (4.4e-6, 4.8e-6)}            # SIA BAND filter, metres
 PIXEL_SCALE = 2.75          # arcsec per WISE pixel
 VISIT_GAP_DAYS = 45.0
+SEARCH_TIMEOUT = 75         # seconds per archive search request
+DOWNLOAD_TIMEOUT = 30       # seconds per cutout request
+DOWNLOAD_BUDGET = 120       # seconds for all cutouts of one request: later visits are skipped, never waited on forever
 D2R = math.pi / 180.0
 _memory: dict[str, dict] = {}
 
@@ -41,27 +49,88 @@ def grid_size(fov: float) -> int:
     return max(8, min(256, round(fov / PIXEL_SCALE)))
 
 
-def query_frames(ra: float, dec: float, band: int) -> list[dict]:
+def _mjd_to_iso(mjd: float) -> str:
+    return datetime.fromtimestamp((mjd - 40587.0) * 86400.0, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+
+
+def _sia_frames(ra: float, dec: float, band: int, collection: str) -> list[dict]:
+    """Frame list from IRSA's SIA v2 service: much faster and steadier than the IBE search for NEOWISE."""
+    lo, hi = BAND_RANGE_M[band]
+    query = [("POS", f"CIRCLE {ra:.6f} {dec:.6f} 0.001"), ("COLLECTION", collection), ("BAND", f"{lo} {hi}"),
+             ("RESPONSEFORMAT", "CSV"), ("MAXREC", "20000")]
+    with _open(SIA_URL + "?" + urllib.parse.urlencode(query), timeout=SEARCH_TIMEOUT, attempts=2) as r:
+        text = r.read().decode("utf-8", "replace")
     rows = []
-    for table in TABLES:
-        url = f"{IBE}/search/{table}?POS={ra:.6f},{dec:.6f}&ct=csv&where=band={band}"
+    for row in csv.DictReader(io.StringIO(text)):
+        url = row.get("access_url") or ""
+        if row.get("dataproduct_subtype") != "science" or row.get("energy_bandpassname") != f"W{band}":
+            continue
+        if "/ibe/data/" not in url or not url.endswith(f"-w{band}-int-1b.fits"):
+            continue
         try:
-            with _open(url, timeout=90) as r:
-                text = r.read().decode("utf-8", "replace")
-        except Exception:
+            mjd = float(row["t_min"])
+        except (KeyError, ValueError):
             continue
-        if not text.startswith("in_row_id"):
-            continue
-        for row in csv.DictReader(io.StringIO(text)):
-            try:
-                q = int(float(row.get("qual_frame") or 0))
-                if q < 5:                                    # 10 = best; below 5 is flagged unusable or poor
-                    continue
-                rows.append({"table": table, "path": f"{row['scangrp']}/{row['scan_id']}/{int(row['frame_num']):03d}/{row['scan_id']}{int(row['frame_num']):03d}-w{band}-int-1b.fits",
-                             "mjd": float(row["mjd_obs"]), "date": row["date_obs"], "qual": q, "obsid": f"{row['scan_id']}{int(row['frame_num']):03d}"})
-            except (KeyError, ValueError):
+        parts = url.split("/ibe/data/", 1)[1].split("/")     # wise/neowiser/p1bm_frm/5r/42565r/159/42565r159-w2-int-1b.fits
+        rows.append({"table": "/".join(parts[:3]), "path": "/".join(parts[3:]), "mjd": mjd, "date": _mjd_to_iso(mjd),
+                     "qual": 10, "obsid": parts[-1].split("-w")[0]})
+    return rows
+
+
+def _ibe_frames(ra: float, dec: float, band: int, table: str) -> list[dict]:
+    """Fallback: the IBE metadata search (it carries a frame-quality score, but can hang for minutes)."""
+    url = f"{IBE}/search/{table}?POS={ra:.6f},{dec:.6f}&ct=csv&where=band={band}"
+    with _open(url, timeout=SEARCH_TIMEOUT, attempts=1) as r:
+        text = r.read().decode("utf-8", "replace")
+    rows = []
+    if not text.startswith("in_row_id"):
+        return rows
+    for row in csv.DictReader(io.StringIO(text)):
+        try:
+            q = int(float(row.get("qual_frame") or 0))
+            if q < 5:                                        # 10 = best; below 5 is flagged unusable or poor
                 continue
+            rows.append({"table": table, "path": f"{row['scangrp']}/{row['scan_id']}/{int(row['frame_num']):03d}/{row['scan_id']}{int(row['frame_num']):03d}-w{band}-int-1b.fits",
+                         "mjd": float(row["mjd_obs"]), "date": row["date_obs"], "qual": q, "obsid": f"{row['scan_id']}{int(row['frame_num']):03d}"})
+        except (KeyError, ValueError):
+            continue
+    return rows
+
+
+def query_frames(root: Path, ra: float, dec: float, band: int) -> list[dict]:
+    """Every usable frame of both surveys covering the position. The two surveys are searched in parallel, each
+    through SIA first and the IBE search only if SIA fails. The list is cached, so a retry after a failed or slow
+    download does not search again."""
+    key = f"wisefr_{ra:.5f}_{dec:+.5f}_{band}"
+    cache_file = _cache_dir(root) / (hashlib.sha1(key.encode()).hexdigest()[:16] + ".json")
+    if cache_file.exists():
+        try:
+            return json.loads(cache_file.read_text("utf-8"))
+        except ValueError:
+            pass
+
+    def one(pair):
+        collection, table = pair
+        try:
+            return _sia_frames(ra, dec, band, collection), True
+        except Exception:
+            pass
+        try:
+            return _ibe_frames(ra, dec, band, table), True
+        except Exception:
+            return [], False
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        parts = list(pool.map(one, zip(SIA_COLLECTIONS, TABLES)))
+    seen, rows = set(), []
+    for found, _ok in parts:
+        for r in found:
+            if (r["table"], r["path"]) not in seen:
+                seen.add((r["table"], r["path"]))
+                rows.append(r)
     rows.sort(key=lambda r: r["mjd"])
+    if rows and all(ok for _found, ok in parts):             # cache only complete answers
+        cache_file.write_text(json.dumps(rows), "utf-8")
     return rows
 
 
@@ -75,9 +144,9 @@ def group_visits(rows: list[dict]) -> list[list[dict]]:
     return visits
 
 
-def read_primary(url: str, timeout: float = 90):
+def read_primary(url: str, timeout: float = DOWNLOAD_TIMEOUT):
     """Header and float32 pixels of the primary image of a WISE cutout."""
-    with _open(url, timeout=timeout) as stream:
+    with _open(url, timeout=timeout, attempts=3) as stream:     # IRSA answers 503 under load; it clears in seconds
         h = _read_header(stream)
         nx, ny = int(h["NAXIS1"]), int(h["NAXIS2"])
         if int(h.get("BITPIX", 0)) != -32:
@@ -143,17 +212,22 @@ def load_epochs(root: Path, ra: float, dec: float, fov: float, band: str = "W2",
             return {**data, "source": "disk cache"}
 
     t0 = time.time()
-    rows = query_frames(ra, dec, BANDS[band][0])
+    rows = query_frames(root, ra, dec, BANDS[band][0])
     if not rows:
-        raise LiveError(f"no WISE/NEOWISE {band} frames cover RA {ra:.4f}, Dec {dec:+.4f}")
+        raise LiveError(f"no WISE/NEOWISE {band} frames found for RA {ra:.4f}, Dec {dec:+.4f} "
+                        "(or the IRSA archive did not answer; try again in a moment)")
     visits = group_visits(rows)
     size_deg = (fov * 1.45 + 4 * PIXEL_SCALE) / 3600.0
+    deadline = time.time() + DOWNLOAD_BUDGET
 
     def work(args):
         vi, group = args
         mid = sorted(group, key=lambda r: (-r["qual"], abs(r["mjd"] - group[len(group) // 2]["mjd"])))   # best quality, then nearest the middle
         errs = []
-        for fr in mid[:3]:                                   # try a few frames of the visit before giving up
+        for fr in mid[:5]:                                   # try a few frames of the visit before giving up (edges, 503s)
+            if time.time() > deadline:
+                errs.append(f"visit {vi}: skipped, IRSA too slow (time budget used up)")
+                break
             url = f"{IBE}/data/{fr['table']}/{fr['path']}?center={ra},{dec}&size={size_deg:.5f}&gzip=false"
             try:
                 h, pix = read_primary(url)
@@ -170,7 +244,7 @@ def load_epochs(root: Path, ra: float, dec: float, fov: float, band: str = "W2",
                     "collection": "NEOWISE" if "neowiser" in fr["table"] else "WISE", "date": fr["date"].replace(" ", "T")[:19], "coverage": round(cov, 3), "data": _encode(img), "mask": mask, "masked": sum(bad)}
         return {"error": "; ".join(errs[:2]) or f"visit {vi}: no usable frame"}
 
-    with ThreadPoolExecutor(max_workers=6) as pool:
+    with ThreadPoolExecutor(max_workers=4) as pool:          # 6 at once made IRSA answer 503 for a third of the cutouts
         results = list(pool.map(work, enumerate(visits)))
     units = [r for r in results if "data" in r]
     errors = [r["error"] for r in results if "error" in r]
