@@ -1211,7 +1211,7 @@ kbd {
         <div><dt>Skip duplicate windows</dt><dd>Drops windows that add no epochs beyond the previous frame.</dd></div>
         <div><dt>Smooth by scan direction</dt><dd>Light 3×3 smoothing that suppresses single-pixel noise.</dd></div>
         <div><dt>Border epoch 0</dt><dd>Outlines the first frame so you can see where the loop starts.</dd></div>
-        <div><dt>Gaia DR3 overlay</dt><dd>On SPHEREx D1–D6: circles real Gaia DR3 stars (G &lt; 18.5), moved to each frame’s date by their proper motion. On simulated bands: simulated matches.</dd></div>
+        <div><dt>Gaia DR3 overlay</dt><dd>Circles the brightest real Gaia DR3 stars in the field, coloured by BP−RP and moved to each frame’s date by their proper motion. Fast movers get a yellow arrow from 2016 to 2026.</dd></div>
         <div><dt>Star cards</dt><dd>On SPHEREx D1–D6, hover a star for its identity card: Gaia name, constellation, history, distance, size, mass, temperature, colour, brightness, age, planets, special phenomena and a spectrum strip coloured by element. Click to pin it, Esc to close.</dd></div>
         <div><dt>Synthetic objects</dt><dd>Inject test movers with a chosen motion and W2 magnitude.</dd></div>
       </dl>
@@ -1513,6 +1513,28 @@ kbd {
     scheduleRebuild();
   }
 
+  /* ---------- 4b. Live Gaia DR3 catalog (ESA/STScI TAP through serve.py) ---------- */
+  const gaiaLive = { key: '', status: 'idle', sources: [] };
+
+  async function requestGaia(ra, dec, fov) {
+    const key = [ra.toFixed(5), dec.toFixed(5), fov].join('|');
+    if (gaiaLive.key === key && (gaiaLive.status === 'ready' || gaiaLive.status === 'loading')) return;
+    gaiaLive.key = key;
+    gaiaLive.status = 'loading';
+    try {
+      const q = new URLSearchParams({ ra, dec, fov });
+      const res = await fetch(`/api/gaia?${q}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const body = await res.json();
+      gaiaLive.sources = body.sources || [];
+      gaiaLive.status = 'ready';
+      drawOverlay();
+    } catch (err) {
+      gaiaLive.status = 'error';
+      console.warn('[gaia] request failed:', err);
+    }
+  }
+
   // Status bar + HUD note: say plainly whether the pixels on screen are real or simulated.
   function updateSource() {
     const statusEl = $('#data-status'), noteEl = $('#hud-source');
@@ -1537,7 +1559,21 @@ kbd {
   }
 
   /* ---------- 4b. Gaia DR3 field + star identity cards (real imagery only) ---------- */
-  const gaia = { key: '', status: 'idle', sources: [], epoch: 2016.0, ctrl: null };
+  // The field's Gaia DR3 sources come from requestGaia() / gaiaLive above (served by gaia_live.py), the same list
+  // the Gaia overlay draws. The card code reads a normalised copy: { id, ra, dec, pmra, pmdec, plx, g, bp_rp } at J2016.0.
+  const GAIA_EPOCH = 2016.0;
+  const gaia = { key: '', from: null, sources: [] };
+  function gaiaStars() {
+    if (gaiaLive.status !== 'ready') return null;
+    if (gaia.from !== gaiaLive.sources) {
+      gaia.from = gaiaLive.sources;
+      gaia.sources = gaiaLive.sources.map((s) => ({
+        id: String(s.source_id), ra: s.ra, dec: s.dec, pmra: s.pmra || 0, pmdec: s.pmdec || 0,
+        plx: s.parallax, g: s.mag_g, bp_rp: s.bp_rp,
+      }));
+    }
+    return gaia.sources;
+  }
   const stars = { hover: null, pinned: null, details: new Map(), errors: new Map(), pending: new Set() };
   const gaiaKey = () => [state.ra.toFixed(5), state.dec.toFixed(5), state.fov].join('|');
   const cardEl = () => $('#star-card');
@@ -1546,32 +1582,12 @@ kbd {
   const num = (v, d = 2) => (isNum(v) ? fmt(v, d) : null);
   const NA = '<span class="muted">no data</span>';
 
-  async function requestGaia(key) {
-    if (gaia.ctrl) gaia.ctrl.abort();
-    const ctrl = new AbortController();
-    Object.assign(gaia, { key, status: 'loading', sources: [], ctrl });
-    hideStarCard(true);
-    try {
-      const q = new URLSearchParams({ ra: state.ra, dec: state.dec, fov: state.fov });
-      const res = await fetch(`/api/gaia?${q}`, { signal: ctrl.signal });
-      const body = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-      if (!res.ok || body.error) throw new Error(body.error || `HTTP ${res.status}`);
-      if (gaia.key !== key) return;
-      gaia.sources = body.sources; gaia.epoch = body.epoch; gaia.status = 'ready';
-    } catch (err) {
-      if (err.name === 'AbortError' || gaia.key !== key) return;
-      gaia.status = 'error';
-      console.warn('[gaia] field query failed:', err.message);
-    }
-    drawOverlay();
-  }
-
   // Offset (arcsec east / north of the field centre) of a Gaia source at decimal year t, moved by its proper motion.
   function gaiaOffset(s, t) {
     let dra = s.ra - state.ra;
     if (dra > 180) dra -= 360;
     if (dra < -180) dra += 360;
-    const dt = t - gaia.epoch;
+    const dt = t - GAIA_EPOCH;
     return [dra * 3600 * Math.cos(state.dec * D2R) + (s.pmra / 1000) * dt, (s.dec - state.dec) * 3600 + (s.pmdec / 1000) * dt];
   }
   const viewTime = () => (model.view ? model.view.t : 2026);
@@ -1583,12 +1599,13 @@ kbd {
 
   // The Gaia star under the pointer: nearest source within about one SPHEREx pixel (bright stars win ties).
   function pickStar(x, y) {
-    if (!liveReady() || gaia.status !== 'ready') return null;
+    const list = liveReady() ? gaiaStars() : null;
+    if (!list) return null;
     const img = imageRect();
     if (x < img.x || x > img.x + img.size || y < img.y || y > img.y + img.size) return null;
     const r = Math.max(10, 0.8 * BANDS[state.band].ps * ppa());
     let best = null, bestScore = Infinity;
-    for (const s of gaia.sources) {
+    for (const s of list) {
       if (!(s.g < 18.5)) continue;
       const [sx, sy] = gaiaScreen(s);
       const d = Math.hypot(sx - x, sy - y);
@@ -2025,7 +2042,11 @@ kbd {
       }
     }
     updateSource();
-    if (liveReady() && gaia.key !== gaiaKey()) requestGaia(gaiaKey());
+    if (liveReady() && gaia.key !== gaiaKey()) {                          // new field: fetch its Gaia stars, drop the old card
+      gaia.key = gaiaKey();
+      hideStarCard(true);
+      requestGaia(state.ra, state.dec, state.fov);
+    }
     if (!liveReady() && (stars.hover || stars.pinned)) hideStarCard(true);
     model.N = liveReady() ? live.N : clamp(Math.round(state.fov / band.ps), 8, 256);
     model.channels = band.channels;
@@ -2297,19 +2318,76 @@ kbd {
     const scan = view && view.frame ? view.frame.scan : null;
     const toScreen = (s) => { const [dx, dy] = sourceOffset(s, t, scan); return [cx - dx * p, cy - dy * p]; };
 
-    // --- Gaia DR3 overlay (simulated catalogue, so only drawn over simulated imagery) ---
-    if (state.gaia && !liveReady()) {
+    // --- Gaia DR3 overlay (Live real catalogue from ESA/STScI TAP) ---
+    if (state.gaia) {
+      requestGaia(state.ra, state.dec, state.fov);
       const r = clamp(4.4 * p, 6, 24);
       ctx.strokeStyle = 'rgba(56,189,248,0.95)';
       ctx.lineWidth = 1.3;
-      ctx.beginPath();
-      for (const s of cache.sources) {
-        if (!s.gaia) continue;
-        const [x, y] = toScreen(s);
-        if (x < img.x || x > img.x + img.size || y < img.y || y > img.y + img.size) continue;
-        ctx.moveTo(x + r, y); ctx.arc(x, y, r, 0, Math.PI * 2);
+
+      if (gaiaLive.sources && gaiaLive.sources.length > 0) {
+        for (const s of gaiaLive.sources) {
+          const dt = (t || 2026.0) - 2016.0;
+          const s_ra = s.ra + (s.pmra * dt) / (cosd * 3600000.0);
+          const s_dec = s.dec + (s.pmdec * dt) / 3600000.0;
+          const dx = (s_ra - state.ra) * 3600 * cosd;
+          const dy = (s_dec - state.dec) * 3600;
+          const x = cx - dx * p;
+          const y = cy - dy * p;
+
+          if (x < img.x - 20 || x > img.x + img.size + 20 || y < img.y - 20 || y > img.y + img.size + 20) continue;
+
+          // Draw circle with real physical color from Gaia BP - RP
+          ctx.beginPath();
+          ctx.strokeStyle = s.color || 'rgba(56,189,248,0.95)';
+          ctx.lineWidth = 1.4;
+          ctx.arc(x, y, r, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // If fast proper motion, draw motion vector arrow
+          if (s.motion_arcsec_10yr && s.motion_arcsec_10yr > 1.0) {
+            const dx16 = (s.ra - state.ra) * 3600 * cosd;
+            const dy16 = (s.dec - state.dec) * 3600;
+            const x16 = cx - dx16 * p;
+            const y16 = cy - dy16 * p;
+            const dx26 = (s.ra_2026 - state.ra) * 3600 * cosd;
+            const dy26 = (s.dec_2026 - state.dec) * 3600;
+            const x26 = cx - dx26 * p;
+            const y26 = cy - dy26 * p;
+
+            ctx.save();
+            ctx.strokeStyle = 'rgba(251,191,36,0.9)';
+            ctx.fillStyle = 'rgba(251,191,36,0.9)';
+            ctx.lineWidth = 1.8;
+            ctx.beginPath();
+            ctx.moveTo(x16, y16);
+            ctx.lineTo(x26, y26);
+            ctx.stroke();
+
+            const angle = Math.atan2(y26 - y16, x26 - x16);
+            const headLen = 6;
+            ctx.beginPath();
+            ctx.moveTo(x26, y26);
+            ctx.lineTo(x26 - headLen * Math.cos(angle - Math.PI / 6), y26 - headLen * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(x26 - headLen * Math.cos(angle + Math.PI / 6), y26 - headLen * Math.sin(angle + Math.PI / 6));
+            ctx.fill();
+
+            ctx.font = '600 10px "JetBrains Mono", ui-monospace, monospace';
+            ctx.fillText(`Gaia ${s.source_id.slice(-6)} (μ=${Math.round(s.motion_arcsec_10yr * 100)} mas/y)`, x26 + 8, y26 + 3);
+            ctx.restore();
+          }
+        }
+        ctx.stroke();
+      } else if (!liveReady()) {
+        ctx.beginPath();
+        for (const s of cache.sources) {
+          if (!s.gaia) continue;
+          const [x, y] = toScreen(s);
+          if (x < img.x || x > img.x + img.size || y < img.y || y > img.y + img.size) continue;
+          ctx.moveTo(x + r, y); ctx.arc(x, y, r, 0, Math.PI * 2);
+        }
+        ctx.stroke();
       }
-      ctx.stroke();
     }
 
     // --- synthetic object labels ---
@@ -2330,22 +2408,9 @@ kbd {
       ctx.fillText(s.name, x + r + 6, y - r - 0.5);
     }
 
-    // --- real Gaia DR3 sources over real SPHEREx imagery, moved to the frame's epoch by proper motion ---
-    if (liveReady() && gaia.status === 'ready') {
+    // --- star-card highlight: the hovered / pinned Gaia star (the catalogue circles are drawn by the Gaia overlay above) ---
+    if (liveReady() && gaiaStars()) {
       const inImg = (x, y) => x >= img.x && x <= img.x + img.size && y >= img.y && y <= img.y + img.size;
-      if (state.gaia) {
-        ctx.strokeStyle = 'rgba(56,189,248,0.8)';
-        ctx.lineWidth = 1.1;
-        ctx.beginPath();
-        for (const s of gaia.sources) {
-          if (!(s.g < 18.5)) continue;
-          const [x, y] = gaiaScreen(s);
-          if (!inImg(x, y)) continue;
-          const r = clamp((19 - s.g) * 0.55 * Math.sqrt(p), 3, 16);
-          ctx.moveTo(x + r, y); ctx.arc(x, y, r, 0, Math.PI * 2);
-        }
-        ctx.stroke();
-      }
       for (const s of [stars.pinned, stars.hover]) {
         if (!s) continue;
         const [x, y] = gaiaScreen(s);

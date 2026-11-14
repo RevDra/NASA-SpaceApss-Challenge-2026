@@ -9,14 +9,16 @@ Local launcher for the SPHEREx & Planet X Deep Space Explorer UI.
 Besides the static files it exposes a small proxy to NASA/IPAC IRSA, because IRSA does not send
 CORS headers and the browser cannot call it directly:
 
-    GET /api/status                                   -> {"ok": true, "live": true}
+    GET /api/status                                   -> {"ok": true, "live": true, "gaia": true}
     GET /api/spherex?ra=..&dec=..&fov=120&band=D2     -> real SPHEREx frames (see spherex_live.py)
         optional: per_visit=6 (exposures kept per visit), refresh=1 (ignore the cache)
-    GET /api/gaia?ra=..&dec=..&fov=120                -> Gaia DR3 sources in the field (see star_info.py)
+    GET /api/gaia?ra=..&dec=..&fov=120                -> Gaia DR3 sources in the field (see gaia_live.py)
+        optional: limit=400, refresh=1
     GET /api/star?id=<Gaia DR3 source_id>             -> identity card: Gaia + SIMBAD + exoplanets + constellation
+                                                         (see star_info.py)
 
-Standard library only (Python 3.8+). Keep this file next to index.html, spherex_live.py, star_info.py
-and constellation_bounds.tsv.
+Standard library only (Python 3.8+). Keep this file next to index.html, spherex_live.py, gaia_live.py,
+star_info.py and constellation_bounds.tsv.
 """
 from __future__ import annotations
 
@@ -32,6 +34,7 @@ import urllib.parse
 import webbrowser
 from pathlib import Path
 
+import gaia_live
 import spherex_live
 import star_info
 
@@ -72,10 +75,25 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def handle_api(self, path: str, query: dict) -> None:
         arg = lambda name, default=None: query.get(name, [default])[0]
         if path == "/api/status":
-            self.send_json(200, {"ok": True, "live": True})
+            self.send_json(200, {"ok": True, "live": True, "gaia": True})
             return
-        if path in ("/api/gaia", "/api/star"):
-            self.handle_star_api(path, arg)
+        if path == "/api/gaia":
+            try:
+                ra, dec = float(arg("ra")), float(arg("dec"))
+                fov = float(arg("fov", 120))
+                limit = int(arg("limit", 400))
+            except (TypeError, ValueError):
+                self.send_json(400, {"error": "ra, dec and fov must be numbers"})
+                return
+            try:
+                sources = gaia_live.load_gaia_sources(ROOT, ra, dec, fov, limit, refresh=arg("refresh") == "1")
+                self.send_json(200, {"ok": True, "ra": ra, "dec": dec, "fov": fov, "sources": sources})
+            except Exception as exc:
+                traceback.print_exc()
+                self.send_json(500, {"error": f"{type(exc).__name__}: {exc}"})
+            return
+        if path == "/api/star":
+            self.handle_star_api(arg)
             return
         if path != "/api/spherex":
             self.send_json(404, {"error": f"unknown endpoint {path}"})
@@ -99,20 +117,13 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             return
         self.send_json(200, data)
 
-    def handle_star_api(self, path: str, arg) -> None:
-        try:
-            if path == "/api/gaia":
-                data = star_info.gaia_field(float(arg("ra")), float(arg("dec")), float(arg("fov", 120)),
-                                            float(arg("gmax", 19)))
-            else:
-                sid = arg("id", "")
-                if not sid.isdigit():
-                    self.send_json(400, {"error": "id must be a Gaia DR3 source_id"})
-                    return
-                data = star_info.star_details(sid)
-        except (TypeError, ValueError):
-            self.send_json(400, {"error": "ra, dec and fov must be numbers"})
+    def handle_star_api(self, arg) -> None:
+        sid = arg("id", "")
+        if not sid.isdigit():
+            self.send_json(400, {"error": "id must be a Gaia DR3 source_id"})
             return
+        try:
+            data = star_info.star_details(sid)
         except star_info.StarError as exc:
             self.send_json(502, {"error": str(exc)})
             return

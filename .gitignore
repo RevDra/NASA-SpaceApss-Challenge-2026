@@ -1,4 +1,3 @@
-
 # OS files
 .DS_Store
 Thumbs.db
@@ -14,5 +13,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Live SPHEREx cutout cache (viewer/serve.py)
+# Live SPHEREx & Gaia cutout cache
 spherex_cache/
+gaia_cache/
+viewer/gaia_cache/
+backend/cache/
+*.fits

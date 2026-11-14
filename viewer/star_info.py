@@ -1,10 +1,8 @@
 """
 Star identity cards for the viewer (standard library only).
 
-Two entry points, both served by serve.py:
+Entry point, served by serve.py as /api/star (the field's Gaia sources come from gaia_live.py):
 
-  gaia_field(ra, dec, fov)   Gaia DR3 sources in the field (positions at epoch 2016.0 plus proper
-                             motion), so the page can draw them and know which star is under the mouse.
   star_details(source_id)    Everything the hover card shows for one Gaia DR3 source, merged from
                              - ESA Gaia DR3 archive: astrometry, photometry, astrophysical parameters
                                (FLAME radius / mass / luminosity / age / evolutionary stage, GSP-Phot
@@ -89,33 +87,6 @@ def _clean(row: dict) -> dict:
 
 
 # --------------------------------------------------------------------------- Gaia
-def gaia_field(ra: float, dec: float, fov: float, gmax: float = 19.0) -> dict:
-    key = f"field:{ra:.5f}:{dec:+.5f}:{fov:.0f}:{gmax}"
-    with _lock:
-        if key in _memory:
-            return _memory[key]
-    # Half-diagonal of the field, plus 2' so fast movers drifting in since 2016 are included.
-    radius = fov * 0.72 / 3600 + 120 / 3600
-    rows = tap(GAIA_TAP, f"""
-        SELECT TOP 3000 source_id, ra, dec, parallax, pmra, pmdec, phot_g_mean_mag, bp_rp
-        FROM gaiadr3.gaia_source
-        WHERE 1 = CONTAINS(POINT('ICRS', ra, dec), CIRCLE('ICRS', {ra}, {dec}, {radius}))
-          AND phot_g_mean_mag < {gmax}
-        ORDER BY phot_g_mean_mag""")
-    sources = []
-    for r in rows:
-        r = _clean(r)
-        sources.append({
-            "id": r["source_id"].strip(), "ra": r["ra"], "dec": r["dec"],
-            "pmra": r["pmra"] or 0.0, "pmdec": r["pmdec"] or 0.0, "plx": r["parallax"],
-            "g": r["phot_g_mean_mag"], "bp_rp": r["bp_rp"],
-        })
-    out = {"epoch": 2016.0, "gmax": gmax, "sources": sources}
-    with _lock:
-        _memory[key] = out
-    return out
-
-
 GAIA_DETAIL_COLUMNS = """
     g.source_id, g.designation, g.ra, g.dec, g.parallax, g.parallax_error, g.pmra, g.pmdec,
     g.radial_velocity, g.phot_g_mean_mag, g.phot_bp_mean_mag, g.phot_rp_mean_mag, g.bp_rp,
