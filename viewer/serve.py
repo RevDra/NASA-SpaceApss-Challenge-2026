@@ -12,8 +12,11 @@ CORS headers and the browser cannot call it directly:
     GET /api/status                                   -> {"ok": true, "live": true}
     GET /api/spherex?ra=..&dec=..&fov=120&band=D2     -> real SPHEREx frames (see spherex_live.py)
         optional: per_visit=6 (exposures kept per visit), refresh=1 (ignore the cache)
+    GET /api/gaia?ra=..&dec=..&fov=120                -> Gaia DR3 sources in the field (see star_info.py)
+    GET /api/star?id=<Gaia DR3 source_id>             -> identity card: Gaia + SIMBAD + exoplanets + constellation
 
-Standard library only (Python 3.8+). Keep this file next to index.html and spherex_live.py.
+Standard library only (Python 3.8+). Keep this file next to index.html, spherex_live.py, star_info.py
+and constellation_bounds.tsv.
 """
 from __future__ import annotations
 
@@ -30,6 +33,7 @@ import webbrowser
 from pathlib import Path
 
 import spherex_live
+import star_info
 
 ROOT = Path(__file__).resolve().parent
 
@@ -70,6 +74,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if path == "/api/status":
             self.send_json(200, {"ok": True, "live": True})
             return
+        if path in ("/api/gaia", "/api/star"):
+            self.handle_star_api(path, arg)
+            return
         if path != "/api/spherex":
             self.send_json(404, {"error": f"unknown endpoint {path}"})
             return
@@ -87,6 +94,29 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.send_json(502, {"error": str(exc)})
             return
         except Exception as exc:  # keep the server alive and tell the page what went wrong
+            traceback.print_exc()
+            self.send_json(500, {"error": f"{type(exc).__name__}: {exc}"})
+            return
+        self.send_json(200, data)
+
+    def handle_star_api(self, path: str, arg) -> None:
+        try:
+            if path == "/api/gaia":
+                data = star_info.gaia_field(float(arg("ra")), float(arg("dec")), float(arg("fov", 120)),
+                                            float(arg("gmax", 19)))
+            else:
+                sid = arg("id", "")
+                if not sid.isdigit():
+                    self.send_json(400, {"error": "id must be a Gaia DR3 source_id"})
+                    return
+                data = star_info.star_details(sid)
+        except (TypeError, ValueError):
+            self.send_json(400, {"error": "ra, dec and fov must be numbers"})
+            return
+        except star_info.StarError as exc:
+            self.send_json(502, {"error": str(exc)})
+            return
+        except Exception as exc:
             traceback.print_exc()
             self.send_json(500, {"error": f"{type(exc).__name__}: {exc}"})
             return
