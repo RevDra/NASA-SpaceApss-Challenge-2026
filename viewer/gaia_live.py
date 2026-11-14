@@ -25,12 +25,12 @@ _memory: dict[str, list[dict]] = {}
 
 
 def _cache_key(ra: float, dec: float, fov_arcsec: float) -> str:
-    raw = f"{ra:.5f}_{dec:.5f}_{fov_arcsec:.1f}"
+    raw = f"v2_{ra:.5f}_{dec:.5f}_{fov_arcsec:.1f}"   # v2: wider search radius (see below)
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
 
 
 def load_gaia_sources(root_dir: Path, ra: float, dec: float, fov_arcsec: float = 120.0,
-                      limit: int = 150, refresh: bool = False) -> list[dict]:
+                      limit: int = 400, refresh: bool = False) -> list[dict]:
     """Query real Gaia DR3 sources within the FOV with epoch shifting to 2026."""
     key = _cache_key(ra, dec, fov_arcsec)
     
@@ -53,8 +53,9 @@ def load_gaia_sources(root_dir: Path, ra: float, dec: float, fov_arcsec: float =
             pass
 
     # 3. Query ESA Gaia TAP
-    # Radius in degrees, adding 20% margin around FOV
-    radius_deg = (fov_arcsec / 3600.0) * 0.6
+    # Radius in degrees: half-diagonal of the square field (0.72 x FOV) plus 2 arcmin, because Gaia positions
+    # are at epoch 2016 and fast movers drift into the field by 2026 (Barnard's Star moved ~104").
+    radius_deg = (fov_arcsec / 3600.0) * 0.72 + 120.0 / 3600.0
     radius_deg = max(0.005, min(radius_deg, 0.5)) # Safety bounds
 
     query = f"""
@@ -75,8 +76,9 @@ def load_gaia_sources(root_dir: Path, ra: float, dec: float, fov_arcsec: float =
     req = urllib.request.Request(GAIA_TAP_URL, data=data_payload, headers={"User-Agent": USER_AGENT})
 
     sources = []
+    from_archive = False
     try:
-        with urllib.request.urlopen(req, timeout=12) as resp:
+        with urllib.request.urlopen(req, timeout=30) as resp:
             tap_res = json.loads(resp.read().decode("utf-8"))
             rows = tap_res.get("data", [])
             dt_years = 2026.0 - 2016.0 # Gaia epoch 2016 -> SPHEREx epoch 2026
@@ -123,6 +125,7 @@ def load_gaia_sources(root_dir: Path, ra: float, dec: float, fov_arcsec: float =
                     "dec_2026": round(dec_2026, 6),
                     "motion_arcsec_10yr": round(math.hypot(pmra_val, pmdec_val) * dt_years / 1000.0, 3)
                 })
+            from_archive = True
     except Exception as e:
         # Fallback to local benchmarks if offline or network error
         benchmarks_path = root_dir.parent / "data" / "benchmarks.json"
@@ -150,12 +153,12 @@ def load_gaia_sources(root_dir: Path, ra: float, dec: float, fov_arcsec: float =
             except Exception:
                 pass
 
-    # Save to disk cache
-    try:
-        with open(cache_file, "w", encoding="utf-8") as f:
-            json.dump(sources, f, indent=2)
-    except Exception:
-        pass
-
-    _memory[key] = sources
+    # Cache only real archive answers: an offline fallback must not hide the real catalogue on the next try.
+    if from_archive:
+        try:
+            with open(cache_file, "w", encoding="utf-8") as f:
+                json.dump(sources, f, indent=2)
+        except Exception:
+            pass
+        _memory[key] = sources
     return sources

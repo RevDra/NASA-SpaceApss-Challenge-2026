@@ -16,6 +16,31 @@ Enter RA/Dec in decimal degrees, then pick a band from **SPHEREx D1** to **D6**.
 Example: Barnard's Star at its current position, `269.4466 4.7680`, FOV `120`, band **SPHEREx D2**.
 You get three frames (2025.7, 2026.2, 2026.7) and the star moves about 1.3 px (~8″) north.
 
+## Star identity cards
+
+On the SPHEREx D1–D6 bands, hover a star to open its card, click to pin it (then it scrolls), and press Esc to close.
+The card uses the same Gaia DR3 star list as the Gaia overlay (`/api/gaia`), moved to each frame's date by proper motion.
+Press `G` to circle all of them.
+
+| Card section | Data source |
+|---|---|
+| Name, Gaia designation, SIMBAD ID | Gaia DR3 + SIMBAD (common name such as "Barnard's star") |
+| Constellation, sky position | IAU boundaries (Roman 1987, `constellation_bounds.tsv`), Gaia position |
+| History | SIMBAD: earliest publications (e.g. Barnard 1916) with ADS links, number of papers, catalogue timeline from the identifiers (BD 1859, HD 1918 … Gaia DR3 2022) |
+| Distance, radius / diameter, mass, luminosity, age, evolutionary stage | Gaia parallax, Gaia FLAME and GSP-Phot |
+| Temperature, colour, spectral type, apparent / absolute magnitude | Gaia GSP-Phot, BP−RP, SIMBAD spectral type |
+| Planets | NASA Exoplanet Archive (discovery year, method, facility, orbit, mass) |
+| Special phenomena | SIMBAD object type, Gaia variability class, binarity, RUWE |
+| Spectrum strip | Coloured by wavelength, brightness = blackbody at the star's temperature. Dark lines mark the elements expected at that temperature, one colour per element in spectral order, with Gaia GSP-Spec abundances [X/H] when measured |
+| Archival images | NASA SkyView: DSS1 (POSS-I, 1950s), DSS2, 2MASS |
+
+Limitations of the cards:
+
+- **Missing values.** Some fields show "no data" when Gaia did not compute them. For example, FLAME gives no mass for M dwarfs, and GSP-Spec abundances exist only for bright FGK stars.
+- **No core temperatures.** These cannot be measured from photometry.
+- **No discoverer names.** Catalogues do not record who discovered a star. The card shows the earliest publication instead.
+- **SIMBAD mirror.** The main CDS server in Strasbourg was down when this was written, so `star_info.py` falls back to the Harvard SIMBAD mirror.
+
 ## How it works
 
 The page must be served by `serve.py`. IRSA does not send CORS headers, so the browser cannot call it
@@ -33,19 +58,21 @@ API:
 |---|---|
 | `GET /api/status` | `{"ok": true, "live": true, "gaia": true}` |
 | `GET /api/spherex?ra=&dec=&fov=120&band=D2` | frames + metadata. Optional `per_visit=6`, `refresh=1` |
-| `GET /api/gaia?ra=&dec=&fov=120` | Real Gaia DR3 catalog sources, parallax, proper motion, and 2026 projected position |
+| `GET /api/gaia?ra=&dec=&fov=120` | Real Gaia DR3 catalog sources, parallax, proper motion, and 2026 projected position (`gaia_live.py`). Optional `limit=400`, `refresh=1` |
+| `GET /api/star?id=<Gaia DR3 source_id>` | star card data: Gaia + SIMBAD + exoplanets + constellation (`star_info.py`) |
 
 Self-test without the browser:
 
 ```bash
 python spherex_live.py 269.4466 4.7680 D2
 python -c "import gaia_live, pathlib; print(gaia_live.load_gaia_sources(pathlib.Path('.'), 269.4466, 4.7680))"
+python star_info.py 4472832130942575872
 ```
 
 ## Features & Scientific Capabilities
 
 - **Real Gaia DR3 overlay.** Press `G` to overlay real stars from ESA Gaia DR3. High-proper-motion stars show yellow motion vector arrows from epoch J2016 to J2026.
-- **Offline cache.** Live exposures are cached in `spherex_cache/` and Gaia DR3 records in `gaia_cache/` for instant zero-latency demo.
+- **Offline cache.** Live exposures are cached in `spherex_cache/` and Gaia DR3 records in `gaia_cache/`, and star cards in `spherex_cache/star_*.json` for instant zero-latency demo.
 
 ## Limitations
 

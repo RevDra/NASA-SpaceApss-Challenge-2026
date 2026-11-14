@@ -9,11 +9,16 @@ Local launcher for the SPHEREx & Planet X Deep Space Explorer UI.
 Besides the static files it exposes a small proxy to NASA/IPAC IRSA, because IRSA does not send
 CORS headers and the browser cannot call it directly:
 
-    GET /api/status                                   -> {"ok": true, "live": true}
+    GET /api/status                                   -> {"ok": true, "live": true, "gaia": true}
     GET /api/spherex?ra=..&dec=..&fov=120&band=D2     -> real SPHEREx frames (see spherex_live.py)
         optional: per_visit=6 (exposures kept per visit), refresh=1 (ignore the cache)
+    GET /api/gaia?ra=..&dec=..&fov=120                -> Gaia DR3 sources in the field (see gaia_live.py)
+        optional: limit=400, refresh=1
+    GET /api/star?id=<Gaia DR3 source_id>             -> identity card: Gaia + SIMBAD + exoplanets + constellation
+                                                         (see star_info.py)
 
-Standard library only (Python 3.8+). Keep this file next to index.html and spherex_live.py.
+Standard library only (Python 3.8+). Keep this file next to index.html, spherex_live.py, gaia_live.py,
+star_info.py and constellation_bounds.tsv.
 """
 from __future__ import annotations
 
@@ -31,6 +36,7 @@ from pathlib import Path
 
 import gaia_live
 import spherex_live
+import star_info
 
 ROOT = Path(__file__).resolve().parent
 
@@ -75,7 +81,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             try:
                 ra, dec = float(arg("ra")), float(arg("dec"))
                 fov = float(arg("fov", 120))
-                limit = int(arg("limit", 150))
+                limit = int(arg("limit", 400))
             except (TypeError, ValueError):
                 self.send_json(400, {"error": "ra, dec and fov must be numbers"})
                 return
@@ -85,6 +91,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             except Exception as exc:
                 traceback.print_exc()
                 self.send_json(500, {"error": f"{type(exc).__name__}: {exc}"})
+            return
+        if path == "/api/star":
+            self.handle_star_api(arg)
             return
         if path != "/api/spherex":
             self.send_json(404, {"error": f"unknown endpoint {path}"})
@@ -103,6 +112,22 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.send_json(502, {"error": str(exc)})
             return
         except Exception as exc:  # keep the server alive and tell the page what went wrong
+            traceback.print_exc()
+            self.send_json(500, {"error": f"{type(exc).__name__}: {exc}"})
+            return
+        self.send_json(200, data)
+
+    def handle_star_api(self, arg) -> None:
+        sid = arg("id", "")
+        if not sid.isdigit():
+            self.send_json(400, {"error": "id must be a Gaia DR3 source_id"})
+            return
+        try:
+            data = star_info.star_details(sid)
+        except star_info.StarError as exc:
+            self.send_json(502, {"error": str(exc)})
+            return
+        except Exception as exc:
             traceback.print_exc()
             self.send_json(500, {"error": f"{type(exc).__name__}: {exc}"})
             return

@@ -253,6 +253,57 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 .scalebar-bar { width: 100px; height: 7px; border: 1.5px solid #fff; border-top: 0; box-shadow: 0 1px 3px rgba(0, 0, 0, .9); transition: width .2s var(--ease-out); }
 .scalebar span { font-size: 11px; color: #fff; text-shadow: 0 1px 3px #000, 0 0 8px #000; }
 
+/* ---------- 7b. Star identity card ---------- */
+.stage.is-over-star { cursor: pointer; }
+.star-card {
+  position: absolute; z-index: 6; left: 0; top: 0; width: min(400px, calc(100% - 24px));
+  display: flex; flex-direction: column; overflow: hidden;
+  border-radius: 16px; background: rgba(6, 10, 20, .94); border: 1px solid rgba(255, 255, 255, .14);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1), 0 24px 60px -16px rgba(0, 0, 0, .9);
+  pointer-events: none; cursor: default; user-select: text;
+  animation: card-in .14s var(--ease-out);
+}
+.star-card.is-pinned { pointer-events: auto; border-color: rgba(56, 189, 248, .5); }
+@keyframes card-in { from { opacity: 0; transform: translateY(4px); } }
+.sc-head { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px 12px; border-bottom: 1px solid var(--line-soft); }
+.sc-swatch { flex: none; width: 34px; height: 34px; margin-top: 2px; border-radius: 50%; box-shadow: 0 0 18px 2px var(--glow, transparent), inset 0 -4px 8px rgba(0, 0, 0, .35); }
+.sc-titles { min-width: 0; flex: 1; }
+.sc-name { font-size: 16px; font-weight: 700; color: #fff; line-height: 1.25; letter-spacing: -.01em; overflow-wrap: anywhere; }
+.sc-id { margin-top: 2px; font-family: var(--font-mono); font-size: 11px; color: var(--silver); overflow-wrap: anywhere; }
+.sc-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+.sc-chips .chip { height: 21px; font-size: 10.5px; padding: 0 7px; }
+.sc-close { flex: none; display: none; width: 26px; height: 26px; border-radius: 8px; border: 1px solid var(--line); background: rgba(255, 255, 255, .04); color: var(--text-2); font-size: 15px; line-height: 1; cursor: pointer; }
+.star-card.is-pinned .sc-close { display: block; }
+.sc-close:hover { color: #fff; border-color: var(--sky); }
+.sc-body { overflow-y: auto; overscroll-behavior: contain; padding: 10px 16px 14px; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .18) transparent; }
+.sc-hint { padding: 7px 16px; font-size: 11px; color: var(--silver-dim); border-top: 1px solid var(--line-soft); }
+.star-card.is-pinned .sc-hint { display: none; }
+.sc-sec { padding: 9px 0; border-top: 1px solid var(--line-soft); }
+.sc-sec:first-child { border-top: 0; padding-top: 4px; }
+.sc-sec h4 { margin-bottom: 6px; font-size: 10.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--sky); }
+.sc-grid { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 3px 10px; font-size: 12px; line-height: 1.5; }
+.sc-grid dt { color: var(--silver); }
+.sc-grid dd { color: #fff; overflow-wrap: anywhere; }
+.sc-grid dd .muted, .sc-muted { color: var(--silver-dim); }
+.sc-list { font-size: 12px; line-height: 1.55; color: var(--text-2); padding-left: 16px; list-style: disc; }
+.sc-list li::marker { color: var(--sky); }
+.sc-card a, .star-card a { color: var(--sky); text-decoration: underline; text-underline-offset: 2px; }
+.sc-spectrum canvas { display: block; width: 100%; height: 104px; }
+.sc-legend { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.sc-el { display: inline-flex; align-items: baseline; gap: 5px; padding: 2px 7px; border-radius: 6px; font-size: 11px; background: rgba(255, 255, 255, .04); border: 1px solid color-mix(in srgb, var(--el) 55%, transparent); color: var(--text-2); }
+.sc-el b { color: var(--el); font-family: var(--font-mono); font-weight: 600; }
+.sc-el .ab { font-family: var(--font-mono); color: #fff; }
+.sc-note { margin-top: 6px; font-size: 11px; line-height: 1.5; color: var(--silver-dim); }
+.sc-images { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.sc-images figure { margin: 0; }
+.sc-images img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; background: #000; border: 1px solid var(--line-soft); }
+.sc-images figcaption { margin-top: 3px; font-size: 10px; line-height: 1.35; color: var(--silver-dim); }
+.sc-loading { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--silver); padding: 6px 0; }
+.sc-loading::before { content: ""; width: 12px; height: 12px; border-radius: 50%; border: 2px solid rgba(56, 189, 248, .3); border-top-color: var(--sky); animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.sc-sources { font-size: 10.5px; line-height: 1.5; color: var(--silver-dim); }
+
 /* ---------- 8. Player ---------- */
 .player {
   position: absolute; z-index: 4; left: 50%; bottom: 16px; transform: translateX(-50%);
@@ -813,6 +864,9 @@ kbd {
 
         <div class="toast glass" id="toast" role="status" aria-live="polite"><svg class="i i-sm"><use href="#i-check"/></svg><span id="toast-msg"></span></div>
 
+        <!-- Star identity card: shown when the mouse is over a Gaia DR3 star on real SPHEREx imagery; click pins it -->
+        <article class="star-card" id="star-card" aria-live="polite" hidden></article>
+
         <!-- Floating playback bar -->
         <div class="player glass" role="group" aria-label="Blink playback">
           <button type="button" class="p-btn" id="btn-prev" aria-label="Previous epoch" title="Previous epoch (←)"><svg class="i"><use href="#i-prev"/></svg></button>
@@ -1157,7 +1211,8 @@ kbd {
         <div><dt>Skip duplicate windows</dt><dd>Drops windows that add no epochs beyond the previous frame.</dd></div>
         <div><dt>Smooth by scan direction</dt><dd>Light 3×3 smoothing that suppresses single-pixel noise.</dd></div>
         <div><dt>Border epoch 0</dt><dd>Outlines the first frame so you can see where the loop starts.</dd></div>
-        <div><dt>Gaia DR3 overlay</dt><dd>Circles sources that have a (simulated) Gaia DR3 match.</dd></div>
+        <div><dt>Gaia DR3 overlay</dt><dd>Circles the brightest real Gaia DR3 stars in the field, coloured by BP−RP and moved to each frame’s date by their proper motion. Fast movers get a yellow arrow from 2016 to 2026.</dd></div>
+        <div><dt>Star cards</dt><dd>On SPHEREx D1–D6, hover a star for its identity card: Gaia name, constellation, history, distance, size, mass, temperature, colour, brightness, age, planets, special phenomena and a spectrum strip coloured by element. Click to pin it, Esc to close.</dd></div>
         <div><dt>Synthetic objects</dt><dd>Inject test movers with a chosen motion and W2 magnitude.</dd></div>
       </dl>
     </div>
@@ -1446,7 +1501,7 @@ kbd {
         epoch: { id: 1000 + i, mission: 'SPHEREx', survey: u.visit + 1, obsid: u.obsid, date: u.date, collection: u.collection },
       }));
       live.status = 'ready';
-      toast(`${live.units.length} SPHEREx exposures in ${body.visits} visits (${body.source})`);
+      toast(`${live.units.length} SPHEREx exposures in ${body.visits} visits (${body.source}). Hover a star for its card.`);
     } catch (err) {
       if (err.name === 'AbortError' || live.key !== key) return;
       live.status = 'error';
@@ -1501,6 +1556,356 @@ kbd {
     if (statusEl) { statusEl.textContent = status; statusEl.title = status; }
     if (noteEl) noteEl.textContent = note;
     document.documentElement.classList.toggle('is-live', liveReady());
+  }
+
+  /* ---------- 4b. Gaia DR3 field + star identity cards (real imagery only) ---------- */
+  // The field's Gaia DR3 sources come from requestGaia() / gaiaLive above (served by gaia_live.py), the same list
+  // the Gaia overlay draws. The card code reads a normalised copy: { id, ra, dec, pmra, pmdec, plx, g, bp_rp } at J2016.0.
+  const GAIA_EPOCH = 2016.0;
+  const gaia = { key: '', from: null, sources: [] };
+  function gaiaStars() {
+    if (gaiaLive.status !== 'ready') return null;
+    if (gaia.from !== gaiaLive.sources) {
+      gaia.from = gaiaLive.sources;
+      gaia.sources = gaiaLive.sources.map((s) => ({
+        id: String(s.source_id), ra: s.ra, dec: s.dec, pmra: s.pmra || 0, pmdec: s.pmdec || 0,
+        plx: s.parallax, g: s.mag_g, bp_rp: s.bp_rp,
+      }));
+    }
+    return gaia.sources;
+  }
+  const stars = { hover: null, pinned: null, details: new Map(), errors: new Map(), pending: new Set() };
+  const gaiaKey = () => [state.ra.toFixed(5), state.dec.toFixed(5), state.fov].join('|');
+  const cardEl = () => $('#star-card');
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
+  const num = (v, d = 2) => (isNum(v) ? fmt(v, d) : null);
+  const NA = '<span class="muted">no data</span>';
+
+  // Offset (arcsec east / north of the field centre) of a Gaia source at decimal year t, moved by its proper motion.
+  function gaiaOffset(s, t) {
+    let dra = s.ra - state.ra;
+    if (dra > 180) dra -= 360;
+    if (dra < -180) dra += 360;
+    const dt = t - GAIA_EPOCH;
+    return [dra * 3600 * Math.cos(state.dec * D2R) + (s.pmra / 1000) * dt, (s.dec - state.dec) * 3600 + (s.pmdec / 1000) * dt];
+  }
+  const viewTime = () => (model.view ? model.view.t : 2026);
+  function gaiaScreen(s) {
+    const [dx, dy] = gaiaOffset(s, viewTime());
+    const p = ppa();
+    return [geo.cx - dx * p, geo.cy - dy * p];
+  }
+
+  // The Gaia star under the pointer: nearest source within about one SPHEREx pixel (bright stars win ties).
+  function pickStar(x, y) {
+    const list = liveReady() ? gaiaStars() : null;
+    if (!list) return null;
+    const img = imageRect();
+    if (x < img.x || x > img.x + img.size || y < img.y || y > img.y + img.size) return null;
+    const r = Math.max(10, 0.8 * BANDS[state.band].ps * ppa());
+    let best = null, bestScore = Infinity;
+    for (const s of list) {
+      if (!(s.g < 18.5)) continue;
+      const [sx, sy] = gaiaScreen(s);
+      const d = Math.hypot(sx - x, sy - y);
+      if (d > r) continue;
+      // SPHEREx pixels are 6″, so a faint star next to a bright one is invisible: brightness counts strongly.
+      const score = d / r + (s.g - 8) * 0.12;
+      if (score < bestScore) { bestScore = score; best = s; }
+    }
+    return best;
+  }
+
+  async function fetchStar(id) {
+    if (stars.details.has(id) || stars.pending.has(id)) return;
+    stars.pending.add(id);
+    try {
+      const res = await fetch(`/api/star?id=${encodeURIComponent(id)}`);
+      const body = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+      if (!res.ok || body.error) throw new Error(body.error || `HTTP ${res.status}`);
+      stars.details.set(id, body);
+    } catch (err) {
+      stars.errors.set(id, err.message || String(err));
+    } finally {
+      stars.pending.delete(id);
+    }
+    const shown = stars.pinned || stars.hover;
+    if (shown && shown.id === id) renderStarCard(shown);
+  }
+
+  // --- colours ---
+  function kelvinRGB(T) {                                                   // blackbody colour (Helland approximation)
+    const t = clamp(T, 1000, 40000) / 100;
+    let r, g, b;
+    if (t <= 66) { r = 255; g = 99.4708025861 * Math.log(t) - 161.1195681661; b = t <= 19 ? 0 : 138.5177312231 * Math.log(t - 10) - 305.0447927307; }
+    else { r = 329.698727446 * Math.pow(t - 60, -0.1332047592); g = 288.1221695283 * Math.pow(t - 60, -0.0755148492); b = 255; }
+    return [r, g, b].map((v) => clamp(Math.round(v), 0, 255));
+  }
+  function teffFromBpRp(c) {                                                // rough, only when Gaia has no temperature
+    const bv = 0.85 * c;
+    return 4600 * (1 / (0.92 * bv + 1.7) + 1 / (0.92 * bv + 0.62));
+  }
+  function colorName(T) {
+    if (T >= 30000) return 'Blue';
+    if (T >= 10000) return 'Blue-white';
+    if (T >= 7500) return 'White';
+    if (T >= 6000) return 'Yellow-white';
+    if (T >= 5200) return 'Yellow';
+    if (T >= 3700) return 'Orange';
+    return 'Red';
+  }
+  function wavelengthRGB(nm) {                                              // visible light, 380–750 nm
+    let r = 0, g = 0, b = 0;
+    if (nm < 440) { r = (440 - nm) / 60; b = 1; }
+    else if (nm < 490) { g = (nm - 440) / 50; b = 1; }
+    else if (nm < 510) { g = 1; b = (510 - nm) / 20; }
+    else if (nm < 580) { r = (nm - 510) / 70; g = 1; }
+    else if (nm < 645) { r = 1; g = (645 - nm) / 65; }
+    else r = 1;
+    const f = nm < 420 ? 0.3 + 0.7 * (nm - 380) / 40 : nm > 700 ? 0.3 + 0.7 * (750 - nm) / 50 : 1;
+    return [r, g, b].map((c) => Math.round(255 * Math.pow(clamp(c * f, 0, 1), 0.8)));
+  }
+  function irRGB(um) {                                                      // infrared, shown in false colour
+    const k = Math.log(um / 0.75) / Math.log(5 / 0.75);
+    return [Math.round(150 - 70 * k), Math.round(18 + 10 * k), Math.round(32 + 95 * k)];
+  }
+
+  // Elements and the absorption lines (µm) that reveal them, with the temperature range where those lines show.
+  // Colours are spread along the visible spectrum in the order of each element's key line, so every element
+  // gets its own colour and the colours follow the spectrum (violet → red).
+  const ELEMENTS = [
+    { sym: 'N',  name: 'Nitrogen (CN)',  key: 0.3883, lines: [0.3883], show: (T) => T > 3800 && T < 6500 },
+    { sym: 'Ca', name: 'Calcium',        key: 0.3934, lines: [0.3934, 0.3968, 0.8498, 0.8542, 0.8662], show: (T) => T < 9500 },
+    { sym: 'H',  name: 'Hydrogen',       key: 0.4861, lines: [0.4102, 0.4341, 0.4861, 0.6563, 1.2818, 1.8751, 2.1661, 4.0523], show: (T) => T > 3300 },
+    { sym: 'Mg', name: 'Magnesium',      key: 0.5175, lines: [0.5175, 1.5040, 1.7109], show: (T) => T < 9500 },
+    { sym: 'Cr', name: 'Chromium',       key: 0.5206, lines: [0.5206], show: (T) => T < 7000 },
+    { sym: 'Fe', name: 'Iron',           key: 0.5270, lines: [0.4383, 0.5270, 1.1883], show: (T) => T < 8500 },
+    { sym: 'Ni', name: 'Nickel',         key: 0.5477, lines: [0.5477], show: (T) => T < 7000 },
+    { sym: 'He', name: 'Helium',         key: 0.5876, lines: [0.4471, 0.5876, 1.0830, 2.0587], show: (T) => T > 10000 },
+    { sym: 'Na', name: 'Sodium',         key: 0.5890, lines: [0.5890, 0.8190, 2.2062], show: (T) => T < 7000 },
+    { sym: 'Ti', name: 'Titanium (TiO)', key: 0.7054, lines: [0.7054, 0.8432], show: (T) => T < 4200 },
+    { sym: 'Zr', name: 'Zirconium',      key: 0.8500, lines: [], show: () => false },
+    { sym: 'Ce', name: 'Cerium',         key: 0.8510, lines: [], show: () => false },
+    { sym: 'Nd', name: 'Neodymium',      key: 0.8520, lines: [], show: () => false },
+    { sym: 'S',  name: 'Sulfur',         key: 0.9213, lines: [0.9213], show: (T) => T > 5000 && T < 9000 },
+    { sym: 'Si', name: 'Silicon',        key: 1.2032, lines: [1.2032, 1.5888], show: (T) => T < 8000 },
+    { sym: 'O',  name: 'Oxygen (H₂O)',   key: 1.40,   lines: [1.40, 1.90, 2.70], show: (T) => T < 3600 },
+    { sym: 'C',  name: 'Carbon (CO)',    key: 2.2935, lines: [2.2935, 4.67], show: (T) => T < 5200 },
+  ];
+  ELEMENTS.forEach((el, i) => { el.color = `hsl(${Math.round(275 - (i * 275) / (ELEMENTS.length - 1))} 90% 64%)`; });
+
+  const specX = (um, W) => (um <= 0.75 ? ((um - 0.38) / 0.37) * 0.36 * W : 0.36 * W + (Math.log(um / 0.75) / Math.log(5 / 0.75)) * 0.64 * W);
+  const specUm = (x, W) => (x <= 0.36 * W ? 0.38 + (x / (0.36 * W)) * 0.37 : 0.75 * Math.pow(5 / 0.75, (x - 0.36 * W) / (0.64 * W)));
+
+  function drawSpectrum(canvas, T) {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const W = Math.round(canvas.clientWidth * dpr), H = Math.round(104 * dpr);
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    const top = 14 * dpr, sh = 30 * dpr;
+    const planck = (um) => Math.pow(um, -5) / (Math.exp(14388 / (um * T)) - 1);
+    let peak = 0;
+    for (let x = 0; x < W; x++) peak = Math.max(peak, planck(specUm(x, W)));
+    for (let x = 0; x < W; x++) {                                           // colour = wavelength, brightness = how much light the star emits there
+      const um = specUm(x + 0.5, W);
+      const [r, g, b] = um <= 0.75 ? wavelengthRGB(um * 1000) : irRGB(um);
+      const k = 0.16 + 0.84 * Math.pow(planck(um) / peak, 0.45);
+      ctx.fillStyle = `rgb(${r * k | 0},${g * k | 0},${b * k | 0})`;
+      ctx.fillRect(x, top, 1, sh);
+    }
+    ctx.font = `${10 * dpr}px "JetBrains Mono", monospace`;
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = 'rgba(203,213,225,.85)';
+    ctx.fillText('visible', 2 * dpr, 10 * dpr);
+    ctx.fillText('infrared · SPHEREx (false colour)', specX(0.78, W), 10 * dpr);
+    // absorption lines + element ticks; labels go in up to three rows so they never overlap
+    const active = ELEMENTS.filter((el) => el.show(T));
+    const rowEnds = [-1e9, -1e9, -1e9];
+    ctx.font = `600 ${9.5 * dpr}px "JetBrains Mono", monospace`;
+    for (const el of active) {
+      for (const um of el.lines) {
+        const x = Math.round(specX(um, W)) + 0.5;
+        ctx.strokeStyle = 'rgba(0,0,0,.78)'; ctx.lineWidth = 1.6 * dpr;
+        ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, top + sh); ctx.stroke();
+        ctx.strokeStyle = el.color; ctx.lineWidth = 1.4 * dpr;
+        ctx.beginPath(); ctx.moveTo(x, top + sh + 2 * dpr); ctx.lineTo(x, top + sh + 8 * dpr); ctx.stroke();
+      }
+      const tw = ctx.measureText(el.sym).width;
+      const lx = clamp(specX(el.lines[0], W) - tw / 2, 0, W - tw);
+      let r = rowEnds.findIndex((end) => lx > end + 3 * dpr);
+      if (r < 0) r = rowEnds.indexOf(Math.min(...rowEnds));
+      rowEnds[r] = lx + tw;
+      ctx.fillStyle = el.color;
+      ctx.fillText(el.sym, lx, top + sh + (18 + 9.5 * r) * dpr);
+    }
+    // wavelength axis
+    ctx.fillStyle = 'rgba(148,163,184,.8)';
+    ctx.font = `${8.5 * dpr}px "JetBrains Mono", monospace`;
+    for (const um of [0.4, 0.5, 0.6, 0.7, 1, 2, 3, 4, 5]) {
+      const x = specX(um, W);
+      ctx.fillRect(x, top + sh + 47 * dpr, 1, 3 * dpr);
+      ctx.fillText(um < 1 ? `${um * 1000}nm` : `${um}µm`, clamp(x - 9 * dpr, 0, W - 26 * dpr), H - 2 * dpr);
+    }
+  }
+
+  // --- card ---
+  function hms(ra) { const h = ra / 15, H = Math.floor(h), m = (h - H) * 60, M = Math.floor(m); return `${pad2(H)}h ${pad2(M)}m ${((m - M) * 60).toFixed(1)}s`; }
+  function dms(dec) { const s = dec < 0 ? '−' : '+', a = Math.abs(dec), D = Math.floor(a), m = (a - D) * 60, M = Math.floor(m); return `${s}${pad2(D)}° ${pad2(M)}′ ${((m - M) * 60).toFixed(0)}″`; }
+  const row = (k, v) => `<dt>${k}</dt><dd>${v ?? NA}</dd>`;
+
+  function cardHTML(s) {
+    const d = stars.details.get(s.id);
+    const err = stars.errors.get(s.id);
+    const g = d ? d.gaia : {};
+    const D = d ? d.derived : {};
+    const T = (d && isNum(D.teff)) ? D.teff : (isNum(s.bp_rp) ? teffFromBpRp(s.bp_rp) : 5000);
+    const Tsrc = d && isNum(D.teff) ? 'Gaia' : 'estimated from colour';
+    const [r, gg, b] = kelvinRGB(T);
+    const sw = `rgb(${r},${gg},${b})`;
+    const name = d ? d.name : `Gaia DR3 ${s.id}`;
+    const chips = [];
+    if (d && d.spectral_type) chips.push(`<span class="chip">${esc(d.spectral_type)}</span>`);
+    if (d && d.simbad && d.simbad.otype_desc) chips.push(`<span class="chip">${esc(d.simbad.otype_desc)}</span>`);
+    if (d && d.planets && d.planets.length) chips.push(`<span class="chip chip-accent">${d.planets.length} planet${d.planets.length > 1 ? 's' : ''}</span>`);
+    chips.push(`<span class="chip">G ${num(s.g, 2)}</span>`);
+
+    let body;
+    if (!d) {
+      const plx = isNum(s.plx) && s.plx > 0 ? 3261.56 / s.plx : null;
+      body = `<section class="sc-sec"><dl class="sc-grid">
+        ${row('Gaia name', `<span class="mono">Gaia DR3 ${esc(s.id)}</span>`)}
+        ${row('Distance', plx ? `≈ ${plx < 100 ? plx.toFixed(1) : Math.round(plx).toLocaleString()} light-years` : null)}
+        ${row('Colour BP−RP', num(s.bp_rp, 2))}</dl></section>
+        ${err ? `<p class="sc-note">Details unavailable: ${esc(err)}</p>` : '<div class="sc-loading">Asking Gaia, SIMBAD and the NASA Exoplanet Archive…</div>'}`;
+    } else {
+      const sim = d.simbad;
+      const con = d.constellation;
+      const ab = d.abundances || { elements: [] };
+      const abMap = Object.fromEntries(ab.elements.map((e) => [e.symbol, e.x_h]));
+      const legend = ELEMENTS.filter((el) => el.show(T) || el.sym in abMap).map((el) => {
+        const v = abMap[el.sym];
+        return `<span class="sc-el" style="--el:${el.color}" title="${esc(el.name)}"><b>${el.sym}</b>${esc(el.name)}${isNum(v) ? ` <span class="ab">${v >= 0 ? '+' : ''}${v.toFixed(2)}</span>` : ''}</span>`;
+      }).join('');
+      const abNote = ab.elements.length
+        ? 'Numbers are Gaia GSP-Spec abundances [X/H] relative to the Sun (0 = solar, +0.3 ≈ twice solar). Zr, Ce and Nd are measured in Gaia’s RVS band (846–870 nm).'
+        : isNum(ab.metallicity) ? `Gaia did not measure individual elements for this star; overall metallicity [M/H] = ${fmt(ab.metallicity, 2)} (${esc(ab.metallicity_source)}).`
+          : 'Gaia did not measure the chemical composition of this star.';
+      const firstRef = sim && sim.earliest_refs && sim.earliest_refs[0];
+      const ly = D.distance_ly;
+      const logg = g.logg_gspphot;
+      const lumClass = isNum(logg) ? (logg >= 4 ? 'dwarf (main-sequence)' : logg >= 3.2 ? 'subgiant' : 'giant') : null;
+      const vSun = isNum(D.radius_rsun) ? `${D.radius_rsun < 0.1 ? D.radius_rsun.toFixed(3) : D.radius_rsun.toFixed(2)} × Sun` : null;
+      body = `
+      <section class="sc-sec sc-spectrum"><h4>Spectrum &amp; composition</h4>
+        <canvas data-teff="${T}"></canvas>
+        <div class="sc-legend">${legend}</div>
+        <p class="sc-note">Strip brightness follows the light a ${Math.round(T).toLocaleString()} K star emits at each wavelength (${Tsrc}). Dark lines mark absorption by the elements below that is expected at this temperature. ${abNote}</p>
+      </section>
+      <section class="sc-sec"><h4>Identity</h4><dl class="sc-grid">
+        ${row('Name', esc(name))}
+        ${row('Gaia name', `<span class="mono">${esc(d.designation)}</span>`)}
+        ${row('SIMBAD ID', sim ? `<a href="${esc(sim.url)}" target="_blank" rel="noopener">${esc(String(sim.main_id).replace(/^NAME /, ''))}</a>` : null)}
+        ${row('Constellation', con ? `${esc(con.name)} <span class="muted">(${esc(con.abbr)})</span>` : null)}
+        ${row('Position', `<span class="mono">${hms(g.ra)}  ${dms(g.dec)}</span><br><span class="muted mono">${g.ra.toFixed(5)}°, ${fmt(g.dec, 5)}° (Gaia, epoch 2016)</span>`)}
+      </dl></section>
+      <section class="sc-sec"><h4>History</h4><dl class="sc-grid">
+        ${row('First published', firstRef ? `${firstRef.year}: “${esc(firstRef.title)}” <a href="https://ui.adsabs.harvard.edu/abs/${encodeURIComponent(firstRef.bibcode)}/abstract" target="_blank" rel="noopener">ADS</a>` : null)}
+        ${row('Papers', sim && isNum(sim.nbref) ? `${sim.nbref.toLocaleString()} in SIMBAD` : null)}
+        ${row('Catalogued in', d.timeline.length ? d.timeline.map((e) => `${e.year} ${esc(e.catalog)}`).join('<br>') : null)}
+      </dl></section>
+      <section class="sc-sec"><h4>Physical properties</h4><dl class="sc-grid">
+        ${row('Distance', isNum(ly) ? `${ly < 100 ? ly.toFixed(2) : Math.round(ly).toLocaleString()} light-years <span class="muted">(${num(D.distance_pc, D.distance_pc < 100 ? 2 : 0)} pc, ${esc(D.distance_source)})</span>` : null)}
+        ${row('Radius', isNum(D.radius_rsun) ? `${vSun} <span class="muted">(${esc(D.radius_source)})</span>` : null)}
+        ${row('Diameter', isNum(D.diameter_km) ? `${Math.round(D.diameter_km).toLocaleString()} km <span class="muted">(Sun: 1,391,400 km)</span>` : null)}
+        ${row('Mass', isNum(D.mass_msun) ? `${D.mass_msun.toFixed(2)} × Sun` : '<span class="muted">not in Gaia FLAME (it covers FGK stars)</span>')}
+        ${row('Surface temp.', isNum(D.teff) ? `${Math.round(D.teff).toLocaleString()} K <span class="muted">(Sun: 5,772 K)</span>` : null)}
+        ${row('Core temp.', '<span class="muted">not measurable from photometry</span>')}
+      </dl></section>
+      <section class="sc-sec"><h4>Colour &amp; brightness</h4><dl class="sc-grid">
+        ${row('Colour', `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${sw};vertical-align:-1px"></span> ${colorName(T)} <span class="muted">(BP−RP ${num(g.bp_rp, 2) ?? '—'})</span>`)}
+        ${row('Spectral type', d.spectral_type ? `${esc(d.spectral_type)} <span class="muted">(${esc(d.spectral_type_source)})</span>` : null)}
+        ${row('Class', lumClass)}
+        ${row('Apparent mag.', isNum(g.phot_g_mean_mag) ? `G = ${g.phot_g_mean_mag.toFixed(2)}` : null)}
+        ${row('Absolute mag.', isNum(D.abs_g) ? `M<sub>G</sub> = ${fmt(D.abs_g, 2)} <span class="muted">(Sun: 4.67)</span>` : null)}
+        ${row('Luminosity', isNum(D.lum_lsun) ? `${D.lum_lsun < 0.01 ? D.lum_lsun.toExponential(2) : D.lum_lsun.toFixed(3)} × Sun` : null)}
+      </dl></section>
+      <section class="sc-sec"><h4>Age &amp; evolution</h4><dl class="sc-grid">
+        ${row('Age', isNum(D.age_gyr) ? `${D.age_gyr.toFixed(1)} billion years <span class="muted">(Sun: 4.6)</span>` : null)}
+        ${row('Stage', D.stage ? esc(D.stage) : lumClass ? `${lumClass} <span class="muted">(from surface gravity)</span>` : null)}
+      </dl></section>
+      <section class="sc-sec"><h4>Planetary system</h4>${d.planets && d.planets.length
+        ? `<ul class="sc-list">${d.planets.map((p) => `<li><b>${esc(p.pl_name)}</b>: found ${p.disc_year | 0} by ${esc(p.discoverymethod)} (${esc(p.disc_facility)})${isNum(p.pl_orbper) ? `, ${p.pl_orbper.toFixed(2)}-day orbit` : ''}${isNum(p.pl_bmasse) ? `, ${p.pl_bmasse.toFixed(2)} Earth masses` : ''}</li>`).join('')}</ul>`
+        : `<p class="sc-muted" style="font-size:12px">${d.planets ? 'No confirmed planets in the NASA Exoplanet Archive.' : 'Exoplanet archive unavailable.'}</p>`}
+      </section>
+      <section class="sc-sec"><h4>Special phenomena</h4>${d.phenomena.length
+        ? `<ul class="sc-list">${d.phenomena.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : '<p class="sc-muted" style="font-size:12px">Nothing flagged by Gaia or SIMBAD.</p>'}
+      </section>
+      <section class="sc-sec"><h4>Archival images</h4><div class="sc-images">${d.images.map((im) =>
+        `<figure><img src="${esc(im.url)}" alt="${esc(im.survey)} image of ${esc(name)}" loading="lazy" onerror="this.closest('figure').hidden=true"><figcaption>${esc(im.label)}</figcaption></figure>`).join('')}</div>
+      </section>
+      <section class="sc-sec sc-sources">Sources: ESA Gaia DR3${sim ? ', SIMBAD (CDS)' : ''}${d.planets ? ', NASA Exoplanet Archive' : ''}, IAU boundaries (Roman 1987), NASA SkyView.${Object.keys(d.errors || {}).length ? ` Unavailable: ${esc(Object.keys(d.errors).join(', '))}.` : ''}</section>`;
+    }
+    return `<header class="sc-head"><span class="sc-swatch" style="background:radial-gradient(circle at 35% 35%, #fff, ${sw} 45%, rgb(${r * 0.45 | 0},${gg * 0.45 | 0},${b * 0.45 | 0}));--glow:rgba(${r},${gg},${b},.55)"></span>
+        <div class="sc-titles"><h3 class="sc-name">${esc(name)}</h3><p class="sc-id">Gaia DR3 ${esc(s.id)}</p><div class="sc-chips">${chips.join('')}</div></div>
+        <button type="button" class="sc-close" aria-label="Close star card">×</button></header>
+      <div class="sc-body">${body}</div>
+      <p class="sc-hint">Click the star to pin this card and scroll it · Esc closes</p>`;
+  }
+
+  function renderStarCard(s) {
+    const el = cardEl();
+    const keepScroll = el.querySelector('.sc-body')?.scrollTop || 0;
+    el.innerHTML = cardHTML(s);
+    el.hidden = false;
+    el.classList.toggle('is-pinned', stars.pinned === s);
+    const cv = el.querySelector('.sc-spectrum canvas');
+    if (cv) drawSpectrum(cv, Number(cv.dataset.teff));
+    el.querySelector('.sc-close').addEventListener('click', () => hideStarCard(true));
+    if (stars.pinned === s) el.querySelector('.sc-body').scrollTop = keepScroll;
+    placeStarCard(s);
+  }
+
+  // Beside the star, on whichever side has room, kept above the playback bar.
+  function placeStarCard(s) {
+    const el = cardEl();
+    if (el.hidden) return;
+    const [x, y] = gaiaScreen(s);
+    const margin = 12, bottomBar = 96;
+    const maxH = Math.max(160, geo.H - margin - bottomBar);
+    el.style.maxHeight = `${maxH}px`;
+    const w = el.offsetWidth, h = el.offsetHeight;
+    const left = x + 24 + w <= geo.W - margin ? x + 24 : Math.max(margin, x - 24 - w);
+    const topPos = clamp(y - 70, margin, Math.max(margin, geo.H - bottomBar - h));
+    el.style.transform = `translate(${Math.round(left)}px, ${Math.round(topPos)}px)`;
+  }
+
+  function hideStarCard(unpin) {
+    if (unpin) stars.pinned = null;
+    if (stars.pinned) return;
+    stars.hover = null;
+    const el = cardEl();
+    if (el) { el.hidden = true; el.classList.remove('is-pinned'); }
+    stage && stage.classList.remove('is-over-star');
+    if (typeof drawOverlay === 'function' && geo.W) drawOverlay();
+  }
+
+  function updateHover(x, y) {
+    const s = pickStar(x, y);
+    stage.classList.toggle('is-over-star', !!s);
+    if (stars.pinned) { if (s !== stars.hover) { stars.hover = s; drawOverlay(); } return; }
+    if (s === stars.hover) return;
+    stars.hover = s;
+    if (!s) { hideStarCard(false); return; }
+    renderStarCard(s);
+    fetchStar(s.id);
+    drawOverlay();
+  }
+
+  function clickStar(x, y) {
+    const s = pickStar(x, y);
+    if (s) { stars.pinned = s; stars.hover = s; renderStarCard(s); fetchStar(s.id); drawOverlay(); }
+    else if (stars.pinned) hideStarCard(true);
   }
 
   /* ---------- 4. Epochs & frames ---------- */
@@ -1637,6 +2042,12 @@ kbd {
       }
     }
     updateSource();
+    if (liveReady() && gaia.key !== gaiaKey()) {                          // new field: fetch its Gaia stars, drop the old card
+      gaia.key = gaiaKey();
+      hideStarCard(true);
+      requestGaia(state.ra, state.dec, state.fov);
+    }
+    if (!liveReady() && (stars.hover || stars.pinned)) hideStarCard(true);
     model.N = liveReady() ? live.N : clamp(Math.round(state.fov / band.ps), 8, 256);
     model.channels = band.channels;
     const key = `${fieldKey()}|${model.N}`;
@@ -1997,6 +2408,31 @@ kbd {
       ctx.fillText(s.name, x + r + 6, y - r - 0.5);
     }
 
+    // --- star-card highlight: the hovered / pinned Gaia star (the catalogue circles are drawn by the Gaia overlay above) ---
+    if (liveReady() && gaiaStars()) {
+      const inImg = (x, y) => x >= img.x && x <= img.x + img.size && y >= img.y && y <= img.y + img.size;
+      for (const s of [stars.pinned, stars.hover]) {
+        if (!s) continue;
+        const [x, y] = gaiaScreen(s);
+        if (!inImg(x, y)) continue;
+        const r = clamp(0.75 * BANDS[state.band].ps * p, 10, 30);
+        ctx.save();
+        ctx.strokeStyle = s === stars.pinned ? '#38BDF8' : 'rgba(255,255,255,0.95)';
+        ctx.shadowColor = 'rgba(56,189,248,0.9)'; ctx.shadowBlur = 8; ctx.lineWidth = 1.8;
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
+        const d = stars.details.get(s.id);
+        const label = d ? d.name : `G ${s.g.toFixed(1)}`;
+        ctx.font = '600 11px "JetBrains Mono", ui-monospace, monospace';
+        const w = ctx.measureText(label).width + 10;
+        ctx.fillStyle = 'rgba(3,5,8,0.82)';
+        ctx.beginPath(); ctx.roundRect(x - w / 2, y + r + 5, w, 17, 4); ctx.fill();
+        ctx.fillStyle = '#E2F3FF';
+        ctx.textAlign = 'center'; ctx.fillText(label, x, y + r + 14); ctx.textAlign = 'start';
+      }
+      if (stars.hover && !stars.pinned) placeStarCard(stars.hover);   // a pinned card stays put while frames blink
+    }
+
     // --- border on epoch 0 ---
     if (state.borderEpoch0 && state.frame === 0 && !(state.shiftAdd && model.stack)) {
       ctx.save();
@@ -2262,7 +2698,7 @@ kbd {
     else if (STACK_KEYS.has(key)) { buildStack(); refresh(); }
     else if (SKY_KEYS.has(key)) { drawSky(); drawOverlay(); updateHud(); updateReadout(); }
     else if (OVERLAY_KEYS.has(key)) drawOverlay();
-    else if (key === 'zoom') { positionFrame(); drawOverlay(); updateScalebar(); }
+    else if (key === 'zoom') { positionFrame(); drawOverlay(); updateScalebar(); if (stars.pinned) placeStarCard(stars.pinned); }
   }
 
   function set(key, value) {
@@ -2614,19 +3050,29 @@ kbd {
 
   // --- stage: hover readout, wheel zoom, double-click recentre ---
   function bindStage() {
+    const onCard = (e) => !!(e.target.closest && (e.target.closest('#star-card') || e.target.closest('.player')));
     stage.addEventListener('pointermove', (e) => {
+      if (onCard(e)) return;
       const r = stage.getBoundingClientRect();
       pointer.inside = true; pointer.x = e.clientX - r.left; pointer.y = e.clientY - r.top;
       updateReadout();
+      updateHover(pointer.x, pointer.y);
     });
-    stage.addEventListener('pointerleave', () => { pointer.inside = false; updateReadout(); });
+    stage.addEventListener('pointerleave', () => { pointer.inside = false; updateReadout(); if (!stars.pinned) hideStarCard(false); });
+    stage.addEventListener('click', (e) => {
+      if (onCard(e)) return;
+      const r = stage.getBoundingClientRect();
+      clickStar(e.clientX - r.left, e.clientY - r.top);
+    });
     let acc = 0;
     stage.addEventListener('wheel', (e) => {
+      if (e.target.closest && e.target.closest('#star-card')) return;   // let the pinned card scroll
       e.preventDefault();
       acc += e.deltaY;
       if (Math.abs(acc) >= 40) { setZoom(state.zoom + (acc < 0 ? 0.5 : -0.5)); acc = 0; }
     }, { passive: false });
     stage.addEventListener('dblclick', (e) => {
+      if (onCard(e)) return;
       const r = stage.getBoundingClientRect();
       const { ra, dec } = skyAt(e.clientX - r.left, e.clientY - r.top);
       goToCoords(Number(ra.toFixed(6)), Number(dec.toFixed(6)));
@@ -2637,7 +3083,11 @@ kbd {
   // --- keyboard shortcuts ---
   function bindKeys() {
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') { if (openPanelName) { closePanel(); e.preventDefault(); } return; }
+      if (e.key === 'Escape') {
+        if (openPanelName) { closePanel(); e.preventDefault(); }
+        else if (stars.pinned) { hideStarCard(true); e.preventDefault(); }
+        return;
+      }
       if (openPanelName || e.metaKey || e.ctrlKey || e.altKey) return;
       const el = e.target;
       const tag = el.tagName;
@@ -2743,7 +3193,7 @@ kbd {
     rebuild();
     setPlaying(state.playing);
     startClock();
-    new ResizeObserver(() => { measure(); positionFrame(); drawOverlay(); updateScalebar(); }).observe(stage);
+    new ResizeObserver(() => { measure(); positionFrame(); drawOverlay(); updateScalebar(); if (stars.pinned) placeStarCard(stars.pinned); }).observe(stage);
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawOverlay);
     requestAnimationFrame((t) => { lastTick = t + 700; loop(t); });   // let the frame "acquire" before blinking starts
     document.documentElement.classList.add('is-ready');
