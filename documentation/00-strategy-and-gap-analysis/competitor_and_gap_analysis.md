@@ -171,3 +171,45 @@ Tổng hợp từ các hệ thống trên và đối chiếu trực tiếp với
    * *Mục đích của giám khảo:* Kiểm tra **GAP 1 (Timeline không đều)** và khả năng vẽ **Light Curve (Đường cong ánh sáng theo thời gian)** kết hợp quan sát sự thay đổi độ sáng ở cả bước sóng ngắn lẫn bước sóng dài (bụi ấm phát bức xạ hồng ngoại).
 5. **R Draconis (Sao biến quang chu kỳ dài loại Mira — phồng to và co lại):**
    * *Mục đích của giám khảo:* Kiểm tra khả năng phân biệt **Vật thể đứng yên nhưng biến thiên độ sáng cực mạnh** (trên bản đồ Difference Image, tâm của nó không nhảy sang bên cạnh tạo hình lưỡng cực trắng-đen như *Barnard's Star*, mà tạo thành một đốm tròn đồng tâm thuần trắng hoặc thuần đen).
+
+---
+
+# PHẦN 8: TỔNG HỢP 4 TRỤ CỘT GIẢI PHÁP (THE 4 CORE PILLARS)
+
+Toàn bộ 8 khoảng trống kỹ thuật ở Phần 6 được quy hoạch thành **4 Trụ cột kiến trúc** tương ứng với 4 module cốt lõi của hệ thống:
+
+| Trụ cột | Tên Trụ cột & Mục tiêu | Các Gap giải quyết | Công nghệ & Thuật toán lõi |
+| :--- | :--- | :--- | :--- |
+| **Trụ cột 1** | **Làm sạch Tín hiệu & Đồng bộ Không – Thời gian**<br>*(Signal & Astrometric Alignment)* | GAP 1, GAP 2, GAP 4 | - Trừ nền bụi hoàng đạo: `IMAGE (HDU 1) - ZODI (HDU 4)`.<br>- Căn chỉnh góc xoay vệ tinh sub-pixel bằng `astropy` / `reproject`.<br>- Khóa dải cảm biến (`D1`–`D6`), tự động chọn `D6` cho vật thể siêu lạnh (*WISE 0855*), tạo ảnh hiệu số (`Epoch_New - Epoch_Old`) và ghép màu giả lập RGB. |
+| **Trụ cột 2** | **Lọc Nhiễu Phần cứng & Định danh Sao Đã biết**<br>*(Real-Bogus & Catalog Cross-Match)* | GAP 6, GAP 7 | - Giải mã bitmask 32-bit từ `FLAGS` (HDU 2, từ khóa `MSKN*`/`MSKD*`) và tính tỷ lệ tín hiệu trên nhiễu `SNR` từ `VARIANCE` (HDU 3) để loại bỏ tia vũ trụ (cosmic rays) và pixel lỗi.<br>- Phủ danh mục **Gaia DR3** kèm mũi tên dự báo chuyển động riêng (`pmra, pmdec`). |
+| **Trụ cột 3** | **Trích xuất Quang phổ Động 102 Kênh & Light Curve**<br>*(Dynamic Spectrophotometry)* | GAP 3, GAP 5, GAP 8 | - Bám tâm sáng động (**Dynamic Centroid**) qua từng epoch để không bị trượt khỏi vật thể bay nhanh.<br>- Đo sáng khẩu độ $3 \times 3$ pixel, tra bước sóng từ `WCS-WAVE` (HDU 6) vẽ phổ `0.75–5.0 µm` đánh dấu vạch hấp thụ $H_2O, CH_4, CO_2$, hoặc vẽ **Light Curve** cho sao biến quang. |
+| **Trụ cột 4** | **Vòng lặp Khoa học Công dân & Tốc độ Tức thì**<br>*(Citizen Science Loop & Zero-Latency UX)* | Bottleneck API & UX | - **Hybrid Cache:** Pre-cache sẵn 100% dữ liệu 5 mục tiêu mẫu để phản hồi `< 100ms`, kết hợp tải đa luồng (`ThreadPoolExecutor`) cho tọa độ bất kỳ.<br>- **Deep-Link URL** (`?ra=...&dec=...&fov=...&band=...`) & xuất thẻ báo cáo ứng viên mới. |
+
+---
+
+# PHẦN 9: ĐẶC TẢ TÀI NGUYÊN DỮ LIỆU NASA IRSA & THÔNG SỐ KỸ THUẬT
+
+### 1. Nguồn dữ liệu & Giao thức truy vấn (Từ `spherex_intro` & `spherex_cutouts`)
+* **Collections chính thức (Đã chuẩn hóa đồng bộ thời gian):**
+  * `spherex_dr1` & `spherex_dr1_deep`: Dữ liệu Data Release 1 (tái xử lý từ dữ liệu 2025).
+  * `spherex_qr3` & `spherex_qr3_deep`: Dữ liệu Quick Release 3 (2026) — dùng ghép cặp trực tiếp với `DR1` để tạo chuỗi thời gian (bỏ qua `QR1` và `QR2` đã lỗi thời).
+* **Câu lệnh SQL TAP cắt ảnh trực tiếp trên server NASA (Không tải full-frame):**
+  ```sql
+  SELECT
+      'https://irsa.ipac.caltech.edu/' || a.uri || '?center={ra},{dec}d&size={fov_deg}' AS uri,
+      p.time_bounds_lower
+  FROM spherex.artifact a
+  JOIN spherex.plane p ON a.planeid = p.planeid
+  WHERE 1 = CONTAINS(POINT('ICRS', {ra}, {dec}), p.poly)
+    AND p.energy_bandpassname = '{bandpass}'
+  ORDER BY p.time_bounds_lower
+  ```
+
+### 2. Định dạng Tệp Cắt MEF (Multi-Extension FITS) gồm 6 HDU chuẩn:
+* **HDU 0 (Primary):** Metadata quan sát (`OBSID`, `DATE-OBS`, góc xoay vệ tinh).
+* **HDU 1 (`IMAGE`):** Ma trận cường độ sáng bức xạ thực (Flux - đơn vị `MJy/sr`).
+* **HDU 2 (`FLAGS`):** Bitmask 32-bit ghi nhận trạng thái pixel (tia vũ trụ, bão hòa, vùng viền).
+* **HDU 3 (`VARIANCE`):** Phương sai độ không đảm bảo đo (Uncertainty / Noise estimate).
+* **HDU 4 (`ZODI`):** Mô hình nền tán xạ bụi hoàng đạo Hệ Mặt Trời (Zodiacal Light Model).
+* **HDU 5 (`EPSF`):** Mô hình hàm lan truyền điểm hiệu dụng (Effective Point Spread Function) trên lưới $21 \times 21$.
+* **HDU 6 (`WCS-WAVE`):** Bảng chuyển đổi tọa độ pixel sang bước sóng trung tâm thực ($0.75 - 5.0\ \mu\text{m}$).
