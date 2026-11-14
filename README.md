@@ -6,6 +6,16 @@ Blink between observation epochs to discover moving objects like asteroids, come
 
 ![SPHEREx Sky Viewer](https://spherex.caltech.edu/images/spherex_logo.png)
 
+## 🛰️ Live SPHEREx viewer (real IRSA data)
+
+[`viewer/`](viewer/) contains a WiseView-style blink viewer that loads **real SPHEREx exposures** from NASA/IPAC IRSA through a small local proxy:
+
+```bash
+cd viewer && python serve.py
+```
+
+Then pick a band from **SPHEREx D1** to **D6**. See [viewer/README.md](viewer/README.md) for how it works.
+
 ## 🚀 Quick Start
 
 1. Open `index.html` in any modern web browser

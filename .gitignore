@@ -13,3 +13,6 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Live SPHEREx cutout cache (viewer/serve.py)
+spherex_cache/
