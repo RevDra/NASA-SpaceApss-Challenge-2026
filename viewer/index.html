@@ -991,6 +991,23 @@ body.tm-on .snap-btn { bottom: 170px; }
 
 <!-- Three.js is loaded lazily by the backdrop module; the app keeps working (CSS background) if it cannot load. -->
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js" } }</script>
+<style id="wait-css">
+.wait { position: absolute; inset: 0; z-index: 30; display: grid; place-items: center; align-content: center; gap: 14px; background: radial-gradient(ellipse at 50% 45%, rgba(8, 14, 28, .78), rgba(3, 6, 12, .9)); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); opacity: 0; visibility: hidden; transition: opacity .35s ease, visibility 0s .35s; pointer-events: none; text-align: center; padding: 20px; }
+.wait.is-on { opacity: 1; visibility: visible; transition: opacity .35s ease; pointer-events: auto; }
+.wait svg { width: min(220px, 52%); height: auto; overflow: visible; }
+.wait .w-orbit { fill: none; stroke: rgba(148, 163, 184, .35); stroke-width: 1; stroke-dasharray: 3 6; }
+.wait .w-spin { transform-origin: 100px 100px; animation: wspin 3.4s linear infinite; }
+.wait .w-planet { animation: wpulse 2.8s ease-in-out infinite; transform-origin: 100px 100px; }
+.wait .w-flame { animation: wflame .28s ease-in-out infinite alternate; transform-origin: 0 14px; }
+.wait b { display: block; font: 700 13px var(--font-mono); letter-spacing: .32em; text-transform: uppercase; color: #fff; }
+.wait b i { font-style: normal; display: inline-block; animation: wdot 1.4s infinite; opacity: .2; } .wait b i:nth-child(2) { animation-delay: .2s; } .wait b i:nth-child(3) { animation-delay: .4s; }
+.wait p { margin: 0; max-width: 34ch; font-size: 13px; line-height: 1.5; color: var(--silver); }
+@keyframes wspin { to { transform: rotate(360deg); } }
+@keyframes wpulse { 50% { transform: scale(1.06); } }
+@keyframes wflame { to { transform: scaleY(1.45); opacity: .7; } }
+@keyframes wdot { 40% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .wait .w-spin { animation-duration: 14s; } .wait .w-flame, .wait .w-planet { animation: none; } }
+</style>
 </head>
 <body class="bg-void font-sans text-white antialiased">
 
@@ -1070,6 +1087,21 @@ body.tm-on .snap-btn { bottom: 170px; }
     <!-- ---------- Main astronomical viewport ---------- -->
     <section class="viewport" aria-label="Sky viewport">
       <div class="stage" id="stage">
+        <div class="wait" id="wait" role="status" aria-live="polite">
+        <svg viewBox="0 0 200 200" aria-hidden="true">
+          <defs><radialGradient id="w-g" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#9fe3ff"/><stop offset=".55" stop-color="#2b78b8"/><stop offset="1" stop-color="#0b2142"/></radialGradient></defs>
+          <ellipse class="w-orbit" cx="100" cy="100" rx="82" ry="82"/>
+          <circle class="w-planet" cx="100" cy="100" r="30" fill="url(#w-g)"/>
+          <g class="w-spin"><g transform="translate(182 100) rotate(180)">
+            <path class="w-flame" d="M-3 12 L0 24 L3 12 Z" fill="#ffb347"/>
+            <path d="M0 -15 C5 -8 6 4 4 12 L-4 12 C-6 4 -5 -8 0 -15 Z" fill="#f4f7fb"/>
+            <path d="M-4 12 L-9 18 L-4 8 Z M4 12 L9 18 L4 8 Z" fill="#ff6a3a"/>
+            <circle cx="0" cy="-2" r="2.4" fill="#38bdf8"/>
+          </g></g>
+        </svg>
+        <b id="wait-title">Waiting<i>.</i><i>.</i><i>.</i></b>
+        <p id="wait-sub">Fetching real photographs from NASA.</p>
+      </div>
         <div class="sky-frame" id="sky-frame"><canvas id="sky" width="64" height="64" aria-label="Real infrared sky photograph from NASA" role="img"></canvas></div>
         <canvas class="overlay" id="overlay" aria-hidden="true"></canvas>
 
@@ -4457,6 +4489,31 @@ function init(THREE) {
 })();
 </script>
 
+<script id="wait-js">
+(() => {
+  const stage = document.getElementById('stage'); if (!stage) return;
+  let vi = false; try { const l = localStorage.getItem('sky-lang'); vi = l === 'vi' || (l !== 'en' && (navigator.language || '').toLowerCase().startsWith('vi')); } catch { /* ignore */ }
+  const T = vi ? { wait: 'Đang chờ', load: 'Đang lấy ảnh thật từ NASA. Lần đầu có thể mất vài chục giây.', find: 'Đang tra ngôi sao trong SIMBAD.' }
+               : { wait: 'Waiting', load: 'Fetching real photographs from NASA. The first time can take a few tens of seconds.', find: 'Looking the star up in SIMBAD.' };
+  const box = document.getElementById('wait'); stage.appendChild(box);
+  const title = document.getElementById('wait-title'), sub = document.getElementById('wait-sub');
+  title.firstChild.nodeValue = T.wait;
+  let since = 0, shown = false;
+  const state = () => {
+    if (/Loading IRSA|Fetching real/i.test((document.getElementById('hud-source') || {}).textContent || '')) return 'load';
+    const pop = document.getElementById('omni-pop');
+    if (pop && !pop.hidden && pop.querySelector('.om-msg:not(.err)') && /SIMBAD/i.test(pop.textContent) && !pop.querySelector('.om-item')) return 'find';
+    return '';
+  };
+  setInterval(() => {
+    const st = state();
+    if (!st) { since = 0; if (shown) { box.classList.remove('is-on'); shown = false; } return; }
+    if (!since) since = Date.now();
+    if (!shown && Date.now() - since > 350) { sub.textContent = T[st]; box.classList.add('is-on'); shown = true; }
+    else if (shown) sub.textContent = T[st];
+  }, 150);
+})();
+</script>
 <script id="col-js">
 (() => {
   const $ = (s, el = document) => el.querySelector(s);
