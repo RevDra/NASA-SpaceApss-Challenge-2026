@@ -1,5 +1,19 @@
 # SPHEREx & Planet X Viewer (live IRSA data)
 
+## Welcome sky (front door)
+
+`python serve.py` now opens `welcome.html` at `/`: a 3D night sky built from real star data. The blink viewer is still at `/index.html`.
+
+- **Intro:** Earth's limb and a procedural nebula (no image files). "Enter the sky" drops you inside the celestial sphere; "Skip to the viewer" goes straight to `index.html`.
+- **Sky:** 3,187 naked-eye stars (SIMBAD), the Milky Way placed with the real galactic matrix, 11 constellation figures. Drag to look around, scroll or pinch to zoom, hover a figure to highlight it, click to fly there and read about it. A 3-step coach teaches the controls and disappears once used.
+- **Things that move:** amber rings mark the five targets from the project notes (Barnard's Star, WISE 0855−0714, Epsilon Indi B, RW Aurigae, R Draconis). Their panel ends in **Watch it move**, which opens `index.html?ra=&dec=&band=&fov=` on that object.
+- **See it in 3D:** pulls a constellation's stars out to their true distances (SIMBAD parallax). The slider goes from "From Earth" (the familiar shape) to "From the side" (how far apart the stars really are). Drag to orbit.
+- **Accessibility:** every label is a real button, the Sky guide lists everything without dragging, Esc closes panels, `prefers-reduced-motion` skips the flights, and the guide and panels still work if WebGL cannot start. English and Vietnamese (button top right).
+- **Deep links accepted by `index.html`:** `?ra=<deg>&dec=<deg>&band=SD2&fov=<arcsec>` (band ids `W1 W2 W12 SPX SD1..SD6`). `welcome.html#sky` skips the intro.
+
+Files: `welcome.html`, `sky/welcome.js`, `sky/welcome.css`, `sky/content.js` (all copy, EN/VI), `sky/sky-data.json` (generated).
+To change the stars or constellation figures, edit `tools/build_sky_data.py` and run `python tools/build_sky_data.py` (needs network; the output is committed so the demo works offline). Three.js loads from the CDN, like the viewer's backdrop.
+
 A WiseView-style blink viewer. The **SPHEREx D1–D6** bands show real SPHEREx Level-2 exposures
 from NASA/IPAC IRSA. The WISE bands and "SPHEREx sim" are simulated in the browser.
 

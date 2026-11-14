@@ -810,7 +810,7 @@ kbd {
 
 <!-- ============ Top floating navbar (kept above the panel layer so tabs stay usable) ============ -->
 <header class="nav glass" id="nav">
-  <a class="brand" href="#" aria-label="SPHEREx Planet X Viewer">
+  <a class="brand" href="welcome.html#sky" aria-label="SPHEREx Planet X Viewer, back to the sky" title="Back to the sky">
     <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
       <defs>
         <radialGradient id="mark-planet" cx=".34" cy=".3" r=".85">
@@ -3316,7 +3316,17 @@ kbd {
   }
 
   /* ---------- 10. Boot ---------- */
+  /* Deep links from the welcome sky: index.html?ra=..&dec=..&band=SD2&fov=120 */
+  function applyUrlParams() {
+    const q = new URLSearchParams(location.search);
+    const ra = parseFloat(q.get('ra')), dec = parseFloat(q.get('dec')), fov = parseFloat(q.get('fov')), band = q.get('band');
+    if (Number.isFinite(ra) && Number.isFinite(dec) && ra >= 0 && ra <= 360 && dec >= -90 && dec <= 90) { state.ra = ra; state.dec = dec; }
+    if (Number.isFinite(fov)) state.fov = Math.min(600, Math.max(30, Math.round(fov)));
+    if (band && BANDS[band]) state.band = band;
+  }
+
   function boot() {
+    applyUrlParams();
     buildToggles();
     buildStarLegend();
     bindCoords(); bindFov(); bindBand(); bindSliders(); bindToggles(); bindAdvanced(); bindDefaults();

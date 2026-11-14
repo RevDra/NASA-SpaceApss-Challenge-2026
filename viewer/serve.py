@@ -59,6 +59,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     def do_GET(self) -> None:
         url = urllib.parse.urlsplit(self.path)
+        if url.path == "/":                        # the welcome sky is the front door; the blink viewer stays at /index.html
+            self.path = "/welcome.html" + (("?" + url.query) if url.query else "")
+            url = urllib.parse.urlsplit(self.path)
         if url.path.startswith("/api/"):
             self.handle_api(url.path, urllib.parse.parse_qs(url.query))
         else:
