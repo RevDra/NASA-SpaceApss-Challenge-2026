@@ -875,18 +875,30 @@ async function initSky() {
     side: THREE.BackSide, transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending, uniforms: { uVis },
     vertexShader: `varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
     fragmentShader: `varying vec3 vDir; uniform float uVis; ${NOISE}
+      ${innerWidth < 900 ? 'float fbmQ(vec3 p){ float a=.5, s=0.; for(int i=0;i<3;i++){ s+=a*vnoise(p); p=p*2.03+vec3(1.7,9.2,3.1); a*=.5; } return s*1.14; }' : 'float fbmQ(vec3 p){ return fbm(p); }'}   /* phones: three octaves, same look, a third cheaper */
       void main(){
         vec3 e = vec3(vDir.x, -vDir.z, vDir.y);
         float gx = dot(e, vec3(-0.0548755604,-0.8734370902,-0.4838350155));
         float gy = dot(e, vec3( 0.4941094279,-0.4448296300, 0.7469822445));
         float gz = dot(e, vec3(-0.8676661490,-0.1980763734, 0.4559837762));
         float b = asin(clamp(gz,-1.,1.)); float l = atan(gy,gx);
-        float band = exp(-pow(b/0.2,2.)); float core = pow(max(cos(l),0.),3.);
-        float n1 = fbm(vDir*7.), n2 = fbm(vDir*24.);
-        float dust = smoothstep(0.46,0.72,fbm(vDir*9.+3.))*exp(-pow(b/0.085,2.));
-        float I = band*(0.32+0.55*core)*(0.5+1.0*n1) + band*0.14*n2 - dust*0.3*band;
-        vec3 c = mix(vec3(0.42,0.52,0.82), vec3(1.0,0.8,0.58), core*0.85);
-        gl_FragColor = vec4(c*max(I,0.)*0.5*uVis, 1.);
+        /* the disc, the bright bulge toward the galactic centre, star clouds, thin dust lanes and a grain of unresolved stars */
+        float band = exp(-pow(b/0.19,2.)), thin = exp(-pow(b/0.055,2.));
+        float core = pow(max(cos(l),0.),4.), bulge = exp(-(l*l*1.6 + b*b*30.));
+        float cl = 0.55*fbmQ(vDir*6.) + 0.45*fbmQ(vDir*19.);
+        float rid = 1. - abs(2.*fbmQ(vDir*8.+1.5) - 1.);
+        float dust = pow(rid, 3.)*exp(-pow(b/0.08,2.));
+        float I = band*(0.16 + 0.34*core)*(0.35 + 0.9*cl) + thin*0.3*cl*(0.4 + core) + bulge*0.5;
+        I *= 1. - 0.45*dust;
+        float halo = exp(-pow(b/0.5,2.))*(0.1 + 0.12*core), wide = exp(-pow(b/0.9,2.));   /* soft glow around the plane, and a faint wash over the whole sky */
+        /* unresolved stars: a fine grain, denser toward the plane and the centre */
+        vec3 g3 = vDir*1500.; float h = hash(floor(g3)); float dens = 0.0025 + 0.02*band + 0.03*thin*(0.5 + core);
+        float grain = step(1. - dens, h) * (0.3 + 0.9*hash(floor(g3)+7.3)) * smoothstep(0.5, 0.08, length(fract(g3) - 0.5)) * (1. - 0.5*dust);
+        vec3 cool = vec3(0.55,0.66,1.0), warm = vec3(1.0,0.78,0.5), pink = vec3(1.0,0.45,0.6);
+        vec3 c = mix(cool, warm, clamp(core*0.9 + bulge, 0., 1.));
+        c = mix(c, pink, 0.22*smoothstep(0.62,0.85,fbmQ(vDir*11.+8.))*thin);
+        vec3 col = c*max(I,0.)*0.68 + vec3(0.30,0.40,0.85)*halo*0.55 + vec3(0.035,0.05,0.11)*(0.55 + wide) + mix(vec3(0.85,0.9,1.), warm, core)*grain*0.55;
+        gl_FragColor = vec4(col*uVis, 1.);
       }`,
   }));
   mw.renderOrder = 1; celestial.add(mw);
