@@ -6372,6 +6372,9 @@
         const mission = BANDS[state.band].mission || 'SPHEREx';
         toast(`Loading real ${mission} exposures from NASA/IPAC IRSA…${mission !== 'SPHEREx' ? ' (about a minute the first time)' : ''}`);
         const q = new URLSearchParams({ ra: state.ra, dec: state.dec, fov: state.fov, band: BANDS[state.band].det });
+        // Never wait forever: the server gives up on slow IRSA requests after about two minutes, so stop here a bit later.
+        const LIVE_TIMEOUT_MS = 170000;
+        const timer = setTimeout(() => { ctrl.timedOut = true; ctrl.abort(); }, LIVE_TIMEOUT_MS);
         try {
           const res = await fetch(`/api/${BANDS[state.band].api || 'spherex'}?${q}`, { signal: ctrl.signal });
           const body = await res.json().catch(() => ({ error: `HTTP ${res.status} (is the page served by serve.py?)` }));
@@ -6386,11 +6389,13 @@
           live.status = 'ready';
           toast(`${live.units.length} real ${BANDS[state.band].mission || 'SPHEREx'} frames in ${body.visits} visits (${body.source}). Hover a star for its card.`);
         } catch (err) {
-          if (err.name === 'AbortError' || live.key !== key) return;
+          if (live.key !== key || (err.name === 'AbortError' && !ctrl.timedOut)) return;   // superseded by a newer request
           live.status = 'error'; live.failedAt = Date.now();
-          live.error = err.message || String(err);
+          live.error = ctrl.timedOut ? `the NASA/IPAC IRSA archive took longer than ${LIVE_TIMEOUT_MS / 60000 | 0} minutes to answer` : (err.message || String(err));
           console.warn('[live] SPHEREx request failed:', live.error);
           toast(`${BANDS[state.band].mission || 'SPHEREx'} data unavailable right now (${live.error}). Nothing is simulated: try again in a moment.`);
+        } finally {
+          clearTimeout(timer);
         }
         updateSource();
         scheduleRebuild();
