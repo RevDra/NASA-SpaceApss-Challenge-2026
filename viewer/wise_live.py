@@ -25,7 +25,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from spherex_live import (LiveError, _cache_dir, _encode, _finish, _open, _read_exact, _read_header, _tangent_to_sky, TanSipWcs, mjd_to_year)
+from spherex_live import (LiveError, _cache_dir, _encode, _finish, _open, _read_exact, _read_header, _tangent_to_sky, TanSipWcs, mjd_to_year, repair_masked)
 import array
 
 IBE = "https://irsa.ipac.caltech.edu/ibe"
@@ -94,6 +94,7 @@ def resample(h: dict, pix, ra0: float, dec0: float, N: int):
     wcs = TanSipWcs(h)
     nx, ny = int(h["NAXIS1"]), int(h["NAXIS2"])
     out = [math.nan] * (N * N)
+    bad = bytearray(N * N)
     ps = PIXEL_SCALE / 3600.0
     for r in range(N):
         eta = (N / 2 - r - 0.5) * ps
@@ -118,7 +119,9 @@ def resample(h: dict, pix, ra0: float, dec0: float, N: int):
                     sw += wt
             if sw > 0.25:
                 out[r * N + k] = s / sw
-    return out
+            else:
+                bad[r * N + k] = 1
+    return out, bad
 
 
 def load_epochs(root: Path, ra: float, dec: float, fov: float, band: str = "W2", refresh: bool = False) -> dict:
@@ -129,7 +132,7 @@ def load_epochs(root: Path, ra: float, dec: float, fov: float, band: str = "W2",
         raise LiveError("RA must be 0-360 and Dec -90..90 degrees")
     fov = max(60.0, min(700.0, fov))
     N = grid_size(fov)
-    key = f"wise_{ra:.5f}_{dec:+.5f}_{fov:.0f}_{band}"
+    key = f"wise2_{ra:.5f}_{dec:+.5f}_{fov:.0f}_{band}"
     cache_file = _cache_dir(root) / (hashlib.sha1(key.encode()).hexdigest()[:16] + ".json")
     if not refresh:
         if key in _memory:
@@ -154,7 +157,9 @@ def load_epochs(root: Path, ra: float, dec: float, fov: float, band: str = "W2",
             url = f"{IBE}/data/{fr['table']}/{fr['path']}?center={ra},{dec}&size={size_deg:.5f}&gzip=false"
             try:
                 h, pix = read_primary(url)
-                img, cov = _finish(resample(h, pix, ra, dec, N))
+                img, bad = resample(h, pix, ra, dec, N)
+                img, mask = repair_masked(img, bad, N)
+                img, cov = _finish(img)
             except Exception as exc:
                 errs.append(f"{fr['obsid']}: {exc}")
                 continue
@@ -162,7 +167,7 @@ def load_epochs(root: Path, ra: float, dec: float, fov: float, band: str = "W2",
                 errs.append(f"{fr['obsid']}: near the frame edge ({cov:.0%})")
                 continue
             return {"t": round(mjd_to_year(fr["mjd"]), 5), "mjd": fr["mjd"], "visit": vi, "obsid": fr["obsid"],
-                    "collection": "NEOWISE" if "neowiser" in fr["table"] else "WISE", "date": fr["date"].replace(" ", "T")[:19], "coverage": round(cov, 3), "data": _encode(img)}
+                    "collection": "NEOWISE" if "neowiser" in fr["table"] else "WISE", "date": fr["date"].replace(" ", "T")[:19], "coverage": round(cov, 3), "data": _encode(img), "mask": mask, "masked": sum(bad)}
         return {"error": "; ".join(errs[:2]) or f"visit {vi}: no usable frame"}
 
     with ThreadPoolExecutor(max_workers=6) as pool:

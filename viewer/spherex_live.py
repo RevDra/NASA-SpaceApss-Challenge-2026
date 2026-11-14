@@ -274,10 +274,13 @@ def _tangent_to_sky(ra0: float, dec0: float, xi_deg: float, eta_deg: float):
 
 
 def resample(h: dict, pix: array.array, ra0: float, dec0: float, N: int):
-    """Bilinear resample onto an N x N grid: row 0 = north, column 0 = east (like the viewer)."""
+    """Bilinear resample onto an N x N grid: row 0 = north, column 0 = east (like the viewer).
+    Returns (image, bad). `bad` marks pixels that lie on the detector but carry no valid measurement (flagged by the
+    mission: saturated, overflowed, cosmic ray...), as opposed to pixels that are simply outside the cutout."""
     wcs = TanSipWcs(h)
     nx, ny = int(h["NAXIS1"]), int(h["NAXIS2"])
     out = [math.nan] * (N * N)
+    bad = bytearray(N * N)
     ps = PIXEL_SCALE / 3600.0
     for r in range(N):
         eta = (N / 2 - r - 0.5) * ps
@@ -301,7 +304,56 @@ def resample(h: dict, pix: array.array, ra0: float, dec0: float, N: int):
                     s += val * wt; sw += wt
             if sw > 0.25:
                 out[r * N + k] = s / sw
-    return out
+            else:
+                bad[r * N + k] = 1
+    return out, bad
+
+
+def repair_masked(img: list[float], bad: bytearray, N: int):
+    """Give the flagged pixels a stand-in value, so a saturated star is not drawn with a hole in its middle.
+
+    Where a star is so bright that the detector overflows, SPHEREx/WISE report no value at all. Filling the hole with
+    the background (what a plain 0 would do) is wrong: it is the brightest spot of the frame. So a hole of three or
+    more pixels takes the brightest valid pixel on its rim (a lower limit: the real light there is at least that
+    much), and an isolated bad pixel takes the median of its valid neighbours. Returns (image, packed mask bits)."""
+    todo = {i for i in range(N * N) if bad[i] and img[i] != img[i]}
+    mask = bytearray((N * N + 7) // 8)
+    for i in todo:
+        mask[i >> 3] |= 1 << (i & 7)
+    seen: set[int] = set()
+    for start in sorted(todo):
+        if start in seen:
+            continue
+        comp, stack = [], [start]
+        seen.add(start)
+        while stack:
+            i = stack.pop()
+            comp.append(i)
+            r, k = divmod(i, N)
+            for rr in (r - 1, r, r + 1):
+                for kk in (k - 1, k, k + 1):
+                    j = rr * N + kk
+                    if 0 <= rr < N and 0 <= kk < N and j in todo and j not in seen:
+                        seen.add(j)
+                        stack.append(j)
+        left = set(comp)
+        for _ in range(len(comp)):                        # peel the hole from the rim inwards
+            if not left:
+                break
+            fills = {}
+            for i in left:
+                r, k = divmod(i, N)
+                vals = [img[rr * N + kk] for rr in (r - 1, r, r + 1) for kk in (k - 1, k, k + 1)
+                        if 0 <= rr < N and 0 <= kk < N and (rr, kk) != (r, k) and img[rr * N + kk] == img[rr * N + kk]]
+                if vals:
+                    vals.sort()
+                    fills[i] = vals[-1] if len(comp) >= 3 else vals[len(vals) // 2]
+            if not fills:
+                break
+            for i, v in fills.items():
+                img[i] = v
+                left.discard(i)
+    return img, base64.b64encode(bytes(mask)).decode("ascii")
 
 
 def _finish(img: list[float]) -> tuple[list[float], float]:
@@ -338,7 +390,7 @@ def load_epochs(root: Path, ra: float, dec: float, fov: float, detector: str,
     per_visit = max(1, min(12, per_visit))
     N = grid_size(fov)
 
-    key = f"clean_{ra:.5f}_{dec:+.5f}_{fov:.0f}_{detector}_{per_visit}"
+    key = f"clean2_{ra:.5f}_{dec:+.5f}_{fov:.0f}_{detector}_{per_visit}"
     cache_file = _cache_dir(root) / (hashlib.sha1(key.encode()).hexdigest()[:16] + ".json")
     if not refresh:
         if key in _memory:
@@ -362,10 +414,14 @@ def load_epochs(root: Path, ra: float, dec: float, fov: float, detector: str,
         try:
             if HAS_DENOISE:
                 proc = process_single_fits(url)
-                h, pix = proc["header"], proc["visual_data"].astype("float32").ravel()
+                vis = proc["visual_data"].astype("float32")
+                vis[proc["bad_mask"]] = float("nan")             # keep the mission's own flags; repair_masked decides the stand-in
+                h, pix = proc["header"], vis.ravel()
             else:
                 h, pix = read_image_extension(url)
-            img, cov = _finish(resample(h, pix, ra, dec, N))
+            img, bad = resample(h, pix, ra, dec, N)
+            img, mask = repair_masked(img, bad, N)
+            img, cov = _finish(img)
         except Exception as exc:
             return {"error": f"{exp['obsid']}: {exc}"}
         if cov < 0.5:
@@ -374,7 +430,7 @@ def load_epochs(root: Path, ra: float, dec: float, fov: float, detector: str,
             "t": round(mjd_to_year(exp["mjd"]), 5), "mjd": exp["mjd"], "visit": exp["visit"],
             "obsid": exp["obsid"], "collection": exp["collection"],
             "date": h.get("DATE-AVG") or h.get("DATE-OBS"), "coverage": round(cov, 3),
-            "data": _encode(img),
+            "data": _encode(img), "mask": mask, "masked": sum(bad),
         }
 
     with ThreadPoolExecutor(max_workers=6) as pool:

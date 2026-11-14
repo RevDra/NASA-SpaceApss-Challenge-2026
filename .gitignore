@@ -19,3 +19,4 @@ gaia_cache/
 viewer/gaia_cache/
 backend/cache/
 *.fits
+.claude/

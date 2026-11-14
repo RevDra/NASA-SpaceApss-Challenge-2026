@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SPHEREx &amp; Planet X Deep Space Explorer</title>
-<meta name="description" content="Blink multi-epoch infrared sky images to hunt for moving objects. Real SPHEREx exposures from NASA/IPAC IRSA, plus simulated WISE imagery.">
+<meta name="description" content="Blink multi-epoch infrared sky images to hunt for moving objects. Real SPHEREx exposures and real WISE/NEOWISE photographs (2010 to 2024) from NASA/IPAC IRSA.">
 <meta name="theme-color" content="#030508">
 
 <!-- Typography: Plus Jakarta Sans (interface) + JetBrains Mono (coordinates, values). Falls back to system fonts offline. -->
@@ -270,6 +270,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 .sl-ticks span:last-child { transform: translateX(-100%); align-items: flex-end; }
 .sl-ticks span::before { content: ""; width: 1px; height: 4px; margin-bottom: 1px; background: rgba(255, 255, 255, .5); }
 .sl-ticks b { font-family: var(--font-sans); font-size: 9.5px; font-weight: 600; color: var(--text-2); }
+.sl-hatch { display: inline-block; width: 12px; height: 12px; margin-right: 7px; vertical-align: -2px; border: 1px solid rgba(255, 122, 92, .9); border-radius: 2px; background: repeating-linear-gradient(135deg, rgba(255, 122, 92, .95) 0 2px, transparent 2px 5px); }
 .sl-note { margin-top: 5px; font-size: 10.5px; line-height: 1.45; color: var(--silver-dim); }
 @media (max-width: 820px) { .star-legend { bottom: 150px; width: min(290px, calc(100% - 32px)); } }
 
@@ -821,9 +822,21 @@ body.tm-on .sky-frame { filter: saturate(.55) brightness(.8); }
 .tabs { background: transparent; border: 0; padding: 0; gap: 2px; }
 .tab { height: 38px; border-radius: 12px; }
 .tab.is-active { background: rgba(56, 189, 248, .12); border-color: rgba(56, 189, 248, .5); box-shadow: none; }
-@media (max-width: 1320px) { .tab span, .wordmark-tail { display: none; } .tab { padding: 0 11px; } }
-@media (max-width: 1100px) { .fr-btn .fr-lbl { display: none; } .utc { display: none; } }
-@media (max-width: 760px) { .omni-key { display: none; } .wordmark { display: none; } .nav { gap: 8px; padding: 0 8px; } .nav-meta { display: none; } }
+/* top bar, short version: brand, search, three actions with icons, four tool icons (names appear on hover) */
+.wordmark-tail, .wordmark-sep { display: none; }
+.nav-meta { gap: 6px; flex: none; }
+.utc, .utc #utc-clock { white-space: nowrap; }
+.tabs { position: relative; margin-left: 4px; padding-left: 10px; gap: 2px; }
+.tabs::before { content: ''; position: absolute; left: 0; top: 9px; bottom: 9px; width: 1px; background: var(--hair); }
+.tab span { display: none; }
+.tab { width: 38px; padding: 0; justify-content: center; position: relative; }
+.tab::after { content: attr(data-label); position: absolute; top: calc(100% + 8px); left: 50%; transform: translate(-50%, 4px); padding: 4px 9px; border-radius: 8px; background: rgba(6, 10, 20, .96); border: 1px solid var(--line); color: #fff; font: 600 11.5px var(--font-sans); white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .15s, transform .15s; z-index: 90; }
+.tab:hover::after, .tab:focus-visible::after { opacity: 1; transform: translate(-50%, 0); }
+.fr-btn { height: 38px; }
+#col-btn .col-n { margin-left: 2px; }
+@media (max-width: 1500px) { .utc { display: none; } }
+@media (max-width: 1180px) { .fr-btn .fr-lbl { display: none; } .fr-btn { padding: 0 11px; } }
+@media (max-width: 760px) { .omni-key { display: none; } .wordmark { display: none; } .nav { gap: 8px; padding: 0 8px; } .nav-meta { gap: 4px; } .tabs { margin-left: 0; padding-left: 6px; } .tab { width: 36px; } }
 @media (max-width: 560px) { .star-legend { display: none; } .tabs .tab:nth-child(n+2) { display: none; } .fr-btn { padding: 0 11px; } #fr-sky-btn { display: none; } .omni { flex-basis: 120px; } }
 
 /* stage */
@@ -1035,16 +1048,16 @@ body.tm-on .snap-btn { bottom: 170px; }
   </div>
 
   <nav class="tabs" role="tablist" aria-label="Sections">
-    <button type="button" class="tab is-active" role="tab" id="tab-settings" data-tab="settings" aria-selected="true" aria-controls="sidebar">
+    <button type="button" class="tab is-active" role="tab" id="tab-settings" data-tab="settings" data-label="Settings" title="Settings" aria-selected="true" aria-controls="sidebar">
       <svg class="i"><use href="#i-sliders"/></svg><span>Settings</span>
     </button>
-    <button type="button" class="tab" role="tab" id="tab-links" data-tab="links" aria-selected="false" aria-controls="panel-links" tabindex="-1">
+    <button type="button" class="tab" role="tab" id="tab-links" data-tab="links" data-label="Links" title="Links" aria-selected="false" aria-controls="panel-links" tabindex="-1">
       <svg class="i"><use href="#i-link"/></svg><span>Links</span>
     </button>
-    <button type="button" class="tab" role="tab" id="tab-help" data-tab="help" aria-selected="false" aria-controls="panel-help" tabindex="-1">
+    <button type="button" class="tab" role="tab" id="tab-help" data-tab="help" data-label="Help" title="Help" aria-selected="false" aria-controls="panel-help" tabindex="-1">
       <svg class="i"><use href="#i-help"/></svg><span>Help</span>
     </button>
-    <button type="button" class="tab" role="tab" id="tab-about" data-tab="about" aria-selected="false" aria-controls="panel-about" tabindex="-1">
+    <button type="button" class="tab" role="tab" id="tab-about" data-tab="about" data-label="About" title="About" aria-selected="false" aria-controls="panel-about" tabindex="-1">
       <svg class="i"><use href="#i-info"/></svg><span>About</span>
     </button>
   </nav>
@@ -1057,26 +1070,26 @@ body.tm-on .snap-btn { bottom: 170px; }
     <!-- ---------- Main astronomical viewport ---------- -->
     <section class="viewport" aria-label="Sky viewport">
       <div class="stage" id="stage">
-        <div class="sky-frame" id="sky-frame"><canvas id="sky" width="64" height="64" aria-label="Simulated infrared sky image" role="img"></canvas></div>
+        <div class="sky-frame" id="sky-frame"><canvas id="sky" width="64" height="64" aria-label="Real infrared sky photograph from NASA" role="img"></canvas></div>
         <canvas class="overlay" id="overlay" aria-hidden="true"></canvas>
 
         <!-- HUD: what is on screen -->
         <div class="hud hud-tl">
           <div class="flex flex-wrap items-center gap-1.5">
-            <span class="chip chip-accent" id="hud-band">W2 4.6 µm</span>
-            <span class="chip" id="hud-mission">NEOWISE</span>
+            <span class="chip chip-accent" id="hud-band">—</span>
+            <span class="chip" id="hud-mission">Fetching real photographs…</span>
             <span class="chip" id="hud-scan" hidden>Ascending scan</span>
             <span class="chip chip-mode" id="hud-mode" hidden>Difference</span>
           </div>
-          <p class="hud-note"><span id="hud-source">Simulated imagery</span>, <span class="mono" id="hud-scale">2.75″/px</span></p>
+          <p class="hud-note"><span id="hud-source">Loading real data…</span>, <span class="mono" id="hud-scale">2.75″/px</span></p>
         </div>
 
         <!-- HUD: cursor readout -->
         <div class="hud hud-tr">
           <div class="readout" id="readout">
             <div class="readout-title" id="ro-title">Crosshair</div>
-            <div class="readout-row"><span class="k">α</span><span class="mono v" id="ro-ra">133.786245°</span></div>
-            <div class="readout-row"><span class="k">δ</span><span class="mono v" id="ro-dec">−7.244372°</span></div>
+            <div class="readout-row"><span class="k">α</span><span class="mono v" id="ro-ra">—</span></div>
+            <div class="readout-row"><span class="k">δ</span><span class="mono v" id="ro-dec">—</span></div>
             <div class="readout-row"><span class="k">px</span><span class="mono v" id="ro-px">—</span></div>
           </div>
         </div>
@@ -1131,8 +1144,8 @@ body.tm-on .snap-btn { bottom: 170px; }
           </div>
 
           <div class="epoch-readout" aria-live="off">
-            <span class="mono epoch-value" id="epoch-value">2010.12</span>
-            <span class="mono epoch-count" id="epoch-count">01 / 25</span>
+            <span class="mono epoch-value" id="epoch-value">—</span>
+            <span class="mono epoch-count" id="epoch-count">loading real data</span>
           </div>
         </div>
       </div>
@@ -1356,7 +1369,7 @@ body.tm-on .snap-btn { bottom: 170px; }
   </main>
 
   <footer class="statusbar">
-    <span class="status"><span class="status-dot" aria-hidden="true"></span><span id="data-status">Simulated data. Pick SPHEREx D1–D6 for real IRSA data.</span></span>
+    <span class="status"><span class="status-dot" aria-hidden="true"></span><span id="data-status">Fetching real photographs from NASA/IPAC IRSA…</span></span>
     <span class="disclaimer">NASA does not endorse any non-U.S. Government entity and is not responsible for information contained on non-U.S. Government websites.</span>
   </footer>
 </div>
@@ -1489,7 +1502,7 @@ body.tm-on .snap-btn { bottom: 170px; }
         <div><dt>Skip duplicate windows</dt><dd>Drops windows that add no epochs beyond the previous frame.</dd></div>
         <div><dt>Smooth by scan direction</dt><dd>Light 3×3 smoothing that suppresses single-pixel noise.</dd></div>
         <div><dt>Border epoch 0</dt><dd>Outlines the first frame so you can see where the loop starts.</dd></div>
-        <div><dt>Gaia DR3 overlay</dt><dd>On SPHEREx D1–D6: rings every Gaia DR3 star that SPHEREx actually sees in the current frame, in the star’s real colour (blue = hot, red = cool; see the legend), moved to the frame’s date by proper motion. Fast movers get a dashed arrow from their 2016 position. On simulated bands: simulated matches.</dd></div>
+        <div><dt>Gaia DR3 overlay</dt><dd>On SPHEREx D1–D6: rings every Gaia DR3 star that SPHEREx actually sees in the current frame, in the star’s real colour (blue = hot, red = cool; see the legend), moved to the frame’s date by proper motion. Fast movers get a dashed arrow from their 2016 position. </dd></div>
         <div><dt>Star cards</dt><dd>On SPHEREx D1–D6, hover a star for its identity card: Gaia name, constellation, history, distance, size, mass, temperature, colour, brightness, age, planets, special phenomena and a spectrum strip coloured by element. Click to pin it, Esc to close.</dd></div>
         <div><dt>Synthetic objects</dt><dd>Inject test movers with a chosen motion and W2 magnitude.</dd></div>
       </dl>
@@ -1532,7 +1545,7 @@ body.tm-on .snap-btn { bottom: 170px; }
       <section class="about-block about-viewer">
         <h3 class="section-title">This viewer</h3>
         <p>The <strong>SPHEREx D1–D6</strong> bands show real data. When the page is served by <span class="mono">serve.py</span>, it asks NASA/IPAC IRSA (SIA v2, collections <span class="mono">spherex_dr1</span> and <span class="mono">spherex_qr3</span>) for every Level-2 exposure covering the position, keeps a few per visit, downloads small cutouts, resamples each onto a common north-up 6.15″/px grid with its own TAN-SIP WCS and subtracts the background. Frames are then grouped by the time window, so the default shows one co-added frame per visit, about six months apart. SPHEREx uses linear variable filters, so a source is seen at a slightly different wavelength in each exposure, and some brightness change between frames is expected. Loaded fields are cached in <span class="mono">spherex_cache/</span> and still work offline.</p>
-        <p>The WISE bands and “SPHEREx sim” are simulated in your browser from the real Gaia DR3 stars of the field you are looking at: true positions, brightness, colour, proper motion and parallax, rendered with WISE-like 2.75″ pixels (6.15″ for SPHEREx) and fresh noise per epoch. A fast mover therefore really moves when you blink: Barnard’s star crosses about 145″ between 2010 and 2024. If Gaia cannot be reached, a random star field is used instead and the status bar says so. One injected high-proper-motion test object, PX-1, sits near the default coordinates, and synthetic objects can be added. The controls follow the conventions of WiseView, the Backyard Worlds blink tool.</p>
+        <p>The <strong>14 years</strong> option shows real photographs too: single exposures from WISE (2010) and its NEOWISE reactivation (2014 to 2024) at 4.6 µm, from the IRSA image service, one per visit (about every six months), resampled onto the same north-up grid with each frame’s own WCS. WISE was switched off between 2011 and 2013, so there are no photographs for those years, and the time bar says so. Very bright stars overflow the detector; those pixels are flagged by NASA, hatched on screen and shown at the brightest value on their rim, which is a lower limit. Barnard’s star crosses about 145″ between 2010 and 2024. Alignment was checked against Gaia DR3: positions agree to within about one pixel in every frame. Older simulated bands (made from Gaia stars for testing) are hidden from the menu and are always labelled “Simulated”; nothing on the default screens is simulated.</p>
         <p class="version mono">v1.0, November 2026</p>
       </section>
     </div>
@@ -1557,7 +1570,7 @@ body.tm-on .snap-btn { bottom: 170px; }
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const DEFAULTS = Object.freeze({
-    ra: 269.4466, dec: 4.768, fov: 120, band: 'SD2',
+    ra: 269.446074, dec: 4.770706, fov: 120, band: 'SD2',
     window: 0.5, blink: 500, zoom: 9, min: -50, max: 500, linearity: 1,
     invert: false, maxDynamic: false, separateScan: false, neowiseOnly: false,
     skipMiddle: false, skipDuplicates: true, smoothScan: false, borderEpoch0: false, gaia: true,
@@ -1791,6 +1804,35 @@ body.tm-on .snap-btn { bottom: 170px; }
     return new Float32Array(bytes.buffer);
   }
 
+  // One bit per pixel (row-major, little-endian within a byte): 1 = the mission flagged this pixel (overflow from a very
+  // bright star, cosmic ray...) and gave no measurement; the server put a stand-in value there.
+  function decodeMask(b64, N) {
+    if (!b64) return null;
+    const bin = atob(b64), out = new Uint8Array(N * N);
+    let any = false;
+    for (let i = 0; i < N * N; i++) if ((bin.charCodeAt(i >> 3) >> (i & 7)) & 1) { out[i] = 1; any = true; }
+    return any ? out : null;
+  }
+  function frameMask(f) {
+    if (!f || !f.members) return null;
+    let out = null;
+    for (const u of f.members) {
+      if (!u.mask) continue;
+      if (!out) out = new Uint8Array(u.mask);
+      else for (let i = 0; i < out.length; i++) out[i] |= u.mask[i];
+    }
+    return out;
+  }
+  let hatch = null;
+  function hatchPattern() {
+    if (hatch) return hatch;
+    const c = document.createElement('canvas'); c.width = c.height = 8;
+    const g = c.getContext('2d');
+    g.strokeStyle = 'rgba(255,122,92,0.95)'; g.lineWidth = 1.6;
+    g.beginPath(); g.moveTo(-2, 10); g.lineTo(10, -2); g.moveTo(-2, 2); g.lineTo(2, -2); g.moveTo(6, 10); g.lineTo(10, 6); g.stroke();
+    return (hatch = octx.createPattern(c, 'repeat'));
+  }
+
   async function requestLive(key) {
     if (live.ctrl) live.ctrl.abort();
     const ctrl = new AbortController();
@@ -1807,17 +1849,17 @@ body.tm-on .snap-btn { bottom: 170px; }
       live.N = body.N;
       live.meta = body;
       live.units = body.units.map((u, i) => ({
-        t: u.t, scan: null, key: `L${i}`, seed: 1000 + i, img: decodeFloat32(u.data),
+        t: u.t, scan: null, key: `L${i}`, seed: 1000 + i, img: decodeFloat32(u.data), mask: decodeMask(u.mask, body.N),
         epoch: { id: 1000 + i, mission: BANDS[state.band].mission || 'SPHEREx', survey: u.visit + 1, obsid: u.obsid, date: u.date, collection: u.collection },
       }));
       live.status = 'ready';
       toast(`${live.units.length} real ${BANDS[state.band].mission || 'SPHEREx'} frames in ${body.visits} visits (${body.source}). Hover a star for its card.`);
     } catch (err) {
       if (err.name === 'AbortError' || live.key !== key) return;
-      live.status = 'error';
+      live.status = 'error'; live.failedAt = Date.now();
       live.error = err.message || String(err);
       console.warn('[live] SPHEREx request failed:', live.error);
-      toast('Live SPHEREx data unavailable. Showing simulated frames.');
+      toast(`${BANDS[state.band].mission || 'SPHEREx'} data unavailable right now (${live.error}). Nothing is simulated: try again in a moment.`);
     }
     updateSource();
     scheduleRebuild();
@@ -1868,8 +1910,8 @@ body.tm-on .snap-btn { bottom: 170px; }
       status = `Live data: ${live.units.length} of ${m.exposures_found} ${m.mission || 'SPHEREx'} ${m.detector} exposures from NASA/IPAC IRSA (${m.collections.join(', ')}), ${m.unit}. Source: ${m.source}.`;
       note = `Real ${BANDS[state.band].mission || 'SPHEREx'} imagery`;
     } else {
-      status = `IRSA unavailable: ${live.error}. Showing simulated frames.`;
-      note = 'Simulated imagery (IRSA unavailable)';
+      status = `NASA/IPAC IRSA did not return ${BANDS[state.band].mission || 'SPHEREx'} photographs for this field (${live.error}). No simulated image is shown. Change the field or press a target again to retry.`;
+      note = 'No real data for this field';
     }
     if (statusEl) { statusEl.textContent = status; statusEl.title = status; }
     if (noteEl) noteEl.textContent = note;
@@ -1939,6 +1981,23 @@ body.tm-on .snap-btn { bottom: 170px; }
     speed(s) { tm.speed = s; },
     frames() { return model.frames ? model.frames.map((f) => f.t) : []; },
     redraw() { drawOverlay(); },
+    /* Self-test: for every ringed star, how far (in image pixels) is the brightest pixel nearby from where Gaia says the star is? */
+    align() {
+      const img = frameImage(); if (!img) return null;
+      const N = model.N, ps = BANDS[state.band].ps, t = viewTime(), out = [], mk = model.view && model.view.frame ? frameMask(model.view.frame) : null;
+      for (const s of (gaiaReadyHere() ? gaiaStars() : [])) {
+        const [dx, dy] = gaiaOffset(s, t);
+        const k = N / 2 - dx / ps - 0.5, r = N / 2 - dy / ps - 0.5, ki = Math.round(k), ri = Math.round(r);
+        if (ki < 3 || ri < 3 || ki > N - 4 || ri > N - 4 || !(s.g < 15)) continue;
+        let flagged = false;                                            // a saturated star has a flat top, so its brightest pixel says nothing about where it is
+        if (mk) for (let rr = ri - 2; rr <= ri + 2; rr++) for (let kk = ki - 2; kk <= ki + 2; kk++) if (mk[rr * N + kk]) flagged = true;
+        if (flagged) continue;
+        let b = -Infinity, bk = ki, br = ri;
+        for (let rr = ri - 2; rr <= ri + 2; rr++) for (let kk = ki - 2; kk <= ki + 2; kk++) if (img[rr * N + kk] > b) { b = img[rr * N + kk]; bk = kk; br = rr; }
+        out.push({ id: s.id, g: s.g, dk: +(bk - k).toFixed(2), dr: +(br - r).toFixed(2) });
+      }
+      return out;
+    },
   };
   function gaiaScreen(s) {
     const [dx, dy] = gaiaOffset(s, shownTime());
@@ -2018,7 +2077,8 @@ body.tm-on .snap-btn { bottom: 170px; }
       <div class="sl-ends"><span>Hot</span><span>Cool</span></div>
       <div class="sl-bar" style="background:linear-gradient(90deg, ${stops.join(', ')})"></div>
       <div class="sl-ticks">${LEGEND_T.filter((T) => names[T]).map((T) => `<span style="left:${(legendPos(T) * 100).toFixed(1)}%">${T.toLocaleString()} K<b>${names[T]}</b></span>`).join('')}</div>
-      <p class="sl-note">Colour comes from surface temperature. Only stars visible in this frame are ringed; hover one for its card.</p>`;
+      <p class="sl-note">Colour comes from surface temperature. Only stars visible in this frame are ringed; hover one for its card.</p>
+      <p class="sl-note sl-mask" id="sl-mask" hidden><i class="sl-hatch"></i>Hatched = too bright for the detector. NASA gives no value there, so it shows the brightest edge value (the real light is at least that).</p>`;
   }
   function updateStarLegend(show) {
     const el = $('#star-legend');
@@ -2667,8 +2727,8 @@ body.tm-on .snap-btn { bottom: 170px; }
   function rebuild() {
     const band = BANDS[state.band];
     if (band.kind === 'live') {
-      if (live.key !== liveKey()) requestLive(liveKey());
-      if (live.status === 'loading') {                                     // blank the image until the real frames arrive
+      if (live.key !== liveKey() || (live.status === 'error' && Date.now() - (live.failedAt || 0) > 8000)) requestLive(liveKey());   // a failed field is retried on the next interaction
+      if (live.status === 'loading' || live.status === 'error') {          // blank the image until real frames arrive; never fall back to a simulation
         model.frames = []; model.stack = null; model.view = null;
         skyCtx.clearRect(0, 0, skyCanvas.width, skyCanvas.height);
         renderTimeline(); updateTimeline(); updateHud(); drawOverlay();
@@ -2923,6 +2983,19 @@ body.tm-on .snap-btn { bottom: 170px; }
     ctx.beginPath(); ctx.rect(img.x, img.y, img.size, img.size); ctx.clip();
     strokeGrid(state.invert && !(model.view && model.view.diff) ? 0.34 : 0.24);
     ctx.restore();
+
+    // --- pixels the mission itself flagged (a star too bright for the detector): hatched, never passed off as a measurement ---
+    const mk = model.view && model.view.frame && !state.shiftAdd ? frameMask(model.view.frame) : null;
+    const note = document.getElementById('sl-mask');
+    if (note) note.hidden = !mk;
+    if (mk && mk.length === model.N * model.N) {
+      const cell = img.size / model.N;
+      ctx.save();
+      ctx.beginPath(); ctx.rect(img.x, img.y, img.size, img.size); ctx.clip();
+      ctx.fillStyle = hatchPattern();
+      for (let i = 0; i < mk.length; i++) if (mk[i]) ctx.fillRect(img.x + (i % model.N) * cell, img.y + Math.floor(i / model.N) * cell, cell + 0.5, cell + 0.5);
+      ctx.restore();
+    }
 
     // --- grid labels, pinned to the inside edges of the image ---
     ctx.font = '500 10px "JetBrains Mono", ui-monospace, monospace';
@@ -3194,6 +3267,9 @@ body.tm-on .snap-btn { bottom: 170px; }
       $('#epoch-count').textContent = `${pad2(state.frame + 1)} / ${pad2(n)}`;
       timelineEl.setAttribute('aria-valuenow', String(state.frame + 1));
       timelineEl.setAttribute('aria-valuetext', `Epoch ${f.t.toFixed(2)}, frame ${state.frame + 1} of ${n}`);
+    } else {
+      $('#epoch-value').textContent = '—';
+      $('#epoch-count').textContent = live.status === 'loading' ? 'loading real data' : 'no frames';
     }
     const blinkable = canBlink();
     $('#btn-play').disabled = !blinkable;
@@ -3279,7 +3355,7 @@ body.tm-on .snap-btn { bottom: 170px; }
         const span = days.length > 1 ? `${days[0]} → ${days[days.length - 1]}` : days[0];
         missionEl.textContent = `${BANDS[state.band].mission || 'SPHEREx'} visit ${e.survey} · ${f.members.length} exp · ${span}`;
       } else missionEl.textContent = e.survey ? `${missions} survey ${e.survey}` : missions;
-    }
+    } else if (liveActive()) missionEl.textContent = live.status === 'loading' ? 'Fetching real photographs…' : 'No real photographs';
     const scanEl = $('#hud-scan');
     scanEl.hidden = !(f && f.scan && !stacked);
     if (f && f.scan) scanEl.textContent = f.scan === 'asc' ? 'Ascending scan' : 'Descending scan';
@@ -3306,9 +3382,10 @@ body.tm-on .snap-btn { bottom: 170px; }
       const k = Math.floor((pointer.x - img.x) / cell), r = Math.floor((pointer.y - img.y) / cell);
       if (view && k >= 0 && r >= 0 && k < model.N && r < model.N) {
         const i = r * model.N + k;
+        const mk = view.frame && !state.shiftAdd ? frameMask(view.frame) : null;
         px = view.imgs.length === 2
           ? `(${k}, ${r})  ${fmt(view.imgs[0][i], 0)} / ${fmt(view.imgs[1][i], 0)}`
-          : `(${k}, ${r})  ${fmt(view.imgs[0][i], 1)}`;
+          : mk && mk[i] ? `(${k}, ${r})  ≥ ${fmt(view.imgs[0][i], 0)} · too bright` : `(${k}, ${r})  ${fmt(view.imgs[0][i], 1)}`;
       }
     }
     $('#ro-title').textContent = pointer.inside ? 'Cursor' : 'Crosshair';
@@ -4076,7 +4153,7 @@ function init(THREE) {
   let lang = 'en';
   try { const l = localStorage.getItem('sky-lang'); lang = l === 'vi' || l === 'en' ? l : ((navigator.language || '').toLowerCase().startsWith('vi') ? 'vi' : 'en'); } catch { /* ignore */ }
   const S = {
-    en: { start: 'Start here', sky: 'Sky map', skyTitle: 'Open the 3D sky at this spot', kicker: 'NASA SPHEREx · Viewer',
+    en: { start: 'Guide', sky: 'Sky', skyTitle: 'Open the 3D sky at this spot', kicker: 'NASA SPHEREx · Viewer',
       title: 'What you are looking at',
       lede: 'Real infrared photos of one small patch of sky, taken on different dates by NASA telescopes. Stars stay put. Anything that moves, or changes brightness, between photos is worth a closer look.',
       steps: ['Press play. The photos blink one after another.', 'Watch for a dot that jumps or flickers.', 'Press G to circle the real Gaia stars, then hover one to read its card.'],
@@ -4085,7 +4162,7 @@ function init(THREE) {
       sim: '<b>Simulated field</b> built from real Gaia stars. Blink the frames: fast movers shift, the rest stay still.',
       targets: [['Barnard’s Star', 'The fastest star across our sky. It shifts between visits.'], ['WISE 0855−0714', 'The coldest brown dwarf. It only shows in infrared.'],
                 ['Epsilon Indi B', 'A pair of brown dwarfs next door.'], ['RW Aurigae', 'A young star that flickers.'], ['R Draconis', 'A giant star that brightens and fades.']] },
-    vi: { start: 'Bắt đầu từ đây', sky: 'Bản đồ sao', skyTitle: 'Mở bầu trời 3D ở đúng chỗ này', kicker: 'NASA SPHEREx · Trình xem',
+    vi: { start: 'Hướng dẫn', sky: 'Bầu trời', skyTitle: 'Mở bầu trời 3D ở đúng chỗ này', kicker: 'NASA SPHEREx · Trình xem',
       title: 'Bạn đang nhìn thấy gì',
       lede: 'Ảnh hồng ngoại thật của một mảng trời nhỏ, do các kính viễn vọng NASA chụp vào những ngày khác nhau. Sao thường đứng yên. Bất cứ thứ gì di chuyển hoặc đổi độ sáng giữa các ảnh đều đáng xem kỹ.',
       steps: ['Bấm chạy. Các ảnh nhấp nháy lần lượt.', 'Tìm một chấm nhảy vị trí hoặc nhấp nháy.', 'Bấm G để khoanh các sao Gaia thật, rồi rê chuột vào một sao để đọc thẻ của nó.'],
@@ -4095,14 +4172,15 @@ function init(THREE) {
       targets: [['Sao Barnard', 'Ngôi sao lướt qua bầu trời nhanh nhất. Nó dịch chuyển giữa các lần ghé thăm.'], ['WISE 0855−0714', 'Sao lùn nâu lạnh nhất. Chỉ hiện trong hồng ngoại.'],
                 ['Epsilon Indi B', 'Cặp sao lùn nâu láng giềng.'], ['RW Aurigae', 'Ngôi sao trẻ nhấp nháy.'], ['R Draconis', 'Ngôi sao khổng lồ sáng lên rồi mờ đi.']] },
   };
-  const T = S[lang];
+  const T = S[lang], vi0 = lang === 'vi';
   /* The same five targets the sky map offers: [ra, dec, band, fov] */
-  const TARGETS = [[269.4466, 4.768, 'SD2', 120], [133.786245, -7.244372, 'SD6', 120], [330.84, -56.785, 'SD2', 120], [76.956, 30.401, 'SD2', 120], [248.167, 66.755, 'SD3', 120]];
+  const TARGETS = [[269.446074, 4.770706, 'SD2', 120], [133.757788, -7.242024, 'SD6', 120], [331.098398, -56.801256, 'SD2', 120], [76.956589, 30.401286, 'SD2', 120], [248.16722, 66.755025, 'SD3', 120]];
 
   /* nav: Start here + Sky map */
   const meta = $('.nav-meta');
   const startBtn = Object.assign(document.createElement('button'), { type: 'button', className: 'fr-btn is-accent', id: 'fr-start-btn' });
-  startBtn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.8"/><path d="M12 17.2h.01"/></svg><span class="fr-lbl">${T.start}</span>`;
+  startBtn.title = vi0 ? 'Mở hướng dẫn: bắt đầu từ đâu' : 'Where to start: a 30-second guide';
+  startBtn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15.6 8.4l-2 5.2-5.2 2 2-5.2z"/></svg><span class="fr-lbl">${T.start}</span>`;
   const skyBtn = Object.assign(document.createElement('a'), { className: 'fr-btn', id: 'fr-sky-btn', href: 'welcome.html#sky', title: T.skyTitle });
   skyBtn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><ellipse cx="12" cy="12" rx="11" ry="4" transform="rotate(-24 12 12)"/></svg><span class="fr-lbl">${T.sky}</span>`;
   if (meta) { meta.appendChild(skyBtn); meta.appendChild(startBtn); }
@@ -4386,8 +4464,8 @@ function init(THREE) {
   const C = window.SpaceCollection, S = C.S, vi = /ạ|ư|ê/.test(S.title);
   const btn = Object.assign(document.createElement('button'), { type: 'button', className: 'fr-btn', id: 'col-btn', title: S.title });
   btn.setAttribute('aria-expanded', 'false'); btn.setAttribute('aria-controls', 'col-drawer');
-  btn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10a1 1 0 0 1 1 1v15l-6-4-6 4V5a1 1 0 0 1 1-1z"/></svg><span class="fr-lbl">' + (vi ? 'Bộ sưu tập' : 'Collection') + '</span><i class="col-n" id="col-n"></i>';
-  const tabs = $('#nav .tabs'); tabs.parentNode.insertBefore(btn, tabs);
+  btn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10a1 1 0 0 1 1 1v15l-6-4-6 4V5a1 1 0 0 1 1-1z"/></svg><span class="fr-lbl">' + (vi ? 'Đã lưu' : 'Saved') + '</span><i class="col-n" id="col-n"></i>';
+  const meta = $('#nav .nav-meta'), guide = $('#fr-start-btn'); if (meta && guide) meta.insertBefore(btn, guide); else { const tabs = $('#nav .tabs'); tabs.parentNode.insertBefore(btn, tabs); }
   const drawer = Object.assign(document.createElement('aside'), { className: 'col-drawer', id: 'col-drawer', hidden: true });
   drawer.setAttribute('aria-label', S.title); document.body.appendChild(drawer);
   C.mount(drawer, (it) => ({ viewer: `index.html?ra=${it.ra}&dec=${it.dec}&band=SD2&fov=120`, sky: `welcome.html?ra=${it.ra}&dec=${it.dec}#sky` }));

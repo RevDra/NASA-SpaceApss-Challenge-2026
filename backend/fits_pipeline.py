@@ -111,6 +111,7 @@ def process_single_fits(cutout_uri: str):
             "exposure": round(exptime, 1),
             "max_snr": round(max_snr, 1),
             "bad_ratio": bad_ratio,
+            "bad_mask": bad_mask,
         }
 
 
