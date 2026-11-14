@@ -16,3 +16,7 @@ yarn-error.log*
 
 # Live SPHEREx cutout cache (viewer/serve.py)
 spherex_cache/
+
+
+*.fits
+backend/cache/
