@@ -74,6 +74,15 @@ python star_info.py 4472832130942575872
 - **Real Gaia DR3 overlay.** Press `G` to overlay real stars from ESA Gaia DR3. High-proper-motion stars show yellow motion vector arrows from epoch J2016 to J2026.
 - **Offline cache.** Live exposures are cached in `spherex_cache/` and Gaia DR3 records in `gaia_cache/`, and star cards in `spherex_cache/star_*.json` for instant zero-latency demo.
 
+## Simulated bands (WISE W1/W2, SPHEREx sim)
+
+The simulated bands draw the real Gaia DR3 stars of the current field (`/api/gaia?limit=800`), not a random sky.
+Each star keeps its true position, G magnitude, BP−RP colour, proper motion and parallax. Its WISE W2 brightness is
+estimated from G and BP−RP (G−W2 ≈ 1.75·(BP−RP) up to BP−RP = 1, then +1.3 per magnitude). Fast movers move when you
+blink: for example Barnard's Star at `269.4482 4.7420`, FOV 240, band W2 crosses about 145″ from 2010 to 2024.
+The coloured rings and the star cards work on these images too. If Gaia is unreachable, the app falls back to the old
+random field and the status bar says so.
+
 ## Limitations
 
 - **Wavelength changes between exposures.** SPHEREx uses linear variable filters, so a source is imaged at a slightly different wavelength in each exposure. Some brightness change between frames is expected.
