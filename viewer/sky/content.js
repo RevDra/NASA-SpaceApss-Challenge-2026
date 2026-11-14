@@ -674,7 +674,7 @@ export const BODIES = {
 /* ------------------------------------------------------------------ the opening journey (scroll story) */
 const JOURNEY = {
   en: {
-    jHeroKick: 'Space_VI · NASA Space Apps Challenge 2026',
+    jHeroKick: 'NODIXHI · NASA Space Apps Challenge 2026',
     jHeroTitle: 'Look up. Then look again in six months.',
     jHeroSub: 'A telescope called SPHEREx photographs the entire sky every six months. Stars that shift between visits are the ones worth finding. This is how we let anyone do it.',
     jBegin: 'Begin the journey', jSkipSky: 'Skip to the sky', jChip: 'Challenge: Planet X and SPHEREx', jScroll: 'Scroll',
@@ -698,11 +698,11 @@ const JOURNEY = {
              ['Viewer', 'Blink real SPHEREx photographs taken months apart. A dot that jumps is moving.']],
     jNow: 'Right now', jMoonLit: 'Moon lit', jCometsTracked: 'comets tracked',
     jSources: 'Built on real data',
-    jK5: 'Space_VI', jT5: 'Ready when you are.', jB5: 'NASA Space Apps Challenge · Ho Chi Minh City 2026', jEnter: 'Start using',
+    jK5: 'NODIXHI', jT5: 'Ready when you are.', jB5: 'NASA Space Apps Challenge · Ho Chi Minh City 2026', jEnter: 'Start using',
     jRail: 'Chapters',
   },
   vi: {
-    jHeroKick: 'Space_VI · NASA Space Apps Challenge 2026',
+    jHeroKick: 'NODIXHI · NASA Space Apps Challenge 2026',
     jHeroTitle: 'Hãy nhìn lên. Rồi nhìn lại sau sáu tháng.',
     jHeroSub: 'Kính viễn vọng SPHEREx chụp toàn bộ bầu trời cứ sáu tháng một lần. Những ngôi sao dịch chuyển giữa hai lần chụp chính là thứ đáng đi tìm. Đây là cách chúng tôi để ai cũng làm được điều đó.',
     jBegin: 'Bắt đầu hành trình', jSkipSky: 'Vào thẳng bầu trời', jChip: 'Đề bài: Planet X and SPHEREx', jScroll: 'Cuộn',
@@ -726,7 +726,7 @@ const JOURNEY = {
              ['Trình xem', 'Nháy qua các ảnh SPHEREx thật chụp cách nhau nhiều tháng. Chấm nào nhảy chỗ là đang chuyển động.']],
     jNow: 'Ngay lúc này', jMoonLit: 'Mặt Trăng sáng', jCometsTracked: 'sao chổi đang theo dõi',
     jSources: 'Xây trên dữ liệu thật',
-    jK5: 'Space_VI', jT5: 'Sẵn sàng khi bạn sẵn sàng.', jB5: 'NASA Space Apps Challenge · TP. Hồ Chí Minh 2026', jEnter: 'Bắt đầu sử dụng',
+    jK5: 'NODIXHI', jT5: 'Sẵn sàng khi bạn sẵn sàng.', jB5: 'NASA Space Apps Challenge · TP. Hồ Chí Minh 2026', jEnter: 'Bắt đầu sử dụng',
     jRail: 'Các chương',
   },
 };
