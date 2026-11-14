@@ -15,3 +15,6 @@ ipykernel>=6.29.0
 reproject
 fastapi
 uvicorn
+
+# HTTPS CA bundle for archive requests (viewer, backend); needed on Python builds without system certificates
+certifi>=2023.7.22

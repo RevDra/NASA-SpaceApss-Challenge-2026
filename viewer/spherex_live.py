@@ -42,14 +42,26 @@ except Exception:
     HAS_DENOISE = False
     
     
+# --- HTTPS certificates ---
+# Some Python installs (notably python.org builds on macOS) ship without CA certificates, so HTTPS fails with
+# CERTIFICATE_VERIFY_FAILED. If certifi is installed, use its CA bundle (verification stays on). Otherwise keep
+# Python's default, which verifies against the system store and works on Windows and most Linux setups.
+# Verification is only switched off when you explicitly ask for it with SPHEREX_INSECURE_SSL=1, never silently:
+# this setting applies to every HTTPS request the server makes (IRSA, Gaia, SIMBAD, NASA Exoplanet Archive).
+import os
 import ssl
 try:
     import certifi
-    ssl._create_default_https_context = lambda: ssl.create_default_context(cafile=certifi.where())
-except Exception:
+    _CA_FILE = certifi.where()
+    ssl._create_default_https_context = lambda: ssl.create_default_context(cafile=_CA_FILE)
+except ImportError:
+    pass
+if os.environ.get("SPHEREX_INSECURE_SSL") == "1":
     ssl._create_default_https_context = ssl._create_unverified_context
-    
-    
+    print("  WARNING: SPHEREX_INSECURE_SSL=1, HTTPS certificate verification is OFF for this server.\n"
+          "           Prefer `pip install certifi` (or run 'Install Certificates.command' on macOS).", file=sys.stderr)
+
+
 SIA_URL = "https://irsa.ipac.caltech.edu/SIA"
 COLLECTIONS = ("spherex_dr1", "spherex_qr3")
 DETECTORS = {
