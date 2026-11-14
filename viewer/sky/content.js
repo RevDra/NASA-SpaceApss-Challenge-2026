@@ -459,7 +459,7 @@ const JOURNEY = {
              ['Viewer', 'Blink real SPHEREx photographs taken months apart. A dot that jumps is moving.']],
     jNow: 'Right now', jMoonLit: 'Moon lit', jCometsTracked: 'comets tracked',
     jSources: 'Built on real data',
-    jK5: 'Space_VI', jT5: 'Ready when you are.', jB5: 'NASA Space Apps Challenge · Ho Chi Minh City 2026', jEnter: 'Enter the sky',
+    jK5: 'Space_VI', jT5: 'Ready when you are.', jB5: 'NASA Space Apps Challenge · Ho Chi Minh City 2026', jEnter: 'Start using',
     jRail: 'Chapters',
   },
   vi: {
@@ -487,7 +487,7 @@ const JOURNEY = {
              ['Trình xem', 'Nháy qua các ảnh SPHEREx thật chụp cách nhau nhiều tháng. Chấm nào nhảy chỗ là đang chuyển động.']],
     jNow: 'Ngay lúc này', jMoonLit: 'Mặt Trăng sáng', jCometsTracked: 'sao chổi đang theo dõi',
     jSources: 'Xây trên dữ liệu thật',
-    jK5: 'Space_VI', jT5: 'Sẵn sàng khi bạn sẵn sàng.', jB5: 'NASA Space Apps Challenge · TP. Hồ Chí Minh 2026', jEnter: 'Bước vào bầu trời',
+    jK5: 'Space_VI', jT5: 'Sẵn sàng khi bạn sẵn sàng.', jB5: 'NASA Space Apps Challenge · TP. Hồ Chí Minh 2026', jEnter: 'Bắt đầu sử dụng',
     jRail: 'Các chương',
   },
 };

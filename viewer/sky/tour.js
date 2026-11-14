@@ -17,15 +17,27 @@ const G = {
     tiles: [['sky', 'My sky', 'See the real sky above you, right now, from any place.', 'Open'], ['cons', 'Constellations', 'Pick one to see its stars and the best nights to watch it.', 'Try Orion'], ['cal', 'Sky calendar', 'Moon phases, meteor showers and your own plans in one month view.', 'Open calendar'],
       ['map', 'Map of Vietnam in 3D', 'See where in Vietnam, including Hoang Sa and Truong Sa, the view is best.', 'Open the map'], ['spx', 'Real SPHEREx photos', 'Zoom into a star and watch it move in real infrared photographs.', 'Open the viewer']],
     next: 'Next', back: 'Back', done: 'Start exploring', skip: 'Skip', step: 'Step {a} of {b}',
-    steps: [
-      ['Start with the planets', 'Planets and the Moon are placed where they really are right now. Tap one to learn about it.'],
-      ['The clock moves the sky', 'Press play, pick a speed or a date. Planets, the Moon and comets move to where they were or will be.'],
-      ['Then the constellations', 'Tap a constellation name. Its star figure lights up and a panel opens.'],
-      ['When to watch it', 'Under the constellation, a strip of nights shows the best time. Add it to Google Calendar or download it.'],
-      ['Where in Vietnam', 'Choose a place on the 3D map of Vietnam. Taller bars mean the constellation climbs higher.'],
-      ['Your own sky', 'My sky shows the sky from your place at any time, with the ground and the horizon.'],
-      ['Into the real photographs', 'Open any star in the viewer to zoom into real SPHEREx infrared photographs.'],
-    ],
+    chooseH: 'How do you want to start?', chooseSub: 'Pick a path. You can open this again any time from the "How to use" button.',
+    starter: ['Starter', 'Explore step by step', 'Eight short steps: the sky, planets, the clock, a constellation, when and where to watch it, a star, then the main screen.', 'Start the tour'],
+    pro: ['Pro', 'Straight to the data', 'Two steps: open a star and read its real parameters, then see the whole main screen in one look.', 'Go Pro'],
+    never: 'Do not open this automatically', toMain: 'Open the main screen', helpMe: 'Open it for me', tryIt: 'Your turn: tap the star', modeStarter: 'Starter', modePro: 'Pro',
+    flow: {
+      starter: [
+        ['This is the real sky', 'Drag to look around, scroll to zoom. Every dot is a real star, put where it really is right now.'],
+        ['Planets and the Moon', 'They sit where they really are at this moment. Tap Jupiter, or any planet, to read about it.'],
+        ['The clock moves the sky', 'Press play, pick a speed or a date. Everything moves to where it was, or will be.'],
+        ['Open a constellation', 'Tap a constellation name. Its star figure lights up and a panel opens with how to find it.'],
+        ['When to watch it', 'Under the constellation a strip of nights shows the best time. Add it to Google Calendar or download it.'],
+        ['Where in Vietnam', 'Choose a place on the 3D map of Vietnam. Taller bars mean the constellation climbs higher there.'],
+        ['Pan to a bright star', 'Drag to pan the sky. The pulsing ring is Sirius, the brightest star. Hover it, then tap it to read its facts.', ['Its facts, from real data', 'Read \u201cDrift across the sky\u201d: the star really is moving. Bigger means faster.']],
+        ['The star that moves fastest', 'Barnard\u2019s Star is faint but runs across our sky about 10 arcseconds every year. This is the kind of mover the challenge hunts.'],
+        ['Into the main screen', 'Press the button on the star panel, or the one below, to zoom into real SPHEREx infrared photographs of it.'],
+      ],
+      pro: [
+        ['Pan to a bright star, read the numbers', 'Drag to pan. Hover the pulsing ring (Sirius) and tap it: distance, temperature, brightness and proper motion appear.', ['The real parameters', 'From SIMBAD and Gaia. Proper motion is the key number: a star that moves between photographs is what this challenge hunts.']],
+        ['The whole main screen', 'You will see the real SPHEREx frames, the time bar, Gaia rings and the controls, each marked with a number and one line.'],
+      ],
+    },
   },
   vi: {
     planetH: 'Xoay thử một hành tinh', planetNote: 'Kéo để xoay. Bề mặt là hình vẽ, không phải ảnh chụp; độ dài ngày, độ nghiêng và khoảng cách là số thật.', day: 'Một ngày', hrs: 'giờ', tilt: 'Độ nghiêng trục', dist: 'Cách Mặt Trời', au: 'AU', size: 'Đường kính', km: 'km', speed: 'Đang quay nhanh gấp {n} lần thật',
@@ -33,15 +45,27 @@ const G = {
     tiles: [['sky', 'Bầu trời của tôi', 'Xem bầu trời thật phía trên bạn, ngay lúc này, ở bất kỳ nơi nào.', 'Mở'], ['cons', 'Chòm sao', 'Chọn một chòm để xem các ngôi sao và những đêm ngắm đẹp nhất.', 'Thử Orion'], ['cal', 'Lịch bầu trời', 'Pha Trăng, mưa sao băng và kế hoạch của bạn trong một lịch tháng.', 'Mở lịch'],
       ['map', 'Bản đồ Việt Nam 3D', 'Xem nơi nào ở Việt Nam, cả Hoàng Sa và Trường Sa, ngắm đẹp nhất.', 'Mở bản đồ'], ['spx', 'Ảnh SPHEREx thật', 'Phóng to vào một ngôi sao và xem nó di chuyển trong ảnh hồng ngoại thật.', 'Mở trình xem']],
     next: 'Tiếp', back: 'Quay lại', done: 'Bắt đầu khám phá', skip: 'Bỏ qua', step: 'Bước {a} / {b}',
-    steps: [
-      ['Bắt đầu từ các hành tinh', 'Các hành tinh và Mặt Trăng nằm đúng chỗ của chúng ngay bây giờ. Bấm vào một hành tinh để tìm hiểu.'],
-      ['Đồng hồ điều khiển bầu trời', 'Bấm chạy, chọn tốc độ hoặc một ngày. Hành tinh, Mặt Trăng và sao chổi sẽ di chuyển về nơi chúng từng ở hay sẽ ở.'],
-      ['Rồi tới các chòm sao', 'Bấm tên một chòm sao. Hình nối sao sáng lên và một bảng thông tin mở ra.'],
-      ['Khi nào ngắm được', 'Dưới chòm sao có dải các đêm kèm giờ đẹp nhất. Thêm vào Google Calendar hoặc tải về.'],
-      ['Ở đâu tại Việt Nam', 'Chọn một nơi trên bản đồ 3D Việt Nam. Cột càng cao nghĩa là chòm sao lên càng cao.'],
-      ['Bầu trời của riêng bạn', '"Bầu trời của tôi" cho thấy bầu trời từ nơi bạn ở vào bất kỳ lúc nào, có cả mặt đất và đường chân trời.'],
-      ['Vào ảnh thật', 'Mở bất kỳ ngôi sao nào trong trình xem để phóng to vào ảnh hồng ngoại SPHEREx thật.'],
-    ],
+    chooseH: 'Bạn muốn bắt đầu thế nào?', chooseSub: 'Chọn một luồng. Bạn có thể mở lại bất cứ lúc nào bằng nút "Hướng dẫn sử dụng".',
+    starter: ['Starter', 'Khám phá từng bước', 'Tám bước ngắn: bầu trời, hành tinh, đồng hồ, một chòm sao, khi nào và ở đâu ngắm, một ngôi sao, rồi vào màn hình chính.', 'Bắt đầu tour'],
+    pro: ['Pro', 'Đi thẳng vào dữ liệu', 'Hai bước: mở một ngôi sao và đọc thông số thật, rồi xem toàn bộ màn hình chính trong một lần nhìn.', 'Vào chế độ Pro'],
+    never: 'Đừng tự mở cái này nữa', toMain: 'Vào màn hình chính', helpMe: 'Mở giúp tôi', tryIt: 'Đến lượt bạn: bấm vào ngôi sao', modeStarter: 'Starter', modePro: 'Pro',
+    flow: {
+      starter: [
+        ['Đây là bầu trời thật', 'Kéo để nhìn quanh, cuộn để phóng to. Mỗi chấm là một ngôi sao thật, đặt đúng chỗ của nó ngay lúc này.'],
+        ['Hành tinh và Mặt Trăng', 'Chúng nằm đúng chỗ thật ở thời điểm này. Bấm vào Sao Mộc, hay hành tinh nào, để đọc về nó.'],
+        ['Đồng hồ điều khiển bầu trời', 'Bấm chạy, chọn tốc độ hoặc một ngày. Mọi thứ di chuyển về nơi nó từng ở, hay sẽ ở.'],
+        ['Mở một chòm sao', 'Bấm tên một chòm sao. Hình nối sao sáng lên và một bảng mở ra, chỉ cách tìm nó.'],
+        ['Khi nào ngắm được', 'Dưới chòm sao có dải các đêm kèm giờ đẹp nhất. Thêm vào Google Calendar hoặc tải về.'],
+        ['Ở đâu tại Việt Nam', 'Chọn một nơi trên bản đồ 3D Việt Nam. Cột càng cao nghĩa là chòm sao càng lên cao ở đó.'],
+        ['Lia tới một ngôi sao sáng', 'Kéo để lia bầu trời. Vòng sáng nhấp nháy là Sirius, ngôi sao sáng nhất. Rê chuột vào nó rồi bấm để đọc thông tin.', ['Thông tin thật của nó', 'Đọc dòng \u201cTrôi trên bầu trời\u201d: ngôi sao này thực sự đang di chuyển. Số càng lớn là chạy càng nhanh.']],
+        ['Ngôi sao chạy nhanh nhất', 'Sao Barnard mờ nhưng chạy ngang bầu trời khoảng 10 giây cung mỗi năm. Đây đúng là loại vật đề bài đi tìm.'],
+        ['Vào màn hình chính', 'Bấm nút trên bảng sao, hoặc nút bên dưới, để phóng to vào ảnh hồng ngoại SPHEREx thật của nó.'],
+      ],
+      pro: [
+        ['Lia tới sao sáng, đọc thông số', 'Kéo để lia. Rê chuột vào vòng sáng nhấp nháy (Sirius) rồi bấm: khoảng cách, nhiệt độ, độ sáng và chuyển động riêng hiện ra.', ['Thông số thật', 'Lấy từ SIMBAD và Gaia. Chuyển động riêng là con số then chốt: sao dịch chuyển giữa các lần chụp chính là thứ đề bài này đi tìm.']],
+        ['Toàn bộ màn hình chính', 'Bạn sẽ thấy các khung SPHEREx thật, thanh thời gian, vòng Gaia và bảng điều khiển, mỗi thứ đánh số kèm một dòng giải thích.'],
+      ],
+    },
   },
 };
 
@@ -134,41 +158,115 @@ export function initTour(api) {
   planetCard.addEventListener('click', (e) => { const b = e.target.closest('[data-pl]'); if (b && b.dataset.pl !== p3.cur) { p3.cur = b.dataset.pl; buildPlanet(); } });
   new IntersectionObserver((es) => { es.forEach((e) => { if (e.isIntersecting && !p3.raf) buildPlanet(); else if (!e.isIntersecting) { cancelAnimationFrame(p3.raf); p3.raf = 0; } }); }, { threshold: 0.05 }).observe(planetCard);
 
-  /* ---------------------------------------------------------------- 3. guided tour, planets to constellations */
+  /* ---------------------------------------------------------------- 3. two flows: Starter (explore) and Pro (data, then the main screen) */
+  const KEY_AUTO = 'space-vi-tour-auto';
+  const SP = () => window.SpacePlan;
+  const closeModals = () => { const p = SP(); if (p && p.closeModals) p.closeModals(); };
+  const FLOWS = {
+    starter: [
+      { run: () => { closeModals(); api.setSkyMode('map'); api.closePanel(); }, target: '#mode-seg' },
+      { run: () => { closeModals(); api.setSkyMode('map'); if (api.state.eph) api.select('body', 'jupiter'); } },
+      { run: () => { closeModals(); api.closePanel(); }, target: '#time-dock' },
+      { run: () => { closeModals(); api.select('const', 'Ori'); } },
+      { run: () => { closeModals(); const pl = $('#pl'); if (pl) pl.scrollIntoView({ block: 'center', behavior: 'smooth' }); }, target: '#pl' },
+      { run: () => { const p = SP(); if (p) { p.setConst('Ori'); p.openMap(); } } },
+      { ask: true, run: () => { closeModals(); api.setSkyMode('map'); api.closePanel(); api.focusStar('Sirius'); } },
+      { run: () => { closeModals(); api.select('mover', 'barnard'); }, target: '#panel .facts' },
+      { run: () => { closeModals(); }, target: '#panel .p-cta', final: true },
+    ],
+    pro: [
+      { ask: true, run: () => { closeModals(); api.setSkyMode('map'); api.closePanel(); api.focusStar('Sirius'); } },
+      { run: () => { closeModals(); }, final: true },
+    ],
+  };
   const tour = Object.assign(document.createElement('aside'), { id: 'tour', hidden: true });
   tour.setAttribute('role', 'dialog'); tour.setAttribute('aria-label', 'Tour'); document.body.appendChild(tour);
   const hl = Object.assign(document.createElement('div'), { id: 'tour-hl', hidden: true }); document.body.appendChild(hl);
-  let step = 0; const N = 7;
-  const target = ['#time-dock', '#time-dock', null, '#pl', null, '#mode-seg', null];
-  const enterSky = () => api.enter();
-  function runStep() {
-    const tx = t(), [h, p] = tx.steps[step], P = window.SpacePlan;
-    tour.innerHTML = `<p class="tour-n">${esc(fmt(tx.step, { a: step + 1, b: N }))}</p><h3>${esc(h)}</h3><p>${esc(p)}</p><div class="tour-dots">${[...Array(N)].map((_, i) => `<i class="${i === step ? 'is-on' : ''}"></i>`).join('')}</div>
-      <div class="tour-btns"><button type="button" class="tour-skip" data-a="skip">${esc(tx.skip)}</button><span></span>${step ? `<button type="button" class="tour-b" data-a="back">${esc(tx.back)}</button>` : ''}<button type="button" class="tour-b tour-primary" data-a="next">${esc(step === N - 1 ? tx.done : tx.next)}</button></div>`;
-    tour.hidden = false; hl.hidden = true;
-    const close = () => { if (P && P.closeModals) P.closeModals(); };
-    if (step === 0) { close(); api.setSkyMode('map'); if (api.state.eph) api.select('body', 'jupiter'); }
-    else if (step === 1) { close(); api.closePanel(); }
-    else if (step === 2) { close(); api.select('const', 'Ori'); }
-    else if (step === 3) { close(); const pl = $('#pl'); if (pl) pl.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
-    else if (step === 4) { if (P) { P.setConst('Ori'); P.openMap(); } }
-    else if (step === 5) { close(); api.setSkyMode('local'); }
-    else if (step === 6) { close(); api.select('star', Math.max(0, api.state.stars.f.findIndex((s) => s[8] === 'Sirius'))); }
-    setTimeout(() => { const el = target[step] && $(target[step]); if (el && el.offsetParent !== null) { const b = el.getBoundingClientRect(); Object.assign(hl.style, { left: b.left - 6 + 'px', top: b.top - 6 + 'px', width: b.width + 12 + 'px', height: b.height + 12 + 'px' }); hl.hidden = false; } }, 900);
-  }
-  function start() { enterSky(); step = 0; setTimeout(runStep, api.state.mode === 'intro' ? 1400 : 100); }
-  function end() { tour.hidden = true; hl.hidden = true; const P = window.SpacePlan; if (P && P.closeModals) P.closeModals(); try { localStorage.setItem('space-vi-tour-done', '1'); } catch { /* ignore */ } }
-  tour.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; const a = b.dataset.a; if (a === 'skip') end(); else if (a === 'back') { step = Math.max(0, step - 1); runStep(); } else if (step === N - 1) end(); else { step++; runStep(); } });
-  addEventListener('keydown', (e) => { if (e.key === 'Escape' && !tour.hidden) end(); });
+  const pick = Object.assign(document.createElement('div'), { id: 'tour-pick', className: 'tour-pick', hidden: true });
+  pick.setAttribute('role', 'dialog'); pick.setAttribute('aria-modal', 'true'); document.body.appendChild(pick);
+  let mode = null, step = 0, forced = false, hlTimer = 0;
+  const setOn = (on) => document.body.classList.toggle('tour-on', on);
 
-  /* the "How to use" buttons: on the landing page and in the sky */
+  const picked = () => !!(api.state.sel && api.state.sel.kind === 'star');
+  let poll = 0;
+  function placeHl(sel) {
+    clearTimeout(hlTimer);
+    hlTimer = setTimeout(() => { const el = sel && $(sel); if (el && el.offsetParent !== null) { const b = el.getBoundingClientRect(); Object.assign(hl.style, { left: b.left - 6 + 'px', top: b.top - 6 + 'px', width: b.width + 12 + 'px', height: b.height + 12 + 'px' }); hl.hidden = false; } else hl.hidden = true; }, 900);
+  }
+  function renderCard(flowKey, f, found) {
+    const tx = t(), N = FLOWS[flowKey].length, [h0, p0, fd] = tx.flow[flowKey][step], h = found && fd ? fd[0] : h0, p = found && fd ? fd[1] : p0;
+    const nextLabel = f.final ? tx.toMain : f.ask && !found ? tx.helpMe : tx.next;
+    tour.innerHTML = `<p class="tour-n"><span class="tour-mode is-${flowKey}">${esc(flowKey === 'pro' ? tx.modePro : tx.modeStarter)}</span> ${esc(fmt(tx.step, { a: step + 1, b: N }))}</p><h3>${esc(h)}</h3><p>${esc(p)}</p>${f.ask && !found ? `<p class="tour-try">${esc(tx.tryIt)}</p>` : ''}<div class="tour-dots">${[...Array(N)].map((_, i) => `<i class="${i === step ? 'is-on' : ''}"></i>`).join('')}</div>
+      <div class="tour-btns"><button type="button" class="tour-skip" data-a="skip">${esc(tx.skip)}</button><span></span>${step ? `<button type="button" class="tour-b" data-a="back">${esc(tx.back)}</button>` : ''}<button type="button" class="tour-b tour-primary" data-a="next">${esc(nextLabel)}</button></div>`;
+  }
+  function runStep() {
+    const f = FLOWS[mode][step]; clearInterval(poll); api.clearHint && api.clearHint();
+    renderCard(mode, f, false); tour.hidden = false; hl.hidden = true; setOn(true); f.run();
+    placeHl(f.target);
+    if (f.ask) {                                              // hands-on: the user pans, hovers and taps the star; we notice and show what to read
+      poll = setInterval(() => { if (tour.hidden) { clearInterval(poll); return; } if (picked()) { clearInterval(poll); renderCard(mode, f, true); placeHl('#panel .facts'); } }, 300);
+    }
+  }
+  function end() { clearInterval(poll); api.clearHint && api.clearHint(); tour.hidden = true; hl.hidden = true; pick.hidden = true; setOn(false); closeModals(); }
+  function begin(m) { mode = m; step = 0; pick.hidden = true; runStep(); }
+  function toMain() {
+    const m = mode; end(); try { sessionStorage.setItem('space-vi-vtour', m); } catch { /* ignore */ }
+    api.go(api.moverUrl());
+  }
+  tour.addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return; const a = b.dataset.a, last = FLOWS[mode].length - 1;
+    const f = FLOWS[mode][step];
+    if (a === 'skip') { clearInterval(poll); end(); } else if (a === 'back') { step = Math.max(0, step - 1); runStep(); }
+    else if (a === 'next' && f.ask && !picked()) { api.selectStar('Sirius'); }       // "open it for me": the poll then shows the facts
+    else if (step === last) toMain(); else { step++; runStep(); }
+  });
+
+  /* the chooser: shown by itself when the sky opens, and by the "How to use" buttons */
+  function showChooser() {
+    const tx = t();
+    let off = false; try { off = localStorage.getItem(KEY_AUTO) === 'off'; } catch { /* ignore */ }
+    const card = (k, ic) => { const [tag, h, p, b] = tx[k]; return `<button type="button" class="tp-card is-${k}" data-mode="${k}"><span class="tp-ic">${ic}</span><em>${esc(tag)}</em><b>${esc(h)}</b><span class="tp-p">${esc(p)}</span><i class="tp-go">${esc(b)}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></i></button>`; };
+    pick.innerHTML = `<div class="tp-box"><button type="button" class="tp-x" data-a="close" aria-label="${esc(tx.skip)}"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button><h2>${esc(tx.chooseH)}</h2><p class="tp-sub">${esc(tx.chooseSub)}</p>
+      <div class="tp-grid">${card('starter', '<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/><ellipse cx="24" cy="24" rx="20" ry="7" transform="rotate(-24 24 24)" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="40" cy="14" r="2.4" fill="currentColor"/></svg>')}${card('pro', '<svg viewBox="0 0 48 48"><path d="M6 36l10-12 8 6 10-16 8 8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/><path d="M6 42h36" stroke="currentColor" stroke-width="2"/></svg>')}</div>
+      <label class="tp-never"><input type="checkbox" id="tp-never"${off ? ' checked' : ''}> ${esc(tx.never)}</label></div>`;
+    pick.hidden = false; setOn(true); $('#start') && ($('#start').hidden = true);
+  }
+  pick.addEventListener('click', (e) => {
+    const never = $('#tp-never'); const remember = () => { try { never && never.checked ? localStorage.setItem(KEY_AUTO, 'off') : localStorage.removeItem(KEY_AUTO); } catch { /* ignore */ } };
+    const c = e.target.closest('[data-mode]'); if (c) { remember(); begin(c.dataset.mode); return; }
+    if (e.target === pick || e.target.closest('[data-a="close"]')) { remember(); pick.hidden = true; setOn(false); }
+  });
+  addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (!pick.hidden) { pick.hidden = true; setOn(false); } else if (!tour.hidden) end(); } });
+
+  /* called when the sky opens: show the chooser by itself (unless switched off, or we came back from the viewer with a target) */
+  function auto() {
+    if (api.state.arrive) { forced = false; return; }
+    let off = false; try { off = localStorage.getItem(KEY_AUTO) === 'off'; } catch { /* ignore */ }
+    if (off && !forced) return; forced = false;
+    setTimeout(showChooser, 900);
+  }
+  function start() { if (api.state.mode === 'intro') { forced = true; api.enter(); } else showChooser(); }
+
+  /* "How to use" buttons, and the Start button that appears at the end of the landing journey */
   const heroCta = $('#hero .hero-cta'), bar = $('.bar-actions');
   const mk = (cls) => Object.assign(document.createElement('button'), { type: 'button', className: cls });
   const b1 = mk('btn btn-ghost'), b2 = mk('chip'); b2.id = 'howto-bar'; b1.id = 'howto';
   if (heroCta) heroCta.insertBefore(b1, $('#skip-sky'));
   if (bar) bar.insertBefore(b2, $('#lang'));
   [b1, b2].forEach((b) => b.addEventListener('click', start));
-  function refresh() { const tx = t(); b1.textContent = tx.howto; b2.textContent = tx.howto; renderDo(); planetCard.dataset.built = ''; if (planetCard.isConnected && p3.raf) buildPlanet(); else card(); if (!tour.hidden) runStep(); }
+  const fab = Object.assign(document.createElement('button'), { type: 'button', id: 'start-fab', className: 'btn btn-primary' });
+  document.body.appendChild(fab); fab.addEventListener('click', () => api.enter());
+  const jr = $('#journey');
+  if (jr) {
+    const upd = () => { const max = jr.scrollHeight - jr.clientHeight, r = max > 0 ? jr.scrollTop / max : 0; fab.classList.toggle('is-on', document.body.classList.contains('is-intro') && r > 0.45 && r < 0.96); };
+    jr.addEventListener('scroll', upd, { passive: true }); addEventListener('resize', upd); upd();
+    new MutationObserver(upd).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  }
+  function refresh() {
+    const tx = t(); b1.textContent = tx.howto; b2.textContent = tx.howto; fab.innerHTML = `<span>${esc(api.lang() === 'vi' ? 'Bắt đầu sử dụng' : 'Start using')}</span><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    renderDo(); planetCard.dataset.built = ''; if (planetCard.isConnected && p3.raf) buildPlanet(); else card();
+    if (!tour.hidden) runStep(); if (!pick.hidden) showChooser();
+  }
   refresh();
-  return { refresh, start };
+  return { refresh, start, auto };
 }

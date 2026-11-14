@@ -36,3 +36,32 @@
 @keyframes tour-pulse { 50% { box-shadow: 0 0 0 11px rgba(56, 189, 248, .06), 0 0 40px rgba(56, 189, 248, .6); } }
 #howto { white-space: nowrap; }
 @media (max-width: 900px) { #tour { bottom: auto; top: 72px; } }
+
+/* two paths: chooser, mode chip, start button */
+body.tour-on #coach, body.tour-on #start { display: none !important; }
+.tour-mode { display: inline-block; margin-right: 6px; padding: 2px 8px; border-radius: 6px; font-size: 10px; letter-spacing: .1em; }
+.tour-mode.is-starter { background: rgba(94, 234, 212, .16); color: #5eead4; } .tour-mode.is-pro { background: rgba(245, 165, 74, .18); color: var(--amber); }
+.tour-pick { position: fixed; inset: 0; z-index: 85; display: grid; place-items: center; padding: 18px; background: rgba(2, 4, 8, .72); backdrop-filter: blur(6px); animation: fade-in .3s var(--ease); }
+.tp-box { position: relative; width: min(760px, 100%); max-height: 100%; overflow: auto; padding: 28px 26px 22px; border-radius: 26px; background: var(--panel); border: 1px solid var(--line); box-shadow: 0 40px 80px -30px #000; }
+.tp-box h2 { margin: 0 0 6px; font-size: clamp(22px, 3.4vw, 30px); font-weight: 800; letter-spacing: -.03em; }
+.tp-sub { margin: 0 0 18px; font-size: 14px; line-height: 1.5; color: var(--text-2); max-width: 54ch; }
+.tp-x { position: absolute; top: 14px; right: 14px; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 11px; border: 1px solid var(--line-soft); background: rgba(255, 255, 255, .04); }
+.tp-x svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.tp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.tp-card { display: grid; align-content: start; justify-items: start; gap: 8px; padding: 20px 18px 18px; text-align: left; border-radius: 22px; border: 1px solid var(--line); background: rgba(255, 255, 255, .03); transition: transform .3s var(--ease), border-color .2s, background .2s; }
+.tp-card:hover { transform: translateY(-4px); background: rgba(255, 255, 255, .07); }
+.tp-card.is-starter:hover { border-color: #5eead4; } .tp-card.is-pro:hover { border-color: var(--amber); }
+.tp-ic svg { width: 46px; height: 46px; } .is-starter .tp-ic { color: #5eead4; } .is-pro .tp-ic { color: var(--amber); }
+.tp-card em { font: 700 11px var(--font-mono); font-style: normal; letter-spacing: .12em; text-transform: uppercase; color: var(--silver); }
+.tp-card b { font-size: 19px; font-weight: 800; letter-spacing: -.02em; }
+.tp-p { font-size: 13px; line-height: 1.55; color: var(--text-2); }
+.tp-go { margin-top: 6px; display: inline-flex; align-items: center; gap: 6px; font-style: normal; font-size: 13px; font-weight: 700; color: #fff; }
+.tp-go svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.tp-never { display: flex; align-items: center; gap: 8px; margin-top: 16px; font-size: 12.5px; color: var(--silver); cursor: pointer; }
+@media (max-width: 640px) { .tp-grid { grid-template-columns: 1fr; } }
+#start-fab { position: fixed; z-index: 30; left: 50%; bottom: 26px; transform: translate(-50%, 24px); opacity: 0; pointer-events: none; box-shadow: 0 18px 40px -12px rgba(56, 189, 248, .5); transition: opacity .4s var(--ease), transform .4s var(--ease); }
+#start-fab.is-on { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+#star-hint { position: fixed; z-index: 70; left: 0; top: 0; width: 46px; height: 46px; border-radius: 50%; pointer-events: none; border: 2px solid #fff; box-shadow: 0 0 22px rgba(56, 189, 248, .9), inset 0 0 14px rgba(56, 189, 248, .5); animation: hint-pulse 1.4s ease-in-out infinite; }
+#star-hint::after { content: attr(data-name); position: absolute; left: 54px; top: 50%; transform: translateY(-50%); padding: 3px 9px; border-radius: 8px; background: rgba(3, 6, 12, .85); border: 1px solid var(--line); font: 700 12px var(--font-sans); white-space: nowrap; }
+@keyframes hint-pulse { 50% { width: 58px; height: 58px; opacity: .6; } }
+.tour-try { margin-top: 8px !important; font-weight: 700; color: var(--amber) !important; }

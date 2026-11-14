@@ -1146,6 +1146,7 @@ function enterSky(instant) {
   applyToggles(); setSkyMode(state.skyMode);
   let seen = false; try { seen = localStorage.getItem('sky-start-seen') === '1'; } catch { /* ignore */ }
   $('#start').hidden = instant || seen; renderCoach();
+  if (tourApi) tourApi.auto();   // the two-path "How to use" opens by itself
   if (!sky) { setGuide(true); return; }
   const target = state.arrive ? { ra: state.arrive.ra, dec: clamp(state.arrive.dec, -84, 84), fov: 26 } : { ra: 86, dec: 3, fov: 68 };
   if (instant || reduce) { Object.assign(view, target); fovTarget = target.fov; sky.intro.visible = false; return; }
@@ -1399,7 +1400,24 @@ function updateLabels() {
     el.classList.toggle('is-faint', p.mag == null || p.mag > 13); const cm = $('.cm', el); if (cm) cm.textContent = p.mag == null ? '' : `${T('magShort')} ${nf(p.mag, 1)}`;
   });
 }
+/* tour helper: pan to a bright star and pulse a ring on it, so the user can hover it and click for its facts */
+function starIndex(name) { return state.stars ? state.stars.f.findIndex((s) => s[8] && s[8].toLowerCase() === name.toLowerCase()) : -1; }
+function focusStar(name) {
+  const i = starIndex(name); if (i < 0) return -1; const s = starOf(i);
+  state.hintStar = i; flyTo(s.ra, s.dec, 16, true); return i;
+}
+function updateHintRing() {
+  let el = $('#star-hint'); if (!el) { el = Object.assign(document.createElement('div'), { id: 'star-hint', hidden: true }); document.body.appendChild(el); }
+  const i = state.hintStar ?? -1;
+  if (i < 0 || state.mode !== 'sky' || (state.sel && state.sel.kind === 'star')) { el.hidden = true; return; }
+  const s = starOf(i), { THREE, camera } = sky, r = A.applyRows(state.M, eq(s.ra, s.dec, 100)), v = new THREE.Vector3(r[0], r[1], r[2]);
+  const fwd = new THREE.Vector3(); camera.getWorldDirection(fwd); const ahead = v.dot(fwd) > 0; v.project(camera);
+  if (!ahead || Math.abs(v.x) > 1.05 || Math.abs(v.y) > 1.05) { el.hidden = true; return; }
+  el.hidden = false; el.dataset.name = s.name;
+  el.style.transform = `translate(${((v.x + 1) / 2 * innerWidth).toFixed(1)}px, ${((1 - v.y) / 2 * innerHeight).toFixed(1)}px) translate(-50%, -50%)`;
+}
 function updateRing() {
+  updateHintRing();
   const ring = $('#star-ring'); let i = -1;
   if (state.sel && state.sel.kind === 'star') i = state.sel.id; else if (hoverStar >= 0 && state.mode === 'sky') i = hoverStar;
   if (i < 0 || state.mode !== 'sky') { ring.hidden = true; return; }
@@ -1430,7 +1448,7 @@ bindJourney();
       window.SpacePlan = planApi = initPlan({ A, lang: () => lang, eph: () => state.eph, state, setSite, setSkyMode, setTime, select, toast });
     }
   } catch (e) { console.warn('[plan]', e); }
-  try { tourApi = initTour({ A, lang: () => lang, state, enter: () => { if (state.mode === 'intro') enterSky(false); }, setSkyMode, select, closePanel }); } catch (e) { console.warn('[tour]', e); }
+  try { tourApi = initTour({ A, lang: () => lang, state, enter: () => { if (state.mode === 'intro') enterSky(false); }, setSkyMode, select, closePanel, go: (url) => zoomIntoViewer(url), focusStar, clearHint: () => { state.hintStar = -1; }, selectStar: (name) => { const i = starIndex(name); if (i >= 0) { state.hintStar = -1; select('star', i); } }, moverUrl: () => { const m = MOVERS.find((x) => x.id === 'barnard'); return viewerUrl(m.ra, m.dec, m.fov, m.band); } }); } catch (e) { console.warn('[tour]', e); }
   await initSky();
   $('#enter').disabled = false; $('#skip-sky').disabled = false; $('#loading').classList.add('is-done'); $('#journey').focus({ preventScroll: true });
   if (location.hash === '#sky') enterSky(true);

@@ -4669,6 +4669,44 @@ function init(THREE) {
   }, 150);
 })();
 </script>
+<script id="vt-js">
+/* Pro path: when the sky page sends you here in Pro mode, mark the whole main screen with four numbered points and one line each. */
+(() => {
+  let m = null; try { m = sessionStorage.getItem('space-vi-vtour'); if (m) sessionStorage.removeItem('space-vi-vtour'); } catch (e) { /* ignore */ }
+  if (m !== 'pro') return;
+  let vi = false; try { const l = localStorage.getItem('sky-lang'); vi = l === 'vi' || (l !== 'en' && (navigator.language || '').toLowerCase().startsWith('vi')); } catch (e) { /* ignore */ }
+  const T = vi ? { h: 'Màn hình chính trong 30 giây', goal: 'Đề bài: Planet X và SPHEREx. Tìm thứ dịch chuyển giữa các lần chụp.', ok: 'Đã hiểu',
+      p: ['Ảnh thật của SPHEREx và toạ độ. Mỗi khung là một lần chụp thật từ NASA/IPAC.', 'Thanh thời gian. Bấm chạy: chấm nào nhảy vị trí là vật đang di chuyển.', 'Vòng màu là sao Gaia trong ảnh. Rê chuột vào để đọc thẻ thông tin.', 'Bảng bên phải: đổi mục tiêu, màu ánh sáng, chuyển sang 14 năm WISE, chỉnh độ sáng.'] }
+    : { h: 'The main screen in 30 seconds', goal: 'The challenge: Planet X and SPHEREx. Find what shifts between photographs.', ok: 'Got it',
+      p: ['Real SPHEREx photograph and coordinates. Each frame is a real exposure from NASA/IPAC.', 'The time bar. Press play: a dot that jumps position is something moving.', 'Coloured rings are Gaia stars in the photo. Hover one to read its card.', 'Right panel: change target, colour of light, switch to 14 years of WISE, tune brightness.'] };
+  const $ = (s) => document.querySelector(s), esc = (x) => String(x).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const root = document.createElement('div'); root.id = 'vt'; root.innerHTML = '<div class="vt-pins"></div><aside class="vt-card"></aside>'; document.body.appendChild(root);
+  const card = root.querySelector('.vt-card'), pins = root.querySelector('.vt-pins');
+  card.innerHTML = `<h3>${esc(T.h)}</h3><ol>${T.p.map((t, i) => `<li><i>${i + 1}</i><span>${esc(t)}</span></li>`).join('')}</ol><p class="vt-goal">${esc(T.goal)}</p><button type="button" class="vt-ok">${esc(T.ok)}</button>`;
+  const spot = [() => $('#sky-frame') || $('.stage'), () => $('.player') || $('#timeline'), () => $('#star-legend:not([hidden])') || $('#sky-frame'), () => $('#sidebar')];
+  const place = () => {
+    pins.innerHTML = '';
+    spot.forEach((get, i) => { const el = get(); if (!el) return; const b = el.getBoundingClientRect(); if (b.width < 20) return;
+      const x = i === 3 ? b.left + 18 : i === 1 ? b.left + 26 : i === 2 ? b.left + 18 : b.left + b.width / 2, y = i === 3 ? b.top + 70 : i === 1 ? b.top - 4 : i === 2 ? b.top + 14 : b.top + 70;
+      const d = document.createElement('i'); d.className = 'vt-pin'; d.textContent = i + 1; d.style.left = Math.max(8, Math.min(innerWidth - 36, x)) + 'px'; d.style.top = Math.max(60, Math.min(innerHeight - 36, y)) + 'px'; pins.appendChild(d); });
+  };
+  const close = () => { root.remove(); removeEventListener('resize', place); };
+  root.querySelector('.vt-ok').addEventListener('click', close);
+  addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); }, { once: true });
+  addEventListener('resize', place);
+  let tries = 0; const wait = setInterval(() => { tries++; const src = $('#hud-source'); if ((src && /Real/.test(src.textContent)) || tries > 28) { clearInterval(wait); setTimeout(() => { root.classList.add('is-on'); place(); }, 700); } }, 250);
+})();
+</script>
+<style id="vt-css">
+#vt { position: fixed; inset: 0; z-index: 300; pointer-events: none; opacity: 0; transition: opacity .5s ease; } #vt.is-on { opacity: 1; }
+.vt-pin { position: fixed; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: #38BDF8; color: #04121c; font: 800 14px "JetBrains Mono", monospace; font-style: normal; box-shadow: 0 0 0 5px rgba(56, 189, 248, .25), 0 6px 16px rgba(0, 0, 0, .5); animation: vt-pulse 1.8s ease-in-out infinite; }
+@keyframes vt-pulse { 50% { box-shadow: 0 0 0 10px rgba(56, 189, 248, .08), 0 6px 16px rgba(0, 0, 0, .5); } }
+.vt-card { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); width: min(560px, calc(100vw - 24px)); padding: 16px 18px 14px; border-radius: 20px; background: rgba(7, 11, 20, .96); border: 1px solid rgba(56, 189, 248, .5); box-shadow: 0 30px 60px -20px #000; pointer-events: auto; backdrop-filter: blur(14px); }
+.vt-card h3 { margin: 0 0 8px; font-size: 16px; font-weight: 800; } .vt-card ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.vt-card li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; font-size: 13px; line-height: 1.45; color: #cbd5e1; } .vt-card li i { width: 20px; height: 20px; border-radius: 50%; background: #38BDF8; color: #04121c; font: 800 11px "JetBrains Mono", monospace; font-style: normal; display: grid; place-items: center; }
+.vt-goal { margin: 10px 0 0; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, .1); font-size: 12.5px; color: #f5a54a; font-weight: 600; }
+.vt-ok { margin-top: 10px; height: 36px; padding: 0 18px; border-radius: 999px; border: 0; background: #fff; color: #05080f; font-weight: 700; font-size: 13px; cursor: pointer; }
+</style>
 <script id="col-js">
 (() => {
   const $ = (s, el = document) => el.querySelector(s);
