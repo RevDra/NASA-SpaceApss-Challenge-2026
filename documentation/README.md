@@ -12,6 +12,11 @@
 
 Toàn bộ tài liệu kỹ thuật, cẩm nang cuộc thi và tài liệu khoa học được tổ chức phân chia theo các thư mục chuyên môn:
 
+### 0. 🏆 [00-strategy-and-gap-analysis/](file:///Users/vinhh/Desktop/NASA/NASA-SpaceApss-Challenge-2026/documentation/00-strategy-and-gap-analysis) — Nghiên cứu đối thủ & Ma trận khoảng trống
+- **[competitor_and_gap_analysis.md](file:///Users/vinhh/Desktop/NASA/NASA-SpaceApss-Challenge-2026/documentation/00-strategy-and-gap-analysis/competitor_and_gap_analysis.md):** Phân tích 4 nhóm giải pháp vô địch thế giới, mổ xẻ 6 hệ thống đầu ngành (LSST, ZTF, TrackML, WWT, MPC, Ariel), ma trận 8 khoảng trống chiến lược (8 Deep Gaps) và giải mã 5 bài test ngầm của NASA (*Barnard's Star, WISE 0855, Epsilon Indi B, RW Aurigae, R Draconis*).
+
+---
+
 ### 1. 📘 [01-hackathon-rules/](file:///Users/vinhh/Desktop/NASA/NASA-SpaceApss-Challenge-2026/documentation/01-hackathon-rules) — Thể lệ, Lịch trình & Pitching
 - **[hackathon-guide.md](file:///Users/vinhh/Desktop/NASA/NASA-SpaceApss-Challenge-2026/documentation/01-hackathon-rules/hackathon-guide.md):** Tóm tắt toàn bộ thể lệ trích xuất từ Handbook chính thức của ban tổ chức (mốc thời gian, quy chế chấm thi, Scoring Rubric thang 20, cơ cấu 8 giải thưởng và checklist nộp bài trước 23:59).
 - **[pitch-and-demo-strategy.md](file:///Users/vinhh/Desktop/NASA/NASA-SpaceApss-Challenge-2026/documentation/01-hackathon-rules/pitch-and-demo-strategy.md):** Kịch bản chuẩn 7 slide thuyết trình (yêu cầu bắt buộc của HCMC live-pitch), chiến lược ghi trọn điểm 5 tiêu chí Rubric và bộ câu hỏi phản biện Q&A từ Ban Giám khảo.
