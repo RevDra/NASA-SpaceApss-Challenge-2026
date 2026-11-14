@@ -59,7 +59,7 @@ def load_gaia_sources(root_dir: Path, ra: float, dec: float, fov_arcsec: float =
 
     query = f"""
     SELECT TOP {limit}
-        source_id, ra, dec, pmra, pmdec, parallax, phot_g_mean_mag
+        source_id, ra, dec, pmra, pmdec, parallax, phot_g_mean_mag, phot_bp_mean_mag, phot_rp_mean_mag
     FROM gaiadr3.gaia_source
     WHERE 1=CONTAINS(POINT('ICRS', ra, dec), CIRCLE('ICRS', {ra:.6f}, {dec:.6f}, {radius_deg:.6f}))
     ORDER BY phot_g_mean_mag ASC
@@ -82,11 +82,26 @@ def load_gaia_sources(root_dir: Path, ra: float, dec: float, fov_arcsec: float =
             dt_years = 2026.0 - 2016.0 # Gaia epoch 2016 -> SPHEREx epoch 2026
 
             for row in rows:
-                sid, s_ra, s_dec, pmra, pmdec, parallax, mag = row
+                sid, s_ra, s_dec, pmra, pmdec, parallax, mag, bp, rp = row
                 pmra_val = float(pmra) if pmra is not None else 0.0
                 pmdec_val = float(pmdec) if pmdec is not None else 0.0
                 parallax_val = float(parallax) if parallax is not None else None
                 mag_val = float(mag) if mag is not None else None
+                bp_val = float(bp) if bp is not None else None
+                rp_val = float(rp) if rp is not None else None
+                bp_rp = round(bp_val - rp_val, 2) if (bp_val is not None and rp_val is not None) else None
+
+                # Astronomical true color mapping from BP - RP
+                if bp_rp is None:
+                    color_hex = "#38BDF8" # Default cyan
+                elif bp_rp < 0.5:
+                    color_hex = "#67E8F9" # Hot blue/cyan (O, B, A stars)
+                elif bp_rp <= 1.5:
+                    color_hex = "#FDE047" # Yellow star (F, G stars like Sun)
+                elif bp_rp <= 2.8:
+                    color_hex = "#FB923C" # Orange / red dwarf (K, M stars)
+                else:
+                    color_hex = "#EF4444" # Deep red / cold infrared star
 
                 # Compute position at epoch 2026.0
                 cos_dec = math.cos(s_dec * D2R)
@@ -102,6 +117,8 @@ def load_gaia_sources(root_dir: Path, ra: float, dec: float, fov_arcsec: float =
                     "pmdec": round(pmdec_val, 2),
                     "parallax": round(parallax_val, 2) if parallax_val else None,
                     "mag_g": round(mag_val, 2) if mag_val else None,
+                    "bp_rp": bp_rp,
+                    "color": color_hex,
                     "ra_2026": round(ra_2026, 6),
                     "dec_2026": round(dec_2026, 6),
                     "motion_arcsec_10yr": round(math.hypot(pmra_val, pmdec_val) * dt_years / 1000.0, 3)
