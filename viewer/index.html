@@ -261,7 +261,22 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
   background: rgba(3, 5, 8, .72); border: 1px solid rgba(255, 255, 255, .12);
   -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
 }
-.sl-title { font-size: 11.5px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+.star-legend { pointer-events: auto; }
+.sl-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.sl-title { font-size: 12px; font-weight: 700; color: #fff; margin: 0; letter-spacing: .01em; }
+.sl-sub { margin: 8px 0 4px; font-size: 11px; font-weight: 600; color: var(--text-2); }
+.sl-toggle { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 8px; border: 1px solid rgba(255, 255, 255, .16); background: rgba(255, 255, 255, .05); color: #fff; transition: background .2s, transform .25s; }
+.sl-toggle:hover { background: rgba(255, 255, 255, .14); }
+.sl-toggle svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; transition: transform .25s; }
+.star-legend.is-shut { width: auto; padding: 6px 8px 6px 12px; }
+.star-legend.is-shut .sl-body { display: none; }
+.star-legend.is-shut .sl-head { gap: 12px; }
+.star-legend.is-shut .sl-toggle svg { transform: rotate(180deg); }
+.sl-rows { list-style: none; margin: 8px 0 0; padding: 8px 0 0; border-top: 1px solid rgba(255, 255, 255, .1); display: grid; gap: 7px; }
+.sl-row { display: grid; grid-template-columns: 22px 1fr; gap: 9px; align-items: center; font-size: 10.5px; line-height: 1.4; color: var(--silver); }
+.sl-row[hidden] { display: none; }
+.sl-row svg { width: 22px; height: 22px; }
+.sl-row .sl-hatch { margin: 0 auto; }
 .sl-ends { display: flex; justify-content: space-between; margin-bottom: 3px; font-size: 10px; font-weight: 600; color: var(--text-2); }
 .sl-bar { height: 10px; border-radius: 5px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12); }
 .sl-ticks { position: relative; height: 30px; margin-top: 3px; }
@@ -1987,6 +2002,7 @@ body.tm-on .snap-btn { bottom: 170px; }
   const viewTime = () => (model.view ? model.view.t : 2026);
   /* Time machine: the year chosen on the time bar. Stars are still DETECTED in the real SPHEREx photo (frame time), but the
      rings are drawn where Gaia's catalogue puts each star in that year: its 2016 position moved by its measured proper motion. */
+  const tracked = [];                                                          // known objects to mark from SIMBAD data: [{name, ra, dec, epoch, pmra, pmdec}] (arcsec, arcsec/yr)
   const tm = { on: false, year: 2026.7, playing: false, speed: 1, last: 0, raf: 0, min: 1990, max: 2040 };
   const shownTime = () => (tm.on ? tm.year : viewTime());
   /* With real frames spread over years (WISE/NEOWISE 2010-2024), the photo follows the year: show the frame nearest to it. */
@@ -2013,6 +2029,14 @@ body.tm-on .snap-btn { bottom: 170px; }
     speed(s) { tm.speed = s; },
     frames() { return model.frames ? model.frames.map((f) => f.t) : []; },
     redraw() { drawOverlay(); },
+    /* o: {name, ra, dec (current epoch), ra2000, dec2000, epoch}. Proper motion comes from the two SIMBAD positions. */
+    track(o) {
+      if (!o || o.ra2000 == null) return;
+      const ep = o.epoch || 2026.87, cd = Math.cos(o.dec * D2R), dt = ep - 2000;
+      const e = { name: o.name, ra: o.ra, dec: o.dec, epoch: ep, pmra: (o.ra - o.ra2000) * cd * 3600 / dt, pmdec: (o.dec - o.dec2000) * 3600 / dt };
+      const i = tracked.findIndex((t) => t.name === e.name); if (i >= 0) tracked[i] = e; else tracked.push(e);
+      drawOverlay();
+    },
     /* Self-test: for every ringed star, how far (in image pixels) is the brightest pixel nearby from where Gaia says the star is? */
     align() {
       const img = frameImage(); if (!img) return null;
@@ -2105,12 +2129,25 @@ body.tm-on .snap-btn { bottom: 170px; }
       stops.push(`rgb(${starRGB(T).join(',')}) ${((i / 24) * 100).toFixed(1)}%`);
     }
     const names = { 30000: 'blue', 10000: 'white', 5800: 'Sun', 2600: 'red' };
-    el.innerHTML = `<p class="sl-title">Ring colour = the star’s real colour</p>
-      <div class="sl-ends"><span>Hot</span><span>Cool</span></div>
-      <div class="sl-bar" style="background:linear-gradient(90deg, ${stops.join(', ')})"></div>
-      <div class="sl-ticks">${LEGEND_T.filter((T) => names[T]).map((T) => `<span style="left:${(legendPos(T) * 100).toFixed(1)}%">${T.toLocaleString()} K<b>${names[T]}</b></span>`).join('')}</div>
-      <p class="sl-note">Colour comes from surface temperature. Only stars visible in this frame are ringed; hover one for its card.</p>
-      <p class="sl-note sl-mask" id="sl-mask" hidden><i class="sl-hatch"></i>Hatched = too bright for the detector. NASA gives no value there, so it shows the brightest edge value (the real light is at least that).</p>`;
+    const ic = (svg) => `<svg viewBox="0 0 24 24" aria-hidden="true">${svg}</svg>`;
+    const rows = [
+      [ic('<circle cx="12" cy="12" r="7" fill="none" stroke="#fdba74" stroke-width="2.2"/>'), 'A star in this photo, ringed in its real colour. Hover for its card.', ''],
+      [ic('<circle cx="12" cy="12" r="5.5" fill="none" stroke="#5eead4" stroke-width="2"/><circle cx="12" cy="12" r="9.5" fill="none" stroke="#5eead4" stroke-width="1.4" stroke-dasharray="2 3"/>'), 'Too faint for Gaia: placed from SIMBAD, with a dot per year.', ''],
+      [ic('<path d="M3 18 L17 8" stroke="#fbbf24" stroke-width="2" stroke-dasharray="3 3"/><path d="M21 6 L14 6.5 L17.5 12 Z" fill="#fbbf24"/>'), 'Moves fast: the arrow starts at its 2016 position.', ''],
+      ['<i class="sl-hatch"></i>', 'Too bright for the detector. NASA gives no value, so we show the brightest edge value (the real light is at least that).', 'sl-mask" id="sl-mask" hidden="']
+    ];
+    el.innerHTML = `<div class="sl-head"><p class="sl-title">Key to the picture</p><button type="button" class="sl-toggle" id="sl-toggle" aria-expanded="true" aria-label="Shrink the key" title="Shrink / open"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></div>
+      <div class="sl-body">
+        <p class="sl-sub">Ring colour = the star’s real colour</p>
+        <div class="sl-ends"><span>Hot</span><span>Cool</span></div>
+        <div class="sl-bar" style="background:linear-gradient(90deg, ${stops.join(', ')})"></div>
+        <div class="sl-ticks">${LEGEND_T.filter((T) => names[T]).map((T) => `<span style="left:${(legendPos(T) * 100).toFixed(1)}%">${T.toLocaleString()} K<b>${names[T]}</b></span>`).join('')}</div>
+        <ul class="sl-rows">${rows.map(([i, t, c]) => `<li class="sl-row ${c}">${i}<span>${t}</span></li>`).join('')}</ul>
+      </div>`;
+    let shut = false; try { shut = localStorage.getItem('space-vi-key-shut') === '1'; } catch { /* ignore */ }
+    const set = (v) => { el.classList.toggle('is-shut', v); const b = $('#sl-toggle'); b.setAttribute('aria-expanded', String(!v)); b.setAttribute('aria-label', v ? 'Open the key' : 'Shrink the key'); try { localStorage.setItem('space-vi-key-shut', v ? '1' : '0'); } catch { /* ignore */ } };
+    set(shut);
+    $('#sl-toggle').addEventListener('click', () => set(!el.classList.contains('is-shut')));
   }
   function updateStarLegend(show) {
     const el = $('#star-legend');
@@ -3027,6 +3064,32 @@ body.tm-on .snap-btn { bottom: 170px; }
       ctx.fillStyle = hatchPattern();
       for (let i = 0; i < mk.length; i++) if (mk[i]) ctx.fillRect(img.x + (i % model.N) * cell, img.y + Math.floor(i / model.N) * cell, cell + 0.5, cell + 0.5);
       ctx.restore();
+      // Call out each overflowed star so it cannot be overlooked: a dashed box and a small label.
+      const N = model.N, seen = new Uint8Array(N * N), blobs = [];
+      for (let i0 = 0; i0 < mk.length; i0++) {
+        if (!mk[i0] || seen[i0]) continue;
+        const stack = [i0]; seen[i0] = 1; let n = 0, k0 = N, k1 = -1, r0 = N, r1 = -1;
+        while (stack.length) {
+          const i = stack.pop(), r = (i / N) | 0, k = i % N; n++;
+          k0 = Math.min(k0, k); k1 = Math.max(k1, k); r0 = Math.min(r0, r); r1 = Math.max(r1, r);
+          for (let rr = r - 1; rr <= r + 1; rr++) for (let kk = k - 1; kk <= k + 1; kk++) {
+            const j = rr * N + kk; if (rr >= 0 && kk >= 0 && rr < N && kk < N && mk[j] && !seen[j]) { seen[j] = 1; stack.push(j); }
+          }
+        }
+        if (n >= 3) blobs.push({ n, k0, k1, r0, r1 });
+      }
+      blobs.sort((a, b) => b.n - a.n);
+      ctx.save();
+      ctx.font = '600 10px "JetBrains Mono", ui-monospace, monospace';
+      for (const b of blobs.slice(0, 4)) {
+        const x0 = img.x + b.k0 * cell - 5, y0 = img.y + b.r0 * cell - 5, w = (b.k1 - b.k0 + 1) * cell + 10, h = (b.r1 - b.r0 + 1) * cell + 10;
+        ctx.strokeStyle = '#ff7a5c'; ctx.lineWidth = 1.6; ctx.setLineDash([5, 4]); ctx.strokeRect(x0, y0, w, h); ctx.setLineDash([]);
+        const label = 'TOO BRIGHT · value is a lower limit', tw = ctx.measureText(label).width + 12;
+        const lx = Math.min(Math.max(x0, 6), Math.max(6, W - tw - 6)), ly = y0 - 12 < 14 ? y0 + h + 12 : y0 - 12;
+        ctx.fillStyle = 'rgba(3,5,8,.82)'; ctx.beginPath(); ctx.roundRect(lx, ly - 9, tw, 18, 5); ctx.fill();
+        ctx.fillStyle = '#ffb4a1'; ctx.fillText(label, lx + 6, ly + 1);
+      }
+      ctx.restore();
     }
 
     // --- grid labels, pinned to the inside edges of the image ---
@@ -3064,6 +3127,39 @@ body.tm-on .snap-btn { bottom: 170px; }
     const t = view ? view.t : 2017.5;
     const scan = view && view.frame ? view.frame.scan : null;
     const toScreen = (s) => { const [dx, dy] = sourceOffset(s, t, scan); return [cx - dx * p, cy - dy * p]; };
+
+    // --- Objects too faint for Gaia (a Y dwarf like WISE 0855): tracked from their SIMBAD position and proper motion ---
+    for (const o of tracked) {
+      const at = (yr) => {
+        const dt = yr - o.epoch, cd = Math.cos(o.dec * D2R);
+        const ra = o.ra + (o.pmra * dt) / 3600 / cd, dec = o.dec + (o.pmdec * dt) / 3600;
+        return [cx - ((ra - state.ra) * 3600 * Math.cos(state.dec * D2R)) * p, cy - ((dec - state.dec) * 3600) * p];
+      };
+      const [x, y] = at(shownTime());
+      if (x < img.x - 40 || y < img.y - 40 || x > img.x + img.size + 40 || y > img.y + img.size + 40) continue;
+      if (gaiaStars && gaiaReadyHere() && gaiaStars()) {                     // already ringed as a Gaia star: do not draw twice
+        const [ox, oy] = [(x - cx) / -p, (y - cy) / -p];
+        if (gaiaStars().some((g) => g.g < 21 && Math.hypot(gaiaOffset(g, shownTime())[0] - ox, gaiaOffset(g, shownTime())[1] - oy) < 3)) continue;
+      }
+      ctx.save();
+      ctx.font = '600 10px "JetBrains Mono", ui-monospace, monospace';
+      ctx.fillStyle = 'rgba(94,234,212,.7)';
+      for (let yr = 2010; yr <= 2040; yr++) {                                // one dot per year along the motion
+        const [tx, ty] = at(yr);
+        ctx.beginPath(); ctx.arc(tx, ty, yr % 10 === 0 ? 3 : 1.4, 0, Math.PI * 2); ctx.fill();
+        if (yr % 10 === 0) ctx.fillText(String(yr), tx + 6, ty - 5);
+      }
+      const rad = clamp(0.7 * BANDS[state.band].ps * p, 12, 28);
+      ctx.strokeStyle = '#5eead4'; ctx.lineWidth = 2; ctx.shadowColor = 'rgba(94,234,212,.8)'; ctx.shadowBlur = 8;
+      ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI * 2); ctx.stroke();
+      ctx.shadowBlur = 0; ctx.setLineDash([3, 4]); ctx.beginPath(); ctx.arc(x, y, rad + 6, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+      const mu = Math.hypot(o.pmra, o.pmdec);
+      const label = `${o.name} · SIMBAD position · ${mu.toFixed(1)}″/yr`, w = ctx.measureText(label).width + 12;
+      const lx = Math.min(Math.max(x + rad + 12, 6), Math.max(6, W - w - 6)), ly = y - rad - 14;
+      ctx.fillStyle = 'rgba(3,5,8,.78)'; ctx.beginPath(); ctx.roundRect(lx, ly - 9, w, 18, 5); ctx.fill();
+      ctx.fillStyle = '#99f6e4'; ctx.fillText(label, lx + 6, ly + 1);
+      ctx.restore();
+    }
 
     // --- Gaia DR3 overlay ---
     // Real SPHEREx bands: a ring around every Gaia star visible in this frame, in the star's own colour (same scale as
@@ -4294,7 +4390,7 @@ function init(THREE) {
   let TG = [['barnard', 269.446074, 4.770706, 'SD2', 120, '#ff8a52', 'M4V'], ['wise0855', 133.757788, -7.242024, 'SD6', 120, '#9a4a3a', 'Y2'], ['epsindib', 331.098398, -56.801256, 'SD2', 120, '#c8643f', 'T1V+T6V'],
             ['rwaur', 76.956589, 30.401286, 'SD2', 120, '#ffb866', 'K1/5e'], ['rdra', 248.16722, 66.755025, 'SD3', 120, '#ff6a3a', 'M4.5-6']].map(([id, ra, dec, band, fov, c, sp]) => ({ id, ra, dec, band, fov, c, sp }));
   const BAND_COL = ['#4aa3ff', '#38d0c9', '#8be08b', '#f2d45c', '#f5a54a', '#ef6a4a'], BAND_W = [0.36, 0.53, 0.78, 1.4, 0.6, 0.58], BAND_UM = ['0.75–1.11', '1.11–1.64', '1.64–2.42', '2.42–3.82', '3.82–4.42', '4.42–5.00'];
-  fetch('sky/targets.json').then((r) => (r.ok ? r.json() : null)).then((j) => { if (!j) return; j.targets.forEach((t) => { const m = TG.find((x) => x.id === t.id); if (m) Object.assign(m, { ra: t.ra, dec: t.dec, ra2000: t.ra2000, dec2000: t.dec2000, band: t.band, fov: t.fov, sp: t.sp_type }); }); EPOCH = j.epoch || EPOCH; buildTargets(); }).catch(() => {});
+  fetch('sky/targets.json').then((r) => (r.ok ? r.json() : null)).then((j) => { if (!j) return; j.targets.forEach((t) => { const m = TG.find((x) => x.id === t.id); if (m) Object.assign(m, { ra: t.ra, dec: t.dec, ra2000: t.ra2000, dec2000: t.dec2000, band: t.band, fov: t.fov, sp: t.sp_type }); }); EPOCH = j.epoch || EPOCH; TG.forEach((m) => window.__tm && window.__tm.track({ name: (T.tg[m.id] || [m.id])[0], ra: m.ra, dec: m.dec, ra2000: m.ra2000, dec2000: m.dec2000, epoch: EPOCH })); buildTargets(); }).catch(() => {});
 
   const fire = (el, type, init) => el.dispatchEvent(new (type.startsWith('key') ? KeyboardEvent : Event)(type, { bubbles: true, ...init }));
   function setCoords(ra, dec) { const c = $('#coords'); if (!c) return; c.value = `${ra.toFixed(6)} ${dec.toFixed(6)}`; fire(c, 'keydown', { key: 'Enter' }); }
@@ -4396,7 +4492,7 @@ function init(THREE) {
     if (k[0] === 't') { fly(TG[+k.slice(1)]); input.value = ''; }
     else if (k[0] === 'r') { const r = recents()[+k.slice(1)]; setCoords(r.ra, r.dec); input.value = ''; }
     else if (k === 'coord') { const c = parseCoords(input.value); if (c) { setCoords(c.ra, c.dec); remember({ name: `${c.ra.toFixed(3)}, ${c.dec.toFixed(3)}`, ra: c.ra, dec: c.dec }); input.value = ''; } }
-    else if (k === 'name' && lastHit) { setCoords(lastHit.ra, lastHit.dec); remember({ name: lastHit.name, ra: lastHit.ra, dec: lastHit.dec }); input.value = ''; }
+    else if (k === 'name' && lastHit) { window.__tm && window.__tm.track(lastHit); setCoords(lastHit.ra, lastHit.dec); remember({ name: lastHit.name, ra: lastHit.ra, dec: lastHit.dec }); input.value = ''; }
     pop.hidden = true; input.setAttribute('aria-expanded', 'false'); input.blur();
   }
   let lastHit = null, timer = null;
