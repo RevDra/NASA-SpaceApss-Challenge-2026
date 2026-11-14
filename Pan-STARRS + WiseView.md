@@ -52,13 +52,11 @@ $\mu=\sqrt{(\mu_\alpha\cos\delta)^2+\mu_\delta^2}.$
 
 A useful local astrometric model is
 
-$
-\boldsymbol{\theta}(t)=
+$\boldsymbol{\theta}(t)=
 \boldsymbol{\theta}_0+
 \boldsymbol{\mu}(t-t_0)+
 \varpi\boldsymbol{P}(t)+
-\boldsymbol{\epsilon}(t),
-$
+\boldsymbol{\epsilon}(t),$
 
 where position, proper motion, parallax, and measurement residuals remain distinct quantities.
 
@@ -70,9 +68,7 @@ Independent astrometry is particularly valuable: Spitzer detections aligned with
 
 Wien’s law,
 
-$
-\lambda_{\max}T=b,
-$
+$\lambda_{\max}T=b,$
 
 provides intuition about temperature, but brown-dwarf spectra require molecular and cloud physics. Methane absorption suppresses W1 relative to W2, supporting red-color selection (Castro et al., 2013). Water, methane, and ammonia shape Y-dwarf spectra (Lacy & Burrows, 2023).
 
@@ -84,19 +80,15 @@ Nor are brown dwarfs universally invisible optically: PS1 detected 494 L dwarfs 
 
 For independent, comparable exposures,
 
-$
-{\rm SNR}_{\rm stack}\approx\sqrt{N}\,{\rm SNR}_{\rm single},
+${\rm SNR}_{\rm stack}\approx\sqrt{N}\,{\rm SNR}_{\rm single},
 \qquad
-\Delta m\approx1.25\log_{10}N.
-$
+\Delta m\approx1.25\log_{10}N.$
 
 Typical WISE visits contain approximately 12 exposures over one day, recurring roughly every six months (Meisner et al., 2018). Epochal stacking gains approximately 1.3 magnitudes but averages away variability on timescales shorter than about one day (Meisner et al., 2018).
 
 Difference imaging can be represented as
 
-$
-D=I_t-(I_{\rm ref}*K),
-$
+$D=I_t-(I_{\rm ref}*K),$
 
 with \(K\) matching image responses. Visual inspection and difference imaging are complementary: Backyard Worlds explicitly combines them (Kuchner et al., 2017).
 
