@@ -1,28 +1,38 @@
-# SPHEREx 3-Tier Scientific Denoising Pipeline (`backend/`)
+# Pipeline Lọc Nhiễu Khoa Học 3 Tầng cho SPHEREx (`backend/`)
 
-## 1. Scope & Responsibility
-This module handles scientific calibration and artifact removal for **NASA/IPAC IRSA SPHEREx Level-2 FITS cutouts** (`spherex_dr1`, `spherex_qr3`) before they are rendered in the Blink Viewer (`viewer/`).
+## 1. Phạm vi & Trách nhiệm
+Mô-đun này đảm nhận việc hiệu chỉnh khoa học và loại bỏ giả ảnh (nhiễu phần cứng, tia vũ trụ, bụi nền) cho các khung cắt **FITS Level-2 của SPHEREx từ NASA/IPAC IRSA** (`spherex_dr1`, `spherex_qr3`) trước khi hiển thị lên giao diện Blink Viewer (`viewer/`).
 
-## 2. Core Files
-- `backend/fits_pipeline.py`: Main FITS processing, 3-tier denoising, WCS alignment, and Gaia DR3 cross-matching logic.
-- `backend/main.py`: Standalone FastAPI server exposing processed cutouts and metadata endpoints.
-- `backend/pre_cache.py`: Batch pre-caching utility for known target coordinates.
+## 2. Các file cốt lõi
+* `backend/fits_pipeline.py`: Lõi xử lý file FITS, lọc nhiễu 3 tầng, căn chỉnh hệ tọa độ thiên văn (WCS) và đối chiếu danh mục sao Gaia DR3.
+* `backend/main.py`: Server FastAPI độc lập cung cấp các API trả về ảnh đã xử lý và metadata.
+* `backend/pre_cache.py`: Công cụ tải và lưu cache trước hàng loạt cho các tọa độ mục tiêu đã biết.
 
-## 3. 3-Tier Denoising Logic (`process_single_fits`)
-Given an IRSA cutout URI, `process_single_fits(cutout_uri)` downloads the multi-extension FITS file via `astropy.utils.data.download_file(..., cache=True)` and executes:
-1. **Zodiacal Dust Subtraction (`ZODI-Clean`):** Computes `zodi_cleaned = IMAGE - ZODI` using the native SPHEREx zodiacal background extension.
-2. **18-Flag Hardware & Cosmic-Ray Masking:** Dynamically maps bit positions from `FLAGS` header keys (`MSKN0`..`MSKN31`) against 18 critical flags (`TRANSIENT`, `OVERFLOW`, `SUR_ERROR`, `NONFUNC`, `MISSING_DATA`, `HOT`, `COLD`, `NONLINEAR`, `PERSIST`, `OUTLIER`, `CROSSTALK`, `GHOST`, `GHOST_FPA`, `GHOST_EXT`, `STREAK`, `BLOOM`, `SNOWBALL`, `HALO`), plus invalid/non-positive `VARIANCE` pixels. Masked pixels are repaired via a 3x3 local median filter (`visual_data`) for clean visual blinking without distorting neighboring PSF cores.
-3. **Science / SNR Layer:** Computes per-pixel signal-to-noise ratio `SNR = zodi_cleaned / sqrt(VARIANCE)` (`snr_map`, `max_snr`, `bad_ratio`).
+## 3. Logic lọc nhiễu 3 tầng (`process_single_fits`)
+Từ đường dẫn (URI) cắt ảnh của IRSA, hàm `process_single_fits(cutout_uri)` tải file FITS đa lớp thông qua `astropy.utils.data.download_file(..., cache=True)` và thực hiện tuần tự 3 bước:
 
-## 4. Viewer Integration Contract (`viewer/spherex_live.py`)
-`viewer/spherex_live.py` hooks directly into `backend/fits_pipeline.py` so the web UI runs on a single server (`python viewer/serve.py`):
-- **Optional Hook (`HAS_DENOISE`):** `spherex_live.py` adds `../backend` to `sys.path` and imports `process_single_fits`. If scientific dependencies (`astropy`, `scipy`) are absent on another machine, it falls back cleanly to raw `IMAGE` HDU streaming.
-- **Required Return Fields:** `process_single_fits()` **must** return `"header"` (`hdul["IMAGE"].header`) alongside `"visual_data"`. `spherex_live.py` feeds `(proc["header"], proc["visual_data"].astype("float32").ravel())` directly into `TanSipWcs` / `resample()`.
-- **Cache Isolation:** Cache keys in `viewer/spherex_live.py` use the `clean_` prefix (`clean_{ra}_{dec}_{fov}_{detector}_{per_visit}`) to avoid collisions with cached raw frames.
-- **SSL Context Patch:** `viewer/spherex_live.py` binds Python's default HTTPS context to `certifi.where()` so IRSA queries succeed on Windows `uv` Python environments.
+1. **Trừ nền bụi hoàng đạo (`ZODI-Clean`):**
+   Lấy ảnh gốc trừ trực tiếp lớp nền bụi hoàng đạo có sẵn của SPHEREx:
+   $$\text{zodi\_cleaned} = \text{IMAGE} - \text{ZODI}$$
 
-## 5. Quick Verification
-- **Test Target with Confirmed SPHEREx Coverage:** `RA = 133.786245`, `Dec = -7.244372`, Band `D6` (4.42–5.00 µm).
-- **Run Integrated Viewer (from repo root):**
+2. **Che và vá 18 cờ nhiễu phần cứng & tia vũ trụ:**
+   Tự động ánh xạ vị trí các bit từ từ khóa `MSKN0`..`MSKN31` trong header của lớp `FLAGS` đối chiếu với 18 cờ lỗi nghiêm trọng (`TRANSIENT`, `OVERFLOW`, `SUR_ERROR`, `NONFUNC`, `MISSING_DATA`, `HOT`, `COLD`, `NONLINEAR`, `PERSIST`, `OUTLIER`, `CROSSTALK`, `GHOST`, `GHOST_FPA`, `GHOST_EXT`, `STREAK`, `BLOOM`, `SNOWBALL`, `HALO`), kết hợp loại bỏ các pixel có phương sai (`VARIANCE`) không hợp lệ hoặc $\le 0$. Các pixel lỗi sau đó được vá mượt bằng bộ lọc trung vị cục bộ $3 \times 3$ (`visual_data`) để hình ảnh ổn định khi nháy khung hình (blinking) mà không làm méo tâm của các nguồn sáng lân cận.
+
+3. **Lớp Khoa học / Tính SNR:**
+   Tính tỷ số tín hiệu trên nhiễu cho từng pixel hợp lệ (trả về `snr_map`, `max_snr`, `bad_ratio`):
+   $$\text{SNR} = \frac{\text{zodi\_cleaned}}{\sqrt{\text{VARIANCE}}}$$
+
+## 4. Quy ước tích hợp với giao diện Viewer (`viewer/spherex_live.py`)
+File `viewer/spherex_live.py` móc nối trực tiếp vào `backend/fits_pipeline.py` để toàn bộ giao diện web chạy gọn trên một server duy nhất (`python viewer/serve.py`). **Lưu ý không phá vỡ 4 quy ước sau khi chỉnh sửa:**
+
+* **Cơ chế Hook dự phòng (`HAS_DENOISE`):** `spherex_live.py` thêm đường dẫn `../backend` vào `sys.path` và nạp hàm `process_single_fits`. Nếu chạy trên máy của thành viên khác chưa cài thư viện khoa học (`astropy`, `scipy`), hệ thống tự động lùi về chế độ đọc luồng `IMAGE` thô mà không làm sập ứng dụng.
+* **Trường dữ liệu bắt buộc phải trả về:** Hàm `process_single_fits()` **bắt buộc** phải trả về `"header"` (`hdul["IMAGE"].header`) đi kèm với `"visual_data"`. `spherex_live.py` sẽ truyền thẳng bộ `(proc["header"], proc["visual_data"].astype("float32").ravel())` vào `TanSipWcs` / `resample()` để căn xoay tọa độ.
+* **Cô lập bộ nhớ đệm (Cache):** Khóa cache trong `viewer/spherex_live.py` dùng tiền tố `clean_` (`clean_{ra}_{dec}_{fov}_{detector}_{per_visit}`) trong `viewer/spherex_cache/` để không lấy nhầm các file cache ảnh thô cũ.
+* **Bản vá chứng chỉ SSL:** `viewer/spherex_live.py` gắn ngữ cảnh HTTPS mặc định của Python vào `certifi.where()` để truy vấn IRSA không bị chặn lỗi `SSL: CERTIFICATE_VERIFY_FAILED` trên môi trường Python cài qua `uv` ở Windows.
+
+## 5. Hướng dẫn chạy & kiểm tra nhanh
+* **Tọa độ mục tiêu đã xác nhận có dữ liệu SPHEREx:** `RA = 133.786245`, `Dec = -7.244372`, kênh `D6` ($4.42\text{--}5.00\ \mu\text{m}$).
+* **Khởi chạy Viewer đã tích hợp (từ thư mục gốc của repo với `.venv` đang bật):**
   ```powershell
   python viewer/serve.py
+  ```
