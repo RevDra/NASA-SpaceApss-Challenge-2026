@@ -832,6 +832,9 @@ body.tm-on .sky-frame { filter: saturate(.55) brightness(.8); }
 .om-item:hover, .om-item.is-on, .om-item:focus-visible { background: rgba(56, 189, 248, .1); }
 .om-item .dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--c, var(--amber)); box-shadow: 0 0 0 3px rgba(255, 255, 255, .08); }
 .om-item b { font-size: 13.5px; font-weight: 700; } .om-item span.s { display: block; font-size: 12px; color: var(--silver); margin-top: 1px; }
+.om-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 10px 6px; }
+.om-chip { height: 28px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--hair); background: rgba(255, 255, 255, .04); color: #fff; font-size: 12.5px; font-weight: 600; transition: background .2s, border-color .2s; }
+.om-chip:hover { background: rgba(56, 189, 248, .14); border-color: rgba(56, 189, 248, .5); }
 .om-msg { margin: 6px 10px; font-size: 12.5px; color: var(--silver); }
 .om-msg.err { color: #ffd9a8; }
 .tabs { background: transparent; border: 0; padding: 0; gap: 2px; }
@@ -1070,7 +1073,7 @@ body.tm-on .snap-btn { bottom: 170px; }
 
   <form class="omni" id="omni" role="search" autocomplete="off" novalidate>
     <svg class="i omni-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
-    <input id="omni-input" type="text" inputmode="search" spellcheck="false" autocomplete="off" placeholder="Search a star, or type coordinates" aria-label="Search a star by name, or type coordinates" aria-controls="omni-pop" aria-expanded="false">
+    <input id="omni-input" type="text" inputmode="search" spellcheck="false" autocomplete="off" placeholder="Star, constellation, RA Dec" aria-label="Search a star or a constellation by name, or type coordinates" aria-controls="omni-pop" aria-expanded="false">
     <kbd class="omni-key" aria-hidden="true">/</kbd>
     <div class="omni-pop" id="omni-pop" role="listbox" hidden></div>
   </form>
@@ -4275,6 +4278,7 @@ function init(THREE) {
 @media (prefers-reduced-motion: reduce) { .fr-veil, .fr-card { animation: none; } }
 </style>
 <script src="sky/collection.js"></script>
+<script src="sky/constellations.js"></script>
 <script id="friendly-js">
 (() => {
   const $ = (s, el = document) => el.querySelector(s);
@@ -4373,13 +4377,13 @@ function init(THREE) {
   try { const l = localStorage.getItem('sky-lang'); lang = l === 'vi' || l === 'en' ? l : ((navigator.language || '').toLowerCase().startsWith('vi') ? 'vi' : 'en'); } catch { /* ignore */ }
   const S = {
     en: { targets: 'Targets', targetsSub: 'tap to fly there', light: 'Colour of light', lightSub: 'real SPHEREx photographs', zoom: 'Zoom', adv: 'Advanced controls', across: '{n}″ across',
-      close: 'Close', medium: 'Medium', wide: 'Wide', ph: 'Search a star, or type coordinates', omniTargets: 'Targets', omniRecent: 'Recent', hint: 'Try “Sirius”, “M31”, or “269.45 4.77”',
+      close: 'Close', medium: 'Medium', wide: 'Wide', ph: 'Star, constellation, RA Dec', omniTargets: 'Targets', omniRecent: 'Recent', hint: 'Type a constellation to list its stars, or try “Sirius”, “M31”, “269.45 4.77”', omniCons: 'Constellations',
       resolving: 'Looking up “{q}” in SIMBAD…', fail: 'No object called “{q}” in SIMBAD', down: 'SIMBAD did not answer. Try coordinates instead.', go: 'Go to {ra}°, {dec}°', found: 'Found {n}',
       bandNote: 'Real SPHEREx photographs from NASA/IPAC IRSA.',
       bands: ['Just past red light. Hot stars shine brightly here.', 'Near infrared. Thin dust is see-through, cool red stars stand out.', 'Cool, old stars, and the first hint of warm dust.', 'Water ice and organic molecules leave fingerprints here.', 'Carbon dioxide leaves its mark near 4.3 µm.', 'Carbon monoxide near 4.7 µm. Cold brown dwarfs glow here.'],
       tg: { barnard: ['Barnard’s Star', 'Fastest star across our sky'], wise0855: ['WISE 0855−0714', 'Coldest brown dwarf known'], epsindib: ['Epsilon Indi B', 'A brown-dwarf pair next door'], rwaur: ['RW Aurigae', 'Young star that flickers'], rdra: ['R Draconis', 'Giant that brightens and fades'] } },
     vi: { targets: 'Mục tiêu', targetsSub: 'bấm để bay tới', light: 'Màu của ánh sáng', lightSub: 'ảnh SPHEREx thật', zoom: 'Thu phóng', adv: 'Nâng cao', across: 'Rộng {n}″',
-      close: 'Gần', medium: 'Vừa', wide: 'Rộng', ph: 'Tìm một ngôi sao, hoặc nhập toạ độ', omniTargets: 'Mục tiêu', omniRecent: 'Gần đây', hint: 'Thử “Sirius”, “M31”, hoặc “269.45 4.77”',
+      close: 'Gần', medium: 'Vừa', wide: 'Rộng', ph: 'Sao, chòm sao, toạ độ', omniTargets: 'Mục tiêu', omniRecent: 'Gần đây', hint: 'Thử “Sirius”, “M31”, hoặc “269.45 4.77”',
       resolving: 'Đang tra “{q}” trong SIMBAD…', fail: 'Không có vật thể nào tên “{q}” trong SIMBAD', down: 'SIMBAD không phản hồi. Hãy thử nhập toạ độ.', go: 'Tới {ra}°, {dec}°', found: 'Tìm thấy {n}',
       bandNote: 'Ảnh SPHEREx thật từ NASA/IPAC IRSA.',
       bands: ['Ngay sau ánh sáng đỏ. Sao nóng sáng rực ở đây.', 'Cận hồng ngoại. Bụi mỏng trở nên trong suốt, sao đỏ lạnh nổi bật.', 'Sao già, lạnh, và dấu hiệu đầu tiên của bụi ấm.', 'Băng nước và phân tử hữu cơ để lại dấu vân tay ở đây.', 'Khí cacbonic để lại dấu ấn gần 4,3 µm.', 'Cacbon monoxit gần 4,7 µm. Sao lùn nâu lạnh phát sáng ở đây.'],
@@ -4458,6 +4462,10 @@ function init(THREE) {
 
   $('#fr-targets-h span').textContent = T.targets; $('#fr-bands-h span').textContent = T.light; $('#fr-zoom-h span').textContent = T.zoom; $('#adv-lbl').textContent = T.adv;
   $('#fr-bands-h .rail-sub').textContent = T.lightSub; $('#omni-input').placeholder = T.ph;
+  /* the full hint names all three kinds of search; fall back to the short one when the box is narrow */
+  { const inp = $('#omni-input'), full = lang === 'vi' ? 'Sao, chòm sao hoặc toạ độ' : 'Star, constellation or coordinates', short = T.ph;
+    const fit = () => { inp.placeholder = inp.clientWidth >= 330 ? full : short; };
+    new ResizeObserver(fit).observe(inp); fit(); }
   buildTargets(); buildBands(); buildZoom(); buildSpan();
   setTimeout(autoZoom, 900); let rz = null; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(autoZoom, 250); });
   setInterval(() => { markTarget(); markBand(); markZoom(); markSpan(); }, 700);
@@ -4476,14 +4484,26 @@ function init(THREE) {
   const recents = () => { try { return JSON.parse(localStorage.getItem('sky-viewer-recent') || '[]'); } catch { return []; } };
   const remember = (r) => { try { localStorage.setItem('sky-viewer-recent', JSON.stringify([r, ...recents().filter((x) => x.name !== r.name)].slice(0, 5))); } catch { /* ignore */ } };
   let items = [], sel = -1, seq = 0;
+  /* Searching a constellation lists its brightest real stars (SIMBAD, IAU boundaries); picking one flies there. */
+  if (window.SpaceConst) window.SpaceConst.load();
+  const SPCOL = { O: '#9bb0ff', B: '#aabfff', A: '#cad7ff', F: '#f8f7ff', G: '#fff4ea', K: '#ffd2a1', M: '#ffb06a' };
+  const TX = lang === 'vi' ? { cons: 'chòm sao', stars: 'sao', top: 'sáng nhất', ly: 'năm ánh sáng' } : { cons: 'constellation', stars: 'stars', top: 'brightest', ly: 'light-years' };
+  let consHits = [];
+  function consHtml(q) {
+    consHits = window.SpaceConst ? window.SpaceConst.search(q, 10).slice(0, 2) : [];
+    return consHits.map((c, ci) => `<p class="om-h">${esc(c.name)} · ${esc(TX.cons)} · ${c.count} ${esc(TX.stars)}, ${esc(TX.top)}</p>` +
+      c.stars.map((st, si) => `<button type="button" class="om-item" role="option" data-k="c${ci}.${si}" style="--c:${SPCOL[(st.sp || '')[0]] || '#94a3b8'}"><i class="dot"></i><span><b>${esc(st.name || 'HIP star')}</b><span class="s">mag ${st.mag.toFixed(1)} · ${st.ly ? st.ly.toLocaleString() + ' ' + esc(TX.ly) : ''}${st.sp ? ' · ' + esc(st.sp) : ''}</span></span></button>`).join('')).join('');
+  }
   function render(extra = '') {
     const q = input.value.trim();
     let html = '';
     if (!q) {
+      html += `<p class="om-h">${esc(T.omniCons || 'Constellations')}</p><div class="om-chips">${['Orion', 'Cygnus', 'Ursa Major', 'Scorpius', 'Cassiopeia', 'Crux'].map((c) => `<button type="button" class="om-chip" data-q="${c}">${c}</button>`).join('')}</div>`;
       html += `<p class="om-h">${esc(T.omniTargets)}</p>` + TG.map((t, i) => `<button type="button" class="om-item" role="option" data-k="t${i}" style="--c:${t.c}"><i class="dot"></i><span><b>${esc(T.tg[t.id][0])}</b><span class="s">${esc(T.tg[t.id][1])}</span></span></button>`).join('');
       const rc = recents(); if (rc.length) html += `<p class="om-h">${esc(T.omniRecent)}</p>` + rc.map((r, i) => `<button type="button" class="om-item" role="option" data-k="r${i}"><i class="dot" style="--c:#94a3b8"></i><span><b>${esc(r.name)}</b><span class="s">${r.ra.toFixed(4)}°, ${r.dec.toFixed(4)}°</span></span></button>`).join('');
       html += `<p class="om-msg">${esc(T.hint)}</p>`;
     }
+    if (q) html += consHtml(q);
     if (extra) html += extra;
     pop.innerHTML = html; pop.hidden = !html; input.setAttribute('aria-expanded', String(!pop.hidden));
     items = [...pop.querySelectorAll('.om-item')]; sel = -1;
@@ -4492,6 +4512,7 @@ function init(THREE) {
     if (k[0] === 't') { fly(TG[+k.slice(1)]); input.value = ''; }
     else if (k[0] === 'r') { const r = recents()[+k.slice(1)]; setCoords(r.ra, r.dec); input.value = ''; }
     else if (k === 'coord') { const c = parseCoords(input.value); if (c) { setCoords(c.ra, c.dec); remember({ name: `${c.ra.toFixed(3)}, ${c.dec.toFixed(3)}`, ra: c.ra, dec: c.dec }); input.value = ''; } }
+    else if (k[0] === 'c') { const [ci, si] = k.slice(1).split('.').map(Number), st = consHits[ci] && consHits[ci].stars[si]; if (st) { const n = window.SpaceConst.now(st); setCoords(n.ra, n.dec); remember({ name: st.name || 'HIP star', ra: n.ra, dec: n.dec }); input.value = ''; } }
     else if (k === 'name' && lastHit) { window.__tm && window.__tm.track(lastHit); setCoords(lastHit.ra, lastHit.dec); remember({ name: lastHit.name, ra: lastHit.ra, dec: lastHit.dec }); input.value = ''; }
     pop.hidden = true; input.setAttribute('aria-expanded', 'false'); input.blur();
   }
@@ -4520,7 +4541,10 @@ function init(THREE) {
     if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && items.length) { e.preventDefault(); sel = (sel + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length; items.forEach((el, i) => el.classList.toggle('is-on', i === sel)); items[sel].scrollIntoView({ block: 'nearest' }); }
   });
   pop.addEventListener('pointerdown', (e) => e.preventDefault());
-  pop.addEventListener('click', (e) => { const b = e.target.closest('.om-item'); if (b) choose(b.dataset.k); });
+  pop.addEventListener('click', (e) => {
+    const chip = e.target.closest('.om-chip'); if (chip) { input.value = chip.dataset.q; input.dispatchEvent(new Event('input', { bubbles: true })); input.focus(); return; }
+    const b = e.target.closest('.om-item'); if (b) choose(b.dataset.k);
+  });
   input.addEventListener('blur', () => setTimeout(() => { pop.hidden = true; input.setAttribute('aria-expanded', 'false'); }, 120));
   addEventListener('keydown', (e) => { if (e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName || '')) { e.preventDefault(); input.focus(); } });
 })();

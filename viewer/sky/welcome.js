@@ -78,6 +78,7 @@ async function loadData() {
   const f = sd.field, n = f.length, vec = new Float32Array(n * 3);
   f.forEach((s, i) => vec.set(eq(s[0], s[1]), i * 3));
   state.stars = { n, f, vec };
+  if (window.SpaceConst) window.SpaceConst.load(f);   // lets the search box list the stars of any constellation
 }
 const starOf = (i) => { const s = state.stars.f[i]; return { i, ra: s[0], dec: s[1], mag: s[2], bv: s[3], ly: s[4], pmra: s[5], pmdec: s[6], sp: s[7], name: s[8] }; };
 
@@ -591,6 +592,14 @@ function searchAll(q) {
   if (state.eph) for (const [k, tb] of Object.entries(state.eph.comets)) if (has(tb.name)) out.push({ kind: 'comet', id: k, t: tb.name, s: T('cometLabel') });
   const stars = []; state.stars.f.forEach((s, i) => { if (s[8] && s[8].toLowerCase().includes(q)) stars.push([s[2], i]); });
   stars.sort((a, b) => a[0] - b[0]).slice(0, 8).forEach(([, i]) => { const s = starOf(i); out.push({ kind: 'star', id: i, t: s.name, s: `${T('starLabel')} · ${T('magShort')} ${nf(s.mag, 1)}` }); });
+  // a constellation name lists its brightest real stars (IAU boundaries + SIMBAD), so a picture of "Orion" gives a pick-list of stars
+  const hits = window.SpaceConst ? window.SpaceConst.search(q, 10) : [];
+  if (hits.length) {
+    const c = hits[0], list = out.slice(0, 3).filter((x) => x.kind !== 'star');
+    out.length = 0; out.push(...list, { kind: 'head', t: `${c.name} · ${c.count} ${lang === 'vi' ? 'sao' : 'stars'}`, s: lang === 'vi' ? 'sáng nhất trước' : 'brightest first' });
+    for (const s of c.stars) out.push({ kind: 'star', id: s.i, t: s.name || 'HIP star', s: `${T('starLabel')} · ${T('magShort')} ${nf(s.mag, 1)}${s.ly ? ' · ' + nf(s.ly, 0) + (lang === 'vi' ? ' nas' : ' ly') : ''}` });
+    return out;
+  }
   return out.slice(0, 10);
 }
 const pickResult = (b) => (b.dataset.kind === 'simbad' ? simbadLookup(b.dataset.q) : select(b.dataset.kind, b.dataset.kind === 'star' ? +b.dataset.id : b.dataset.id));
@@ -610,7 +619,7 @@ $('#search').addEventListener('input', (e) => {
   const r = searchAll(e.target.value), box = $('#search-results');
   box.hidden = !e.target.value.trim();
   const q = e.target.value.trim();
-  box.innerHTML = r.map((x) => `<button type="button" role="option" class="sr-item" data-kind="${x.kind}" data-id="${x.id}"><b>${esc(x.t)}</b><span>${esc(x.s)}</span></button>`).join('') +
+  box.innerHTML = r.map((x) => x.kind === 'head' ? `<p class="sr-head"><b>${esc(x.t)}</b><span>${esc(x.s)}</span></p>` : `<button type="button" role="option" class="sr-item" data-kind="${x.kind}" data-id="${x.id}"><b>${esc(x.t)}</b><span>${esc(x.s)}</span></button>`).join('') +
     (q.length >= 2 ? `<button type="button" role="option" class="sr-item sr-simbad" data-kind="simbad" data-q="${esc(q)}"><b>${esc(fmt(T('simbadFor'), { q }))}</b><span>SIMBAD</span></button>` : '');
 });
 $('#search').addEventListener('keydown', (e) => { if (e.key === 'Enter') { const b = $('#search-results .sr-item'); if (b) { e.preventDefault(); pickResult(b); } } });

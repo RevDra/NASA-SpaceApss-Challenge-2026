@@ -525,3 +525,8 @@ body:not(.is-intro) .jrail { display: none; }
 #p-save.is-done { border-color: rgba(111, 224, 194, .6); color: #9ff0d6; }
 .sr-simbad b::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; background: var(--amber); }
 .lbl-here.is-found .ring { border-style: solid; border-color: var(--sky); }
+
+/* constellation search: heading above the list of its stars */
+.sr-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 8px 10px 3px; padding-top: 7px; border-top: 1px solid rgba(255, 255, 255, .1); }
+.sr-head b { font: 700 11px var(--mono, ui-monospace, monospace); letter-spacing: .1em; text-transform: uppercase; color: #fff; }
+.sr-head span { font-size: 11px; color: var(--silver); }
