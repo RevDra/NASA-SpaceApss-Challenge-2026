@@ -8870,6 +8870,58 @@
       white-space: nowrap;
     }
 
+    .lang-sw {
+      display: inline-flex;
+      height: 38px;
+      padding: 3px;
+      gap: 2px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(3, 5, 8, .4);
+    }
+
+    .lang-sw button {
+      min-width: 36px;
+      padding: 0 8px;
+      border: 0;
+      border-radius: 9px;
+      background: transparent;
+      color: #94a3b8;
+      font: 700 12px var(--font-sans, inherit);
+      letter-spacing: .04em;
+      cursor: pointer;
+      transition: background .2s, color .2s;
+    }
+
+    .lang-sw button:hover {
+      color: #fff;
+    }
+
+    .lang-sw button[aria-pressed="true"] {
+      background: #fff;
+      color: #05080f;
+      cursor: default;
+    }
+
+    .lang-sw button:focus-visible {
+      outline: 2px solid #38bdf8;
+      outline-offset: 1px;
+    }
+
+    @media (max-width: 760px) {
+      /* phones: one button showing the language you can switch to, so the banner stays uncrowded */
+      .lang-sw button[aria-pressed="true"] {
+        display: none;
+      }
+
+      .lang-sw button {
+        min-width: 38px;
+        padding: 0 6px;
+        background: rgba(255, 255, 255, .08);
+        color: #fff;
+      }
+    }
+
     .fr-btn:hover {
       background: rgba(255, 255, 255, .09);
       border-color: rgba(255, 255, 255, .3);
@@ -9167,6 +9219,17 @@
       const skyBtn = Object.assign(document.createElement('a'), { className: 'fr-btn', id: 'fr-sky-btn', href: 'welcome.html#sky', title: T.skyTitle });
       skyBtn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><ellipse cx="12" cy="12" rx="11" ry="4" transform="rotate(-24 12 12)"/></svg><span class="fr-lbl">${T.sky}</span>`;
       if (meta) { meta.appendChild(skyBtn); meta.appendChild(startBtn); }
+
+      /* language switch: VI | EN. The choice is shared with the welcome page ('sky-lang'); the pages read it when they load, so switching reloads. */
+      const langSw = Object.assign(document.createElement('div'), { className: 'lang-sw', id: 'lang-sw' });
+      langSw.setAttribute('role', 'group'); langSw.setAttribute('aria-label', 'Ng\u00f4n ng\u1eef / Language');
+      langSw.innerHTML = ['vi', 'en'].map((l) => `<button type="button" data-l="${l}" aria-pressed="${(vi0 ? 'vi' : 'en') === l}" title="${l === 'vi' ? 'Ti\u1ebfng Vi\u1ec7t' : 'English'}">${l.toUpperCase()}</button>`).join('');
+      langSw.addEventListener('click', (e) => {
+        const b = e.target.closest('button[data-l]'); if (!b || b.getAttribute('aria-pressed') === 'true') return;
+        try { localStorage.setItem('sky-lang', b.dataset.l); } catch (err) { /* private mode: the switch cannot be remembered */ }
+        location.reload();
+      });
+      if (meta) meta.appendChild(langSw);
 
       /* start card */
       const veil = Object.assign(document.createElement('div'), { className: 'fr-veil', hidden: true });
