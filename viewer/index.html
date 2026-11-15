@@ -13,6 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="sky/collection.css">
+  <link rel="stylesheet" href="sky/chat.css">
   <link rel="stylesheet"
     href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
 
@@ -4796,6 +4797,16 @@
       bottom: 170px;
     }
 
+    .nova-btn {
+      bottom: 130px;
+      color: var(--amber);
+      border-color: rgba(245, 165, 74, .55);
+    }
+
+    body.tm-on .nova-btn {
+      bottom: 216px;
+    }
+
     @media (max-width: 820px) {
       .snap-btn span {
         display: none;
@@ -9114,6 +9125,7 @@
     }
   </style>
   <script src="sky/collection.js"></script>
+  <script src="sky/chat.js" defer></script>
   <script src="sky/constellations.js"></script>
   <script id="friendly-js">
     (() => {
@@ -9742,6 +9754,7 @@
         veil.hidden = false; document.body.classList.add('rp-open');
       }
       window.__openSnapChoice = choose;
+      window.__openReport = () => form();
 
       /* ---- step 2: the form ---- */
       const S = 520;                                                         // internal size of the marking canvas
@@ -9941,6 +9954,9 @@
       C.onChange(() => { if (drawer.hidden && C.count()) btn.classList.add('is-pulse'), setTimeout(() => btn.classList.remove('is-pulse'), 1200); });
       const snap = Object.assign(document.createElement('button'), { type: 'button', className: 'snap-btn', id: 'snap-btn', title: vi ? 'Lưu ảnh chụp khung này' : 'Save a snapshot of this field' });
       snap.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l1.5-2.5h7L17 8h3v11H4z"/><circle cx="12" cy="13.5" r="3.6"/></svg><span>' + (vi ? 'Lưu ảnh' : 'Save snapshot') + '</span>';
+      const nova = Object.assign(document.createElement('button'), { type: 'button', className: 'snap-btn nova-btn', id: 'nova-btn', title: vi ? 'Báo ngôi sao mới: toạ độ tự điền từ ảnh' : 'Report a new star: coordinates fill in from the picture' });
+      nova.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.4 5.6 6 .6-4.5 4 1.4 6-5.3-3.2-5.3 3.2 1.4-6-4.5-4 6-.6z"/></svg><span>' + (vi ? 'Tôi thấy sao mới' : 'I found a new star') + '</span>';
+      nova.addEventListener('click', () => window.__openReport && window.__openReport()); $('#stage').appendChild(nova);
       snap.addEventListener('click', () => (window.__openSnapChoice ? window.__openSnapChoice() : window.__saveSnapshot && window.__saveSnapshot())); $('#stage').appendChild(snap);
     })();
   </script>
