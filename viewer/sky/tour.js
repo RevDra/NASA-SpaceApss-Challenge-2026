@@ -1,7 +1,8 @@
 /* Landing extras: a rotating 3D planet, "what you can do" tiles, and a guided tour from the planets to the constellations.
 
    REAL: each planet's day length, axial tilt, distance and size (published values) and the clock-driven sky the tour walks through.
-   ILLUSTRATIVE (said on screen): the planet surfaces are drawn procedurally, they are not photographs, and the spin is sped up. */
+   Earth wears NASA's Blue Marble Next Generation satellite map (sky/assets/earth). ILLUSTRATIVE (said on screen): the other planets' surfaces are drawn
+   procedurally, they are not photographs, and the spin is sped up. */
 
 const PLANETS = [
   { id: 'earth', en: 'Earth', vi: 'Trái Đất', hours: 23.93, tilt: 23.44, au: 1, km: 12742, body: null },
@@ -12,7 +13,7 @@ const PLANETS = [
 const SPEED = 1800;                          // 1 real hour of spin per 2 seconds
 const G = {
   en: {
-    planetH: 'Spin a planet', planetNote: 'Drag it to turn it. Surfaces are drawn, not photographs; day length, tilt and distance are real.', day: 'One day', hrs: 'hours', tilt: 'Axis tilt', dist: 'From the Sun', au: 'AU', size: 'Width', km: 'km', speed: 'Spinning {n}x faster than real',
+    planetH: 'Spin a planet', planetNote: 'Drag it to turn it. Surfaces are drawn, not photographs; day length, tilt and distance are real.', planetNoteEarth: 'Drag it to turn it. This is NASA\u2019s Blue Marble satellite map (MODIS, no clouds). Day length, tilt and distance are real; the spin is sped up.', day: 'One day', hrs: 'hours', tilt: 'Axis tilt', dist: 'From the Sun', au: 'AU', size: 'Width', km: 'km', speed: 'Spinning {n}x faster than real',
     howto: 'How to use', doH: 'What you can do here', doSub: 'Every one of these opens in one click.',
     tiles: [['sky', 'My sky', 'See the real sky above you, right now, from any place.', 'Open'], ['cons', 'Constellations', 'Pick one to see its stars and the best nights to watch it.', 'Try Orion'], ['cal', 'Sky calendar', 'Moon phases, meteor showers and your own plans in one month view.', 'Open calendar'],
       ['map', 'Map of Vietnam in 3D', 'See where in Vietnam, including Hoang Sa and Truong Sa, the view is best.', 'Open the map'], ['spx', 'Real SPHEREx photos', 'Zoom into a star and watch it move in real infrared photographs.', 'Open the viewer']],
@@ -41,7 +42,7 @@ const G = {
     },
   },
   vi: {
-    planetH: 'Xoay thử một hành tinh', planetNote: 'Kéo để xoay. Bề mặt là hình vẽ, không phải ảnh chụp; độ dài ngày, độ nghiêng và khoảng cách là số thật.', day: 'Một ngày', hrs: 'giờ', tilt: 'Độ nghiêng trục', dist: 'Cách Mặt Trời', au: 'AU', size: 'Đường kính', km: 'km', speed: 'Đang quay nhanh gấp {n} lần thật',
+    planetH: 'Xoay thử một hành tinh', planetNote: 'Kéo để xoay. Bề mặt là hình vẽ, không phải ảnh chụp; độ dài ngày, độ nghiêng và khoảng cách là số thật.', planetNoteEarth: 'Kéo để xoay. Đây là bản đồ vệ tinh Blue Marble của NASA (MODIS, không có mây). Độ dài ngày, độ nghiêng và khoảng cách là số thật; tốc độ xoay được tăng lên.', day: 'Một ngày', hrs: 'giờ', tilt: 'Độ nghiêng trục', dist: 'Cách Mặt Trời', au: 'AU', size: 'Đường kính', km: 'km', speed: 'Đang quay nhanh gấp {n} lần thật',
     howto: 'Hướng dẫn sử dụng', doH: 'Bạn làm được gì ở đây', doSub: 'Mỗi thứ dưới đây mở ra chỉ bằng một cú bấm.',
     tiles: [['sky', 'Bầu trời của tôi', 'Xem bầu trời thật phía trên bạn, ngay lúc này, ở bất kỳ nơi nào.', 'Mở'], ['cons', 'Chòm sao', 'Chọn một chòm để xem các ngôi sao và những đêm ngắm đẹp nhất.', 'Thử Orion'], ['cal', 'Lịch bầu trời', 'Pha Trăng, mưa sao băng và kế hoạch của bạn trong một lịch tháng.', 'Mở lịch'],
       ['map', 'Bản đồ Việt Nam 3D', 'Xem nơi nào ở Việt Nam, cả Hoàng Sa và Trường Sa, ngắm đẹp nhất.', 'Mở bản đồ'], ['spx', 'Ảnh SPHEREx thật', 'Phóng to vào một ngôi sao và xem nó di chuyển trong ảnh hồng ngoại thật.', 'Mở trình xem']],
@@ -118,21 +119,21 @@ export function initTour(api) {
     return `<div class="pl3d-tabs" role="tablist">${PLANETS.map((x) => `<button type="button" role="tab" aria-selected="${x.id === p3.cur}" data-pl="${x.id}">${esc(vi ? x.vi : x.en)}</button>`).join('')}</div>
       <div class="pl3d-stage"><canvas></canvas><p class="pl3d-speed">${esc(fmt(tx.speed, { n: SPEED.toLocaleString() }))}</p></div>
       <dl class="pl3d-facts"><div><dt>${esc(tx.day)}</dt><dd>${p.hours.toLocaleString(vi ? 'vi-VN' : 'en-US', { maximumFractionDigits: 1 })} ${esc(tx.hrs)}</dd></div><div><dt>${esc(tx.tilt)}</dt><dd>${p.tilt.toLocaleString(vi ? 'vi-VN' : 'en-US')}°</dd></div><div><dt>${esc(tx.dist)}</dt><dd>${p.au.toLocaleString(vi ? 'vi-VN' : 'en-US')} ${esc(tx.au)}</dd></div><div><dt>${esc(tx.size)}</dt><dd>${p.km.toLocaleString(vi ? 'vi-VN' : 'en-US')} ${esc(tx.km)}</dd></div></dl>
-      <p class="pl3d-note">${esc(tx.planetNote)}</p>`;
+      <p class="pl3d-note">${esc(p.id === 'earth' ? tx.planetNoteEarth : tx.planetNote)}</p>`;
   }
-  const FRAG = `precision highp float; varying vec3 vP; varying vec3 vN; uniform int uT; uniform vec3 uL;
+  const FRAG = `precision highp float; varying vec3 vP; varying vec3 vN; varying vec2 vUv; uniform int uT; uniform vec3 uL; uniform sampler2D uMap; uniform float uHas;
     float h(vec3 p){ p = fract(p*0.3183099+.1); p *= 17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
     float nz(vec3 x){ vec3 i=floor(x), f=fract(x); f=f*f*(3.0-2.0*f); return mix(mix(mix(h(i),h(i+vec3(1,0,0)),f.x),mix(h(i+vec3(0,1,0)),h(i+vec3(1,1,0)),f.x),f.y),mix(mix(h(i+vec3(0,0,1)),h(i+vec3(1,0,1)),f.x),mix(h(i+vec3(0,1,1)),h(i+vec3(1,1,1)),f.x),f.y),f.z); }
     float fbm(vec3 x){ float a=.5, s=0.; for(int i=0;i<5;i++){ s+=a*nz(x); x*=2.03; a*=.5; } return s; }
     void main(){ vec3 p = normalize(vP); vec3 c;
-      if (uT == 0) { float n = fbm(p*2.6); float land = smoothstep(.5,.54,n); c = mix(vec3(.03,.16,.4), mix(vec3(.16,.42,.2), vec3(.5,.42,.25), smoothstep(.58,.8,n)), land); c = mix(c, vec3(.95), smoothstep(.86,.93,abs(p.y))); float cl = smoothstep(.55,.8,fbm(p*3.4+vec3(4.,1.,2.))); c = mix(c, vec3(1.), cl*.75); }
+      if (uT == 0) { float n = fbm(p*2.6); float land = smoothstep(.5,.54,n); c = mix(vec3(.03,.16,.4), mix(vec3(.16,.42,.2), vec3(.5,.42,.25), smoothstep(.58,.8,n)), land); c = mix(c, vec3(.95), smoothstep(.86,.93,abs(p.y))); float cl = smoothstep(.55,.8,fbm(p*3.4+vec3(4.,1.,2.))); c = mix(c, vec3(1.), cl*.75); c = mix(c, min(texture2D(uMap, vUv).rgb*1.4, vec3(1.)), uHas); }
       else if (uT == 1) { float n = fbm(p*3.2); c = mix(vec3(.55,.24,.13), vec3(.78,.42,.24), n); c = mix(c, vec3(.28,.14,.1), smoothstep(.62,.8,fbm(p*5.))*.5); c = mix(c, vec3(.95), smoothstep(.9,.96,abs(p.y))*.9); }
       else if (uT == 2) { float w = p.y*14. + fbm(p*vec3(1.,6.,1.)*2.)*3.; float b = sin(w)*.5+.5; c = mix(vec3(.86,.74,.58), vec3(.6,.38,.26), b); c = mix(c, vec3(.95,.9,.82), smoothstep(.62,.9,sin(w*.5+1.)*.5+.5)*.35); float s = length((p.xy-vec2(.3,-.28))*vec2(1.,2.2)); c = mix(c, vec3(.75,.32,.2), smoothstep(.16,.08,s)*.8); }
       else { float w = p.y*9. + fbm(p*vec3(1.,5.,1.)*1.6)*1.4; float b = sin(w)*.5+.5; c = mix(vec3(.86,.76,.55), vec3(.7,.58,.4), b); }
       float l = dot(normalize(vN), normalize(uL)); float d = smoothstep(-.1,.7,l);
       vec3 col = c*(.06 + .98*d); if (uT == 0) col += vec3(.1,.3,.7)*pow(1.-max(dot(normalize(vN), vec3(0,0,1)),0.), 3.)*(.2+d*.8);
       gl_FragColor = vec4(col,1.); }`;
-  const VERT = 'varying vec3 vP; varying vec3 vN; void main(){ vP = position; vN = normalize(normalMatrix*normal); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.); }';
+  const VERT = 'varying vec3 vP; varying vec3 vN; varying vec2 vUv; void main(){ vP = position; vUv = uv; vN = normalize(normalMatrix*normal); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.); }';
   async function buildPlanet() {
     card(); const canvas = $('canvas', planetCard); if (!canvas) return;
     if (!p3.THREE) { try { p3.THREE = await import('three'); } catch { return; } }
@@ -141,7 +142,8 @@ export function initTour(api) {
     const scene = new T.Scene(), cam = new T.PerspectiveCamera(32, 1, 0.1, 50); cam.position.set(0, 0, 6.4);
     const p = PLANETS.find((x) => x.id === p3.cur), idx = PLANETS.indexOf(p), group = new T.Group(), spin = new T.Group();
     group.rotation.z = -p.tilt * Math.PI / 180; group.add(spin); scene.add(group);
-    const mat = new T.ShaderMaterial({ vertexShader: VERT, fragmentShader: FRAG, uniforms: { uT: { value: idx }, uL: { value: new T.Vector3(-1.4, 0.7, 1.2) } } });
+    const mat = new T.ShaderMaterial({ vertexShader: VERT, fragmentShader: FRAG, uniforms: { uT: { value: idx }, uL: { value: new T.Vector3(-1.4, 0.7, 1.2) }, uMap: { value: null }, uHas: { value: 0 } } });
+    if (p.id === 'earth') new T.TextureLoader().load('sky/assets/earth/bluemarble-4096.jpg', (tex) => { tex.anisotropy = Math.min(8, r.capabilities.getMaxAnisotropy()); mat.uniforms.uMap.value = tex; mat.uniforms.uHas.value = 1; });
     const ball = new T.Mesh(new T.SphereGeometry(1.5, 64, 48), mat); spin.add(ball);
     if (p.id === 'saturn') {
       const ring = new T.Mesh(new T.RingGeometry(2.0, 3.2, 128, 1), new T.ShaderMaterial({ transparent: true, side: T.DoubleSide, vertexShader: 'varying vec2 vU; varying vec3 vW; void main(){ vU = position.xy; vW=(modelMatrix*vec4(position,1.)).xyz; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.); }',
@@ -149,7 +151,7 @@ export function initTour(api) {
       ring.rotation.x = Math.PI / 2; group.add(ring);
     }
     const size = () => { const w = stage.clientWidth, h = stage.clientHeight; if (!w) return; r.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix(); }; size(); new ResizeObserver(size).observe(stage);
-    let last = performance.now(), yaw = 0; const omega = (2 * Math.PI) / (p.hours * 3600 / SPEED);
+    let last = performance.now(), yaw = p.id === 'earth' ? 2.88 : 0;      /* Earth starts with Asia facing you */ const omega = (2 * Math.PI) / (p.hours * 3600 / SPEED);
     canvas.addEventListener('pointerdown', (e) => { p3.drag = e.clientX; canvas.setPointerCapture(e.pointerId); });
     canvas.addEventListener('pointermove', (e) => { if (p3.drag) { yaw += (e.clientX - p3.drag) * 0.01; p3.drag = e.clientX; } });
     canvas.addEventListener('pointerup', () => { p3.drag = 0; });
