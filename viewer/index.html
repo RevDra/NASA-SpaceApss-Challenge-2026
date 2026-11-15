@@ -6727,26 +6727,25 @@
       }
 
       // Elements and the absorption lines (µm) that reveal them, with the temperature range where those lines show.
+      // Wavelengths are laboratory values (NIST). Rows named "bands" are molecules (CN, TiO, H₂O, CO), not single atoms.
+      // This is a model from the star's temperature, not a measurement of its spectrum.
       // Colours are spread along the visible spectrum in the order of each element's key line, so every element
       // gets its own colour and the colours follow the spectrum (violet → red).
       const ELEMENTS = [
-        { sym: 'N', name: 'Nitrogen (CN)', key: 0.3883, lines: [0.3883], show: (T) => T > 3800 && T < 6500 },
+        { sym: 'N', name: 'Nitrogen (CN band)', key: 0.3883, lines: [0.3883], show: (T) => T > 3800 && T < 6500 },
         { sym: 'Ca', name: 'Calcium', key: 0.3934, lines: [0.3934, 0.3968, 0.8498, 0.8542, 0.8662], show: (T) => T < 9500 },
-        { sym: 'H', name: 'Hydrogen', key: 0.4861, lines: [0.4102, 0.4341, 0.4861, 0.6563, 1.2818, 1.8751, 2.1661, 4.0523], show: (T) => T > 3300 },
+        { sym: 'H', name: 'Hydrogen', key: 0.4861, lines: [0.4102, 0.4341, 0.4861, 0.6563, 1.2818, 1.8751, 2.1661, 4.0523], show: (T) => T > 4500 },
         { sym: 'Mg', name: 'Magnesium', key: 0.5175, lines: [0.5175, 1.5040, 1.7109], show: (T) => T < 9500 },
         { sym: 'Cr', name: 'Chromium', key: 0.5206, lines: [0.5206], show: (T) => T < 7000 },
         { sym: 'Fe', name: 'Iron', key: 0.5270, lines: [0.4383, 0.5270, 1.1883], show: (T) => T < 8500 },
         { sym: 'Ni', name: 'Nickel', key: 0.5477, lines: [0.5477], show: (T) => T < 7000 },
         { sym: 'He', name: 'Helium', key: 0.5876, lines: [0.4471, 0.5876, 1.0830, 2.0587], show: (T) => T > 10000 },
         { sym: 'Na', name: 'Sodium', key: 0.5890, lines: [0.5890, 0.8190, 2.2062], show: (T) => T < 7000 },
-        { sym: 'Ti', name: 'Titanium (TiO)', key: 0.7054, lines: [0.7054, 0.8432], show: (T) => T < 4200 },
-        { sym: 'Zr', name: 'Zirconium', key: 0.8500, lines: [], show: () => false },
-        { sym: 'Ce', name: 'Cerium', key: 0.8510, lines: [], show: () => false },
-        { sym: 'Nd', name: 'Neodymium', key: 0.8520, lines: [], show: () => false },
+        { sym: 'Ti', name: 'Titanium (TiO bands)', key: 0.7054, lines: [0.7054, 0.8432], show: (T) => T < 4200 },
         { sym: 'S', name: 'Sulfur', key: 0.9213, lines: [0.9213], show: (T) => T > 5000 && T < 9000 },
         { sym: 'Si', name: 'Silicon', key: 1.2032, lines: [1.2032, 1.5888], show: (T) => T < 8000 },
-        { sym: 'O', name: 'Oxygen (H₂O)', key: 1.40, lines: [1.40, 1.90, 2.70], show: (T) => T < 3600 },
-        { sym: 'C', name: 'Carbon (CO)', key: 2.2935, lines: [2.2935, 4.67], show: (T) => T < 5200 },
+        { sym: 'O', name: 'Oxygen (water-vapour bands)', key: 1.40, lines: [1.40, 1.90, 2.70], show: (T) => T < 3600 },
+        { sym: 'C', name: 'Carbon (CO bands)', key: 2.2935, lines: [2.2935, 4.67], show: (T) => T < 5200 },
       ];
       ELEMENTS.forEach((el, i) => { el.color = `hsl(${Math.round(275 - (i * 275) / (ELEMENTS.length - 1))} 90% 64%)`; });
 

@@ -1089,21 +1089,32 @@ async function initSky() {
   const sunDir = fwd0.clone().add(right0.clone().multiplyScalar(-0.75)).add(new V3(0, 0.16, 0)).normalize();
   const earthMat = new THREE.ShaderMaterial({
     transparent: true,                                   /* drawn after the Milky Way and the stars, so the Earth stands in front of them */
-    uniforms: { uL: { value: sunDir }, uTime: { value: 0 }, uA: { value: 1 } },
-    vertexShader: `varying vec3 vN; varying vec3 vW; void main(){ vN = normal; vec4 w = modelMatrix*vec4(position,1.); vW = w.xyz; gl_Position = projectionMatrix*viewMatrix*w; }`,
-    fragmentShader: `varying vec3 vN; varying vec3 vW; uniform vec3 uL; uniform float uTime; uniform float uA; ${NOISE}
+    uniforms: { uL: { value: sunDir }, uTime: { value: 0 }, uA: { value: 1 }, uMap: { value: null }, uHas: { value: 0 } },
+    vertexShader: `varying vec3 vN; varying vec3 vW; varying vec2 vUv; void main(){ vN = normal; vUv = uv; vec4 w = modelMatrix*vec4(position,1.); vW = w.xyz; gl_Position = projectionMatrix*viewMatrix*w; }`,
+    fragmentShader: `varying vec3 vN; varying vec3 vW; varying vec2 vUv; uniform vec3 uL; uniform float uTime; uniform float uA; uniform sampler2D uMap; uniform float uHas; ${NOISE}
       void main(){
         vec3 N = normalize(vN), V = normalize(cameraPosition - vW); float ndl = dot(N,uL); float day = smoothstep(-.08,.5,ndl);
         vec3 sp = N*5.0; float land = fbm(sp*.9+3.0); float cloud = smoothstep(.47,.78,fbm(sp*2.3+vec3(uTime*.012,0.,11.)));
         float isLand = smoothstep(.54,.58,land); vec3 surf = mix(vec3(.02,.07,.19), vec3(.085,.11,.09), isLand);
+        /* real NASA Blue Marble once it has loaded; the procedural look above is only the fallback while it loads or if it cannot */
+        vec3 real = texture2D(uMap, vUv).rgb; float oc = smoothstep(.06,.18,real.b-real.r)*(1.-smoothstep(.5,.8,real.r));
+        isLand = mix(isLand, 1.-oc, uHas); surf = mix(surf, real*.72, uHas); cloud *= (1.-uHas);
         vec3 lit = surf*(.2+1.7*day) + cloud*vec3(.85,.9,1.)*(.04+.9*day)*.75;
-        vec3 Hh = normalize(uL+V); lit += pow(max(dot(N,Hh),0.),70.)*(1.-isLand)*(1.-cloud)*vec3(1.,.72,.38)*2.4;
-        float city = smoothstep(.62,.9,fbm(sp*8.))*isLand*(1.-day)*(1.-cloud); lit += city*vec3(1.,.7,.35)*.55;
+        vec3 Hh = normalize(uL+V); lit += pow(max(dot(N,Hh),0.),mix(70.,170.,uHas))*(1.-isLand)*(1.-cloud)*vec3(1.,.72,.38)*mix(2.4,.9,uHas);
+        float city = smoothstep(.62,.9,fbm(sp*8.))*isLand*(1.-day)*(1.-cloud)*(1.-uHas); lit += city*vec3(1.,.7,.35)*.55;
         float fres = pow(1.-max(dot(N,V),0.),3.); lit += mix(vec3(.08,.32,.95), vec3(1.,.64,.3), smoothstep(0.,.7,ndl)*.8)*fres*(.3+1.3*day);
         gl_FragColor = vec4(lit*1.3, uA);                  /* uA falls to 0 as you scroll: the Earth melts away */
       }`,
   });
   const earthMesh = new THREE.Mesh(new THREE.SphereGeometry(R, 160, 96), earthMat); earthMesh.renderOrder = 10; earth.add(earthMesh);
+  /* Real Earth: NASA Blue Marble Next Generation (MODIS, Dec 2004, with topography and bathymetry), an equirectangular map.
+     The sphere is turned so Vietnam (14 N, 108 E) sits on top, right under the camera, and it then spins slowly eastward. */
+  { const lat = 14 * Math.PI / 180, lon = 108 * Math.PI / 180, ph = lon + Math.PI, th = Math.PI / 2 - lat;
+    const P = new V3(-Math.cos(ph) * Math.sin(th), Math.cos(th), Math.sin(ph) * Math.sin(th));
+    earthMesh.userData.orient = new THREE.Quaternion().setFromUnitVectors(P, new V3(0, 1, 0)); earthMesh.quaternion.copy(earthMesh.userData.orient);
+    new THREE.TextureLoader().load('sky/assets/earth/bluemarble-4096.jpg', (tex) => {
+      tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy()); earthMat.uniforms.uMap.value = tex; earthMat.uniforms.uHas.value = 1;
+    }, undefined, () => console.info('[sky] earth map unavailable, using the drawn Earth')); }
   const atm = new THREE.Mesh(new THREE.SphereGeometry(R * 1.045, 96, 64), new THREE.ShaderMaterial({
     side: THREE.BackSide, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, uniforms: { uL: { value: sunDir }, uA: { value: 1 } },
     vertexShader: `varying vec3 vN; varying vec3 vW; void main(){ vN = normal; vec4 w = modelMatrix*vec4(position,1.); vW = w.xyz; gl_Position = projectionMatrix*viewMatrix*w; }`,
@@ -1437,7 +1448,7 @@ function frame(now) {
     { const a = 1 - clamp(p * 5, 0, 1); sky.earthMat.uniforms.uA.value = a; sky.atm.material.uniforms.uA.value = a; }   /* ...and fades with it */
     sky.nebMat.uniforms.uFade.value = 1 - clamp(p * 4.5, 0, 1);
     sky.mw.material.uniforms.uBoost.value = 1 + 0.45 * sky.nebMat.uniforms.uFade.value;   /* a brighter, richer Milky Way on the cover */
-    sky.nebMat.uniforms.uTime.value = secs; sky.earth.children[0].material.uniforms.uTime.value = secs;
+    sky.nebMat.uniforms.uTime.value = secs; sky.earth.children[0].material.uniforms.uTime.value = secs; { const m = sky.earth.children[0], u = m.userData; if (u.orient) m.quaternion.copy(u.orient).multiply(new sky.THREE.Quaternion().setFromAxisAngle(new sky.THREE.Vector3(0, 1, 0), secs * 0.004)); }   /* turn about the Earth's own axis, eastward */
   } else if (state.mode === 'sky') {
     if (tween) {
       const k = clamp((now - tween.t0) / tween.dur, 0, 1), te = ease(k);
