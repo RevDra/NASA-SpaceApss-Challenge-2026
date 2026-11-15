@@ -7123,6 +7123,28 @@
       }
       window.__saveSnapshot = saveSnapshot;
 
+      /* data for the "I found a new star" report (rp-js): the real frames, one picture of each, and the field geometry */
+      window.__reportData = () => {
+        if (!liveReady() || !model.frames || !model.frames.length) return null;
+        const b = BANDS[state.band], N = model.N, ps = b.ps;
+        const frames = model.frames.map((f, i) => {
+          const e = f.members[0].epoch || {}, last = f.members[f.members.length - 1].epoch || {};
+          return { i, t: f.t, date: String(e.date || '').slice(0, 10), dateEnd: String(last.date || e.date || '').slice(0, 10), obsid: e.obsid || '', img: f.data[0] };
+        });
+        const frameCanvas = (i) => {
+          const f = model.frames[i]; if (!f) return null;
+          const img = f.data[0], c = document.createElement('canvas'); c.width = c.height = N;
+          const g = c.getContext('2d'), id = g.createImageData(N, N), d = id.data;
+          const [lo, hi] = displayRange({ imgs: [img], diff: false }), lut = stretchLUT(false), sc = (LUT_N - 1) / (hi - lo);
+          for (let p = 0, q = 0; p < img.length; p++, q += 4) {
+            const k = (img[p] - lo) * sc, i2 = k <= 0 ? 0 : k >= LUT_N - 1 ? LUT_N - 1 : k | 0, v = state.invert ? 1 - lut[i2] : lut[i2];
+            d[q] = DARK[0] + (LIGHT[0] - DARK[0]) * v; d[q + 1] = DARK[1] + (LIGHT[1] - DARK[1]) * v; d[q + 2] = DARK[2] + (LIGHT[2] - DARK[2]) * v + 6 * v * (1 - v); d[q + 3] = 255;
+          }
+          g.putImageData(id, 0, 0); return c;
+        };
+        return { N, ps, ra: state.ra, dec: state.dec, fov: state.fov, band: b.hud || b.label, mission: b.mission || 'SPHEREx', unit: (live.meta && live.meta.unit) || '', frames, current: state.frame, frameCanvas, fieldPoint: (k, r) => ({ ra: state.ra + ((N / 2 - k) * ps) / 3600 / Math.cos(state.dec * D2R), dec: state.dec + ((N / 2 - r) * ps) / 3600 }) };
+      };
+
       function renderStarCard(s) {
         const el = cardEl();
         const keepScroll = el.querySelector('.sc-body')?.scrollTop || 0;
@@ -9678,6 +9700,226 @@
       cursor: pointer;
     }
   </style>
+  <script id="rp-js">
+    /* "I found a new star": the snapshot button asks what to do; the report form marks the object on the real frames, fills in the
+       coordinates, time window and per-frame brightness by itself, and sends everything to the admin (POST /api/report). */
+    (() => {
+      const $ = (s, el = document) => el.querySelector(s);
+      const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+      let vi = false; try { const l = localStorage.getItem('sky-lang'); vi = l === 'vi' || (l !== 'en' && (navigator.language || '').toLowerCase().startsWith('vi')); } catch (e) { /* ignore */ }
+      const T = vi ? {
+        chooseH: 'Bạn muốn làm gì với ảnh này?', optNew: 'Tôi thấy một ngôi sao mới', optNewS: 'Đánh dấu vị trí và gửi cho ban quản trị. Nếu đúng, bạn nhận quà.', optSave: 'Lưu vào bảng học tập', optSaveS: 'Giữ ảnh và thông tin trong "Đã lưu" để đọc lại.', close: 'Đóng',
+        needLive: 'Hãy đợi ảnh thật tải xong rồi thử lại.', title: 'Báo cáo ngôi sao mới', sub: 'Bấm vào chỗ bạn thấy ngôi sao, hoặc kéo để khoanh vùng. Lật qua các khung ngày để đánh dấu lần thứ hai nếu nó đã dịch chuyển.',
+        frames: 'Khung (ngày chụp)', mark1: 'Lần thấy 1', mark2: 'Lần thấy 2', clear: 'Xóa đánh dấu', hint: 'Chưa đánh dấu. Bấm vào ngôi sao trên ảnh.',
+        auto: 'Tự điền từ ảnh', field: 'Vùng trời', band: 'Dải sóng', win: 'Khoảng thời gian thấy', from: 'Từ', to: 'Đến', pos: 'Vị trí', motion: 'Chuyển động ước tính', snr: 'Độ sáng từng khung (σ)', none: 'chưa có',
+        you: 'Về bạn', name: 'Tên của bạn', contact: 'Email, Zalo hoặc Telegram (để admin trao quà)', note: 'Bạn thấy gì? (không bắt buộc)', consent: 'Tôi đồng ý gửi báo cáo này, kèm tên và liên hệ, cho ban quản trị Space_VI.',
+        send: 'Gửi cho admin', draft: 'Lưu nháp vào bảng học tập', dl: 'Tải báo cáo (.json)', sending: 'Đang gửi…', evidence: 'Ảnh minh chứng (tự cắt từ các khung)',
+        eMark: 'Hãy đánh dấu vị trí trên ảnh.', eName: 'Điền tên và cách liên hệ.', eConsent: 'Hãy tích ô đồng ý.', eSend: 'Không gửi được', eHelp: 'Bạn có thể tải báo cáo về và gửi tay cho ban quản trị.',
+        thanks: 'Đã gửi! Cảm ơn bạn', thanksP: 'Mã báo cáo {id}. Nếu bạn thấy đúng, bạn sẽ nhận quà từ admin: chúng tôi liên hệ qua {c}.', thanksS: 'Gửi báo cáo chỉ có nghĩa là ban quản trị đã nhận được. Việc xác nhận cần được kiểm tra thêm.', again: 'Xong', draftOk: 'Đã lưu nháp vào bảng học tập', est: 'ước tính', over: 'trong', yr: 'năm', ev: 'sao chổi/vật dịch chuyển',
+      } : {
+        chooseH: 'What do you want to do with this picture?', optNew: 'I found a new star', optNewS: 'Mark where it is and send it to the admin. If you are right, you get a gift.', optSave: 'Save to my learning board', optSaveS: 'Keep the picture and its facts in "Saved" to read later.', close: 'Close',
+        needLive: 'Wait for the real photographs to load, then try again.', title: 'Report a new star', sub: 'Tap the star on the picture, or drag to outline it. Flip to another date to mark it a second time if it moved.',
+        frames: 'Frames (date taken)', mark1: 'Sighting 1', mark2: 'Sighting 2', clear: 'Clear marks', hint: 'Nothing marked yet. Tap the star on the picture.',
+        auto: 'Filled in from the picture', field: 'Field', band: 'Band', win: 'Time window seen', from: 'From', to: 'To', pos: 'Position', motion: 'Estimated motion', snr: 'Brightness per frame (σ)', none: 'none yet',
+        you: 'About you', name: 'Your name', contact: 'Email, Zalo or Telegram (so the admin can send the gift)', note: 'What did you notice? (optional)', consent: 'I agree to send this report, with my name and contact, to the Space_VI admin.',
+        send: 'Send to admin', draft: 'Save draft to my learning board', dl: 'Download report (.json)', sending: 'Sending…', evidence: 'Evidence (cut automatically from the frames)',
+        eMark: 'Mark the position on the picture first.', eName: 'Fill in your name and a way to reach you.', eConsent: 'Please tick the agreement.', eSend: 'Could not send', eHelp: 'You can download the report and send it to the admin yourself.',
+        thanks: 'Sent! Thank you', thanksP: 'Report {id}. If you are right, you will get a gift from the admin: we will contact you at {c}.', thanksS: 'Sending only means the admin received it. Confirming a discovery needs further checks.', again: 'Done', draftOk: 'Draft saved to your learning board', est: 'estimated', over: 'in', yr: 'yr', ev: 'mover',
+      };
+      const hms = (d) => { const h = (((d % 360) + 360) % 360) / 15, H = Math.floor(h), M = Math.floor((h - H) * 60), S = ((h - H) * 60 - M) * 60; return `${H}h ${String(M).padStart(2, '0')}m ${S.toFixed(1).padStart(4, '0')}s`; };
+      const dms = (d) => { const a = Math.abs(d), D = Math.floor(a), M = Math.floor((a - D) * 60), S = ((a - D) * 60 - M) * 60; return `${d < 0 ? '−' : '+'}${D}° ${String(M).padStart(2, '0')}′ ${S.toFixed(0).padStart(2, '0')}″`; };
+      const veil = Object.assign(document.createElement('div'), { id: 'rp-veil', hidden: true }); veil.setAttribute('role', 'dialog'); veil.setAttribute('aria-modal', 'true'); document.body.appendChild(veil);
+      const toast = (m) => { const t = $('#toast'), l = $('#toast-msg'); if (t && l) { l.textContent = m; t.classList.add('is-visible'); setTimeout(() => t.classList.remove('is-visible'), 2600); } };
+      const close = () => { veil.hidden = true; veil.innerHTML = ''; document.body.classList.remove('rp-open'); };
+      veil.addEventListener('click', (e) => { if (e.target === veil || e.target.closest('[data-rp=close]')) close(); });
+      addEventListener('keydown', (e) => { if (e.key === 'Escape' && !veil.hidden) close(); });
+
+      /* ---- step 1: what to do with the snapshot ---- */
+      function choose() {
+        veil.innerHTML = `<div class="rp-box rp-small"><button type="button" class="rp-x" data-rp="close" aria-label="${esc(T.close)}"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button><h2>${esc(T.chooseH)}</h2>
+          <div class="rp-opts"><button type="button" class="rp-opt is-new" data-rp="new"><b>${esc(T.optNew)}</b><span>${esc(T.optNewS)}</span></button>
+          <button type="button" class="rp-opt" data-rp="save"><b>${esc(T.optSave)}</b><span>${esc(T.optSaveS)}</span></button></div></div>`;
+        veil.hidden = false; document.body.classList.add('rp-open');
+      }
+      window.__openSnapChoice = choose;
+
+      /* ---- step 2: the form ---- */
+      const S = 520;                                                         // internal size of the marking canvas
+      let D = null, cur = 0, marks = [], drag = null, sigmaCache = new Map();
+      const sigma = (i) => { if (sigmaCache.has(i)) return sigmaCache.get(i); const a = Float32Array.from(D.frames[i].img, Math.abs).sort(), v = Math.max(1e-9, 1.4826 * a[a.length >> 1]); sigmaCache.set(i, v); return v; };
+      const mkOf = (c, i) => { const k = (c.x / S) * D.N, r = (c.y / S) * D.N, p = D.fieldPoint(k, r), f = D.frames[i]; return { frame: i, k, r, ra: p.ra, dec: p.dec, t: f.t, date: f.date, radius: (c.rad / S) * D.N * D.ps }; };
+      const at = (t) => {                                                    // where the object should be in a frame taken at epoch t: fixed, or moving between the two sightings
+        const a = marks[0], b = marks[1]; if (!a) return null; if (!b || b.t === a.t) return { k: a.k, r: a.r };
+        const u = (t - a.t) / (b.t - a.t); return { k: a.k + u * (b.k - a.k), r: a.r + u * (b.r - a.r) };
+      };
+      const peak = (i, pos) => {
+        const img = D.frames[i].img, N = D.N, k0 = Math.floor(pos.k), r0 = Math.floor(pos.r); let best = -Infinity;
+        for (let r = r0 - 1; r <= r0 + 1; r++) for (let k = k0 - 1; k <= k0 + 1; k++) if (k >= 0 && r >= 0 && k < N && r < N && img[r * N + k] > best) best = img[r * N + k];
+        return best / sigma(i);
+      };
+      const detections = () => D.frames.map((f) => { const p = at(f.t); return { date: f.date, i: f.i, snr: p ? peak(f.i, p) : null }; });
+      const motion = () => {
+        if (marks.length < 2 || marks[0].t === marks[1].t) return null; const [a, b] = marks, cd = Math.cos(a.dec * Math.PI / 180);
+        const e = (b.ra - a.ra) * cd * 3600, n = (b.dec - a.dec) * 3600, yrs = Math.abs(b.t - a.t), arc = Math.hypot(e, n);
+        return { arcsec: arc, years: yrs, masyr: (arc / yrs) * 1000, pa: (Math.atan2(e, n) * 180 / Math.PI + 360) % 360 };
+      };
+      const windowOf = () => { const d = detections().filter((x) => x.snr != null && x.snr >= 3), list = d.length ? d : detections(); return { start: list[0].date, end: list[list.length - 1].date }; };
+
+      function paint() {
+        const cv = $('#rp-cv'); if (!cv) return; const g = cv.getContext('2d'); g.imageSmoothingEnabled = false; g.clearRect(0, 0, S, S);
+        g.drawImage(D.frameCanvas(cur), 0, 0, S, S);
+        g.strokeStyle = 'rgba(255,255,255,.08)'; g.lineWidth = 1; g.beginPath(); for (let i = 1; i < 4; i++) { g.moveTo((i * S) / 4, 0); g.lineTo((i * S) / 4, S); g.moveTo(0, (i * S) / 4); g.lineTo(S, (i * S) / 4); } g.stroke();
+        const all = drag && drag.rad > 6 ? [...marks.map((m) => ({ m, live: false })), { m: { x: drag.x, y: drag.y, rad: drag.rad, frame: cur, tmp: true }, live: true }] : marks.map((m) => ({ m, live: false }));
+        all.forEach(({ m }, idx) => {
+          const x = m.x, y = m.y, here = m.frame === cur, col = idx === 1 || m.tmp && marks.length ? '#f5a54a' : '#38bdf8';
+          g.save(); g.strokeStyle = col; g.fillStyle = col; g.lineWidth = here ? 2.4 : 1.4; g.globalAlpha = here ? 1 : 0.55; if (!here) g.setLineDash([5, 4]);
+          if (m.rad > 6) { g.beginPath(); g.arc(x, y, m.rad, 0, Math.PI * 2); g.stroke(); } else { g.beginPath(); g.arc(x, y, 16, 0, Math.PI * 2); g.stroke(); g.beginPath(); g.moveTo(x - 26, y); g.lineTo(x - 8, y); g.moveTo(x + 8, y); g.lineTo(x + 26, y); g.moveTo(x, y - 26); g.lineTo(x, y - 8); g.moveTo(x, y + 8); g.lineTo(x, y + 26); g.stroke(); }
+          g.setLineDash([]); g.font = '700 14px system-ui'; g.fillText(String(idx + 1), x + 20, y - 18); g.restore();
+        });
+      }
+      function info() {
+        const box = $('#rp-info'); if (!box) return; const det = detections(), mo = motion(), w = windowOf();
+        $('#rp-from').value = w.start; $('#rp-to').value = w.end;
+        const pos = marks.map((m, i) => `<div><b>${esc(i ? T.mark2 : T.mark1)}</b> · ${esc(m.date)}<br><span class="mono">RA ${hms(m.ra)} (${m.ra.toFixed(5)}°)<br>Dec ${dms(m.dec)} (${m.dec.toFixed(5)}°)</span>${m.radius ? `<br><small>≈ ${Math.round(m.radius)}″</small>` : ''}</div>`).join('') || `<small>${esc(T.hint)}</small>`;
+        box.innerHTML = `<div class="rp-pos">${pos}</div>` + (mo ? `<p class="rp-mo"><b>${esc(T.motion)}:</b> ${mo.arcsec.toFixed(1)}″ ${esc(T.over)} ${mo.years.toFixed(2)} ${esc(T.yr)} = ${Math.round(mo.masyr).toLocaleString()} mas/yr, PA ${Math.round(mo.pa)}° <small>(${esc(T.est)})</small></p>` : '')
+          + (marks.length ? `<p class="rp-snr"><b>${esc(T.snr)}:</b> ${det.map((x) => `<span class="${x.snr >= 3 ? 'is-hit' : ''}" title="${esc(x.date)}">${esc(x.date.slice(2))} ${x.snr == null ? '–' : x.snr.toFixed(1)}</span>`).join('')}</p>` : '');
+        $('#rp-ev').innerHTML = marks.length ? `<small>${esc(T.evidence)}</small><canvas id="rp-evc" width="768" height="${evidenceH()}"></canvas>` : ''; if (marks.length) evidence($('#rp-evc'));
+      }
+      const picks = () => { const n = D.frames.length, want = Math.min(8, n), out = new Set(marks.map((m) => m.frame)); for (let j = 0; out.size < want; j++) out.add(Math.round((j * (n - 1)) / Math.max(1, want - 1))); return [...out].sort((a, b) => a - b); };
+      const evidenceH = () => Math.ceil(picks().length / 4) * 192;
+      function evidence(cv) {
+        const g = cv.getContext('2d'); g.imageSmoothingEnabled = false; g.fillStyle = '#02040a'; g.fillRect(0, 0, cv.width, cv.height); const half = 6;
+        picks().forEach((i, n) => {
+          const f = D.frames[i], p = at(f.t), x0 = (n % 4) * 192, y0 = Math.floor(n / 4) * 192, src = D.frameCanvas(i);
+          g.drawImage(src, Math.round(p.k - half), Math.round(p.r - half), half * 2 + 1, half * 2 + 1, x0 + 4, y0 + 4, 184, 160);
+          g.strokeStyle = 'rgba(56,189,248,.8)'; g.lineWidth = 1.5; g.strokeRect(x0 + 4 + 184 / 2 - 14, y0 + 4 + 160 / 2 - 14, 28, 28);
+          g.fillStyle = '#e7edf7'; g.font = '600 13px system-ui'; g.fillText(f.date, x0 + 8, y0 + 183);
+        });
+      }
+      const frameRow = () => `<div class="rp-frames" role="tablist">${D.frames.map((f) => `<button type="button" data-rp-f="${f.i}" class="${f.i === cur ? 'is-on' : ''}${marks.some((m) => m.frame === f.i) ? ' has' : ''}">${esc(f.date.slice(2) || String(f.i + 1))}</button>`).join('')}</div>`;
+
+      function form() {
+        D = window.__reportData && window.__reportData();
+        if (!D) { close(); toast(T.needLive); return; }
+        if (D.band.startsWith(D.mission)) D.band = D.band.slice(D.mission.length).trim();      // the band label already names the mission
+        cur = Math.min(D.current, D.frames.length - 1); marks = []; sigmaCache = new Map(); drag = null;
+        veil.innerHTML = `<div class="rp-box"><button type="button" class="rp-x" data-rp="close" aria-label="${esc(T.close)}"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button><h2>${esc(T.title)}</h2><p class="rp-sub">${esc(T.sub)}</p>
+          <div class="rp-grid"><div class="rp-left"><canvas id="rp-cv" width="${S}" height="${S}" aria-label="Frame to mark"></canvas><p class="rp-cap">${esc(T.frames)}</p><div id="rp-frames">${frameRow()}</div><button type="button" class="rp-link" data-rp="clear">${esc(T.clear)}</button></div>
+          <div class="rp-right"><h3>${esc(T.auto)}</h3><dl class="rp-auto"><dt>${esc(T.field)}</dt><dd class="mono">RA ${hms(D.ra)} · Dec ${dms(D.dec)} · ${D.fov}″</dd><dt>${esc(T.band)}</dt><dd>${esc(D.mission)} ${esc(D.band)}</dd></dl>
+            <div id="rp-info"></div><div class="rp-win"><b>${esc(T.win)}</b><label>${esc(T.from)} <input id="rp-from" type="date"></label><label>${esc(T.to)} <input id="rp-to" type="date"></label></div><div id="rp-ev"></div>
+            <h3>${esc(T.you)}</h3><label class="rp-f">${esc(T.name)}<input id="rp-name" maxlength="80" autocomplete="name"></label><label class="rp-f">${esc(T.contact)}<input id="rp-contact" maxlength="120" autocomplete="email"></label><label class="rp-f">${esc(T.note)}<textarea id="rp-note" rows="2" maxlength="2000"></textarea></label>
+            <label class="rp-consent"><input id="rp-consent" type="checkbox"> ${esc(T.consent)}</label><p id="rp-err" class="rp-err" role="alert" hidden></p>
+            <div class="rp-btns"><button type="button" class="rp-send" data-rp="send">${esc(T.send)}</button><button type="button" data-rp="draft">${esc(T.draft)}</button><button type="button" data-rp="dl">${esc(T.dl)}</button></div></div></div></div>`;
+        veil.hidden = false; document.body.classList.add('rp-open');
+        try { $('#rp-name').value = localStorage.getItem('space-vi-rp-name') || ''; $('#rp-contact').value = localStorage.getItem('space-vi-rp-contact') || ''; } catch (e) { /* ignore */ }
+        paint(); info(); bindCanvas();
+      }
+      function bindCanvas() {
+        const cv = $('#rp-cv'), pos = (e) => { const r = cv.getBoundingClientRect(); return { x: Math.max(0, Math.min(S, ((e.clientX - r.left) / r.width) * S)), y: Math.max(0, Math.min(S, ((e.clientY - r.top) / r.height) * S)) }; };
+        cv.addEventListener('pointerdown', (e) => { const p = pos(e); drag = { x: p.x, y: p.y, rad: 0 }; cv.setPointerCapture(e.pointerId); });
+        cv.addEventListener('pointermove', (e) => { if (!drag) return; const p = pos(e); drag.rad = Math.hypot(p.x - drag.x, p.y - drag.y); paint(); });
+        cv.addEventListener('pointerup', (e) => {
+          if (!drag) return; const p = pos(e), c = { x: drag.x, y: drag.y, rad: drag.rad > 6 ? drag.rad : 0 }; drag = null;
+          const m = { ...mkOf(c, cur), x: c.x, y: c.y, rad: c.rad }, same = marks.findIndex((q) => q.frame === cur);
+          if (same >= 0) marks[same] = m; else if (marks.length < 2) marks.push(m); else marks[1] = m;
+          marks.sort((a, b) => a.t - b.t); paint(); info(); $('#rp-frames').innerHTML = frameRow(); void p;
+        });
+      }
+      veil.addEventListener('click', (e) => {
+        const f = e.target.closest('[data-rp-f]'); if (f && D) { cur = +f.dataset.rpF; paint(); $('#rp-frames').innerHTML = frameRow(); return; }
+        const a = e.target.closest('[data-rp]'); if (!a) return; const k = a.dataset.rp;
+        if (k === 'new') form(); else if (k === 'save') { close(); window.__saveSnapshot && window.__saveSnapshot(); }
+        else if (k === 'clear') { marks = []; paint(); info(); $('#rp-frames').innerHTML = frameRow(); }
+        else if (k === 'send') send(); else if (k === 'draft') draft(); else if (k === 'dl') download();
+        else if (k === 'done') close();
+      });
+
+      /* ---- the report itself ---- */
+      const snapshotImage = () => {
+        const c = document.createElement('canvas'); c.width = c.height = 640; const g = c.getContext('2d'); g.imageSmoothingEnabled = false; const fi = marks[0].frame;
+        g.drawImage(D.frameCanvas(fi), 0, 0, 640, 640); const k = 640 / S;
+        marks.forEach((m, i) => { g.strokeStyle = i ? '#f5a54a' : '#38bdf8'; g.fillStyle = g.strokeStyle; g.lineWidth = 3; g.beginPath(); g.arc(m.x * k, m.y * k, m.rad ? m.rad * k : 20, 0, Math.PI * 2); g.stroke(); g.font = '700 18px system-ui'; g.fillText(String(i + 1), m.x * k + 24, m.y * k - 22); });
+        g.fillStyle = 'rgba(2,4,10,.78)'; g.fillRect(0, 608, 640, 32); g.fillStyle = '#e7edf7'; g.font = '600 14px system-ui'; g.fillText(`${D.mission} ${D.band} · ${D.frames[fi].date} · RA ${marks[0].ra.toFixed(4)} Dec ${marks[0].dec.toFixed(4)}`, 10, 629);
+        return c.toDataURL('image/jpeg', 0.88);
+      };
+      const build = () => {
+        const err = $('#rp-err'); err.hidden = true; const name = $('#rp-name').value.trim(), contact = $('#rp-contact').value.trim();
+        if (!marks.length) return { error: T.eMark };
+        const mo = motion(), det = detections();
+        const cv = document.createElement('canvas'); cv.width = 768; cv.height = evidenceH(); evidence(cv);
+        return { error: null, name, contact, report: {
+          reporter: { name, contact }, consent: $('#rp-consent').checked, note: $('#rp-note').value.trim(),
+          field: { ra: D.ra, dec: D.dec, fov: D.fov, band: D.band, mission: D.mission, unit: D.unit, target: '' },
+          window: { start: $('#rp-from').value, end: $('#rp-to').value }, frames: D.frames.map((f) => ({ t: f.t, date: f.date, obsid: f.obsid })),
+          marks: marks.map((m) => ({ ra: m.ra, dec: m.dec, t: m.t, date: m.date, k: m.k, r: m.r, radius: m.radius || 0 })),
+          detections: det.filter((x) => x.snr != null).map((x) => ({ date: x.date, snr: x.snr })),
+          motion: mo ? { arcsec: mo.arcsec, masyr: mo.masyr, pa: mo.pa, years: mo.years } : null,
+          images: { snapshot: snapshotImage(), evidence: cv.toDataURL('image/png') } } };
+      };
+      const fail = (m, good) => { const e = $('#rp-err'); e.textContent = m; e.hidden = false; e.classList.toggle('is-ok', !!good); };
+      function download() { const b = build(); if (b.error) return fail(b.error); const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([JSON.stringify(b.report, null, 1)], { type: 'application/json' })), download: `space-vi-report-${Date.now()}.json` }); document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+      const toCollection = (b, id) => {
+        if (!window.SpaceCollection) return; const m = b.report.marks[0], mo = b.report.motion;
+        window.SpaceCollection.add({ kind: 'report', name: `${vi ? 'Báo sao mới' : 'New star report'}${id ? ' · ' + id : ' (' + (vi ? 'nháp' : 'draft') + ')'}`, ra: m.ra, dec: m.dec, image: b.report.images.snapshot,
+          facts: [['Position', `${m.ra.toFixed(5)}, ${m.dec.toFixed(5)}`], ['Seen', `${b.report.window.start} to ${b.report.window.end}`], ['Band', `${D.mission} ${D.band}`], ...(mo ? [['Motion', `${Math.round(mo.masyr).toLocaleString()} mas/yr`]] : [])],
+          summary: `Marked in a real ${D.mission} photograph${id ? ' and sent to the admin (report ' + id + ')' : ', saved as a draft'}.${mo ? ` Estimated motion ${mo.arcsec.toFixed(1)} arcseconds over ${mo.years.toFixed(2)} years.` : ''}`, source: `${D.mission} via NASA/IPAC IRSA` });
+      };
+      function draft() { const b = build(); if (b.error) return fail(b.error); toCollection(b, null); fail(T.draftOk, true); }
+      async function send() {
+        const b = build(); if (b.error) return fail(b.error);
+        if (!b.name || !b.contact) return fail(T.eName); if (!b.report.consent) return fail(T.eConsent);
+        const btn = $('[data-rp=send]'); btn.disabled = true; btn.textContent = T.sending;
+        try {
+          const r = await fetch('/api/report', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b.report) }), j = await r.json().catch(() => ({}));
+          if (!r.ok || !j.ok) throw new Error(j.error || `HTTP ${r.status}`);
+          try { localStorage.setItem('space-vi-rp-name', b.name); localStorage.setItem('space-vi-rp-contact', b.contact); } catch (e) { /* ignore */ }
+          toCollection(b, j.id);
+          veil.innerHTML = `<div class="rp-box rp-small rp-thanks"><div class="rp-gift" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="7" y="20" width="34" height="22" rx="3" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M5 14h38v6H5zM24 14v28" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M24 14c-6 0-10-2-10-5s5-4 10 5c5-9 10-8 10-5s-4 5-10 5z" fill="none" stroke="currentColor" stroke-width="2.4"/></svg></div>
+            <h2>${esc(T.thanks)}</h2><p>${esc(T.thanksP.replace('{id}', j.id).replace('{c}', b.contact))}</p><p class="rp-sub">${esc(T.thanksS)}</p><button type="button" class="rp-send" data-rp="done">${esc(T.again)}</button></div>`;
+        } catch (e) { btn.disabled = false; btn.textContent = T.send; fail(`${T.eSend} (${e.message}). ${T.eHelp}`); }
+      }
+
+      /* a camera button in the player bar too, next to the time readout */
+      const player = $('.player');
+      if (player) { const b = Object.assign(document.createElement('button'), { type: 'button', className: 'p-btn rp-cam', id: 'rp-cam' }); b.setAttribute('aria-label', vi ? 'Lưu ảnh chụp / báo sao mới' : 'Save snapshot / report a new star'); b.title = b.getAttribute('aria-label');
+        b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l1.5-2.5h7L17 8h3v11H4z"/><circle cx="12" cy="13.5" r="3.6"/></svg>'; b.addEventListener('click', choose); player.appendChild(b); }
+    })();
+  </script>
+  <style id="rp-css">
+    #rp-veil { position: fixed; inset: 0; z-index: 600; display: grid; place-items: center; padding: 14px; background: rgba(2, 4, 8, .74); backdrop-filter: blur(6px); overflow-y: auto; }
+    #rp-veil[hidden] { display: none; }
+    .rp-box { position: relative; width: min(1040px, 100%); max-height: 100%; overflow-y: auto; padding: 22px 22px 20px; border-radius: 24px; background: rgba(8, 12, 22, .97); border: 1px solid rgba(255, 255, 255, .14); box-shadow: 0 40px 80px -30px #000; color: #e7edf7; }
+    .rp-box.rp-small { width: min(520px, 100%); }
+    .rp-box h2 { margin: 0 0 4px; font-size: 22px; font-weight: 800; letter-spacing: -.02em; padding-right: 40px; } .rp-box h3 { margin: 14px 0 6px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: #94a3b8; font-weight: 700; }
+    .rp-sub { margin: 0 0 12px; font-size: 13px; line-height: 1.5; color: #94a3b8; }
+    .rp-x { position: absolute; top: 14px; right: 14px; width: 38px; height: 38px; display: grid; place-items: center; border-radius: 12px; border: 1px solid rgba(255, 255, 255, .14); background: rgba(255, 255, 255, .05); color: #fff; cursor: pointer; }
+    .rp-x svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+    .rp-opts { display: grid; gap: 10px; margin-top: 14px; }
+    .rp-opt { display: grid; gap: 4px; text-align: left; padding: 16px 16px; border-radius: 18px; border: 1px solid rgba(255, 255, 255, .16); background: rgba(255, 255, 255, .04); color: #fff; cursor: pointer; transition: transform .2s, border-color .2s; }
+    .rp-opt:hover { transform: translateY(-2px); border-color: #38bdf8; } .rp-opt.is-new { border-color: rgba(245, 165, 74, .6); background: rgba(245, 165, 74, .08); } .rp-opt b { font-size: 16px; } .rp-opt span { font-size: 12.5px; color: #cbd5e1; }
+    .rp-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 20px; }
+    #rp-cv { width: 100%; aspect-ratio: 1; display: block; border-radius: 14px; border: 1px solid rgba(255, 255, 255, .16); background: #000; cursor: crosshair; touch-action: none; image-rendering: pixelated; }
+    .rp-cap { margin: 10px 0 4px; font-size: 11px; color: #94a3b8; }
+    .rp-frames { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; }
+    .rp-frames button { flex: none; height: 34px; padding: 0 10px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, .16); background: rgba(255, 255, 255, .04); color: #e7edf7; font: 600 12px ui-monospace, monospace; cursor: pointer; }
+    .rp-frames button.is-on { background: #38bdf8; color: #04121c; border-color: #38bdf8; } .rp-frames button.has { box-shadow: inset 0 -3px 0 #f5a54a; }
+    .rp-link { margin-top: 4px; border: 0; background: none; color: #38bdf8; font-weight: 700; font-size: 12.5px; cursor: pointer; padding: 6px 0; }
+    .rp-auto { margin: 0; display: grid; grid-template-columns: 90px 1fr; gap: 4px 10px; font-size: 13px; } .rp-auto dt { color: #94a3b8; } .rp-auto dd { margin: 0; } .mono { font-family: ui-monospace, monospace; font-size: 12px; }
+    .rp-pos { display: grid; gap: 8px; margin-top: 8px; font-size: 13px; } .rp-pos > div { padding: 8px 10px; border-radius: 12px; background: rgba(56, 189, 248, .08); border: 1px solid rgba(56, 189, 248, .3); } .rp-pos > small { color: #94a3b8; }
+    .rp-mo, .rp-snr { margin: 8px 0 0; font-size: 12.5px; color: #cbd5e1; } .rp-snr span { display: inline-block; margin: 2px 4px 0 0; padding: 1px 7px; border-radius: 6px; background: rgba(255, 255, 255, .06); font: 600 11px ui-monospace, monospace; } .rp-snr .is-hit { background: rgba(94, 234, 212, .18); color: #5eead4; }
+    .rp-win { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 12px; font-size: 13px; } .rp-win label { display: flex; align-items: center; gap: 6px; color: #94a3b8; }
+    .rp-win input, .rp-f input, .rp-f textarea { height: 38px; padding: 0 10px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, .16); background: rgba(0, 0, 0, .35); color: #fff; font: inherit; }
+    #rp-ev { margin-top: 10px; } #rp-ev small { color: #94a3b8; font-size: 11px; } #rp-evc { width: 100%; display: block; margin-top: 4px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, .12); }
+    .rp-f { display: grid; gap: 4px; margin-top: 8px; font-size: 12.5px; color: #cbd5e1; } .rp-f textarea { height: auto; padding: 8px 10px; resize: vertical; }
+    .rp-consent { display: flex; align-items: flex-start; gap: 8px; margin-top: 12px; font-size: 12.5px; color: #cbd5e1; } .rp-consent input { margin-top: 3px; width: 18px; height: 18px; }
+    .rp-err { margin: 10px 0 0; padding: 8px 10px; border-radius: 10px; background: rgba(248, 113, 113, .14); color: #fecaca; font-size: 12.5px; }
+    .rp-err.is-ok { background: rgba(94, 234, 212, .14); color: #99f6e4; }
+    .rp-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; } .rp-btns button, .rp-send { height: 42px; padding: 0 16px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, .18); background: rgba(255, 255, 255, .06); color: #fff; font-weight: 700; font-size: 13px; cursor: pointer; }
+    .rp-btns .rp-send, .rp-send { background: #fff; color: #05080f; border-color: #fff; } .rp-btns button:disabled { opacity: .5; cursor: progress; }
+    .rp-thanks { text-align: center; } .rp-thanks p { margin: 8px 0; font-size: 14px; line-height: 1.55; } .rp-gift { width: 64px; height: 64px; margin: 6px auto 8px; color: #f5a54a; } .rp-gift svg { width: 100%; height: 100%; }
+    .rp-cam { margin-left: 4px; } .rp-cam svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
+    @media (max-width: 820px) { #rp-veil { place-items: end center; padding: 0; } .rp-box { border-radius: 24px 24px 0 0; max-height: 96svh; padding: 18px 14px calc(18px + env(safe-area-inset-bottom, 0px)); } .rp-grid { grid-template-columns: 1fr; gap: 6px; } .rp-btns button { flex: 1 1 100%; } }
+  </style>
   <script id="col-js">
     (() => {
       const $ = (s, el = document) => el.querySelector(s);
@@ -9699,7 +9941,7 @@
       C.onChange(() => { if (drawer.hidden && C.count()) btn.classList.add('is-pulse'), setTimeout(() => btn.classList.remove('is-pulse'), 1200); });
       const snap = Object.assign(document.createElement('button'), { type: 'button', className: 'snap-btn', id: 'snap-btn', title: vi ? 'Lưu ảnh chụp khung này' : 'Save a snapshot of this field' });
       snap.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l1.5-2.5h7L17 8h3v11H4z"/><circle cx="12" cy="13.5" r="3.6"/></svg><span>' + (vi ? 'Lưu ảnh' : 'Save snapshot') + '</span>';
-      snap.addEventListener('click', () => window.__saveSnapshot && window.__saveSnapshot()); $('#stage').appendChild(snap);
+      snap.addEventListener('click', () => (window.__openSnapChoice ? window.__openSnapChoice() : window.__saveSnapshot && window.__saveSnapshot())); $('#stage').appendChild(snap);
     })();
   </script>
 </body>

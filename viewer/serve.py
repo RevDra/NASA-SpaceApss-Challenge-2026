@@ -18,6 +18,8 @@ CORS headers and the browser cannot call it directly:
                                                          (see star_info.py)
     GET /api/wise?ra=..&dec=..&fov=300&band=W2        -> real WISE/NEOWISE frames 2010-2024 (see wise_live.py)
     GET /api/resolve?name=<text>                      -> SIMBAD name -> coordinates, moved to the current epoch
+    POST /api/report                                  -> a "I found a new star" report from the viewer (see reports_store.py)
+    GET /api/admin/reports?token=..                   -> the stored reports (token = env ADMIN_TOKEN, or this computer only)
 
 Standard library only (Python 3.8+). Keep this file next to index.html, spherex_live.py, gaia_live.py,
 star_info.py and constellation_bounds.tsv.
@@ -26,8 +28,10 @@ from __future__ import annotations
 
 import argparse
 import functools
+import hmac
 import http.server
 import json
+import os
 import socket
 import sys
 import threading
@@ -37,6 +41,7 @@ import webbrowser
 from pathlib import Path
 
 import gaia_live
+import reports_store
 import spherex_live
 import wise_live
 import star_info
@@ -60,8 +65,59 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.send_header("Cache-Control", "no-store")
         super().end_headers()
 
+    # ---- reports from the viewer: stored for the admin, never served as static files ----
+    def is_admin(self, query: dict) -> bool:
+        token = os.environ.get("ADMIN_TOKEN", "")
+        given = (query.get("token") or [""])[0]
+        if token:
+            return hmac.compare_digest(token.encode(), given.encode())
+        return self.client_address[0] in ("127.0.0.1", "::1")
+
+    def is_private_path(self, path: str) -> bool:
+        """True for any spelling of /reports/... (case, %-escapes, ./ and ../ tricks), or a path resolving into the store."""
+        parts = [seg for seg in urllib.parse.unquote(path).replace("\\", "/").split("/") if seg not in ("", ".")]
+        if parts and parts[0].casefold().rstrip(". ") == "reports":
+            return True
+        try:
+            target = Path(self.translate_path(path)).resolve()
+            store = reports_store.store_dir(ROOT)
+            return target == store or store in target.parents
+        except (OSError, ValueError):
+            return True
+
+    def do_POST(self) -> None:
+        url = urllib.parse.urlsplit(self.path)
+        if url.path != "/api/report":
+            self.send_json(404, {"error": "unknown endpoint"})
+            return
+        try:
+            n = int(self.headers.get("Content-Length", "0"))
+        except ValueError:
+            n = 0
+        if n <= 0 or n > reports_store.MAX_BODY:
+            self.send_json(413, {"error": "report is empty or too large"})
+            return
+        body = self.rfile.read(n)
+        try:
+            self.send_json(200, reports_store.save_report(ROOT, body, self.client_address[0]))
+        except reports_store.ReportError as exc:
+            self.send_json(400, {"error": str(exc)})
+        except Exception as exc:
+            traceback.print_exc()
+            self.send_json(500, {"error": f"{type(exc).__name__}: {exc}"})
+
+    def do_HEAD(self) -> None:
+        if self.is_private_path(urllib.parse.urlsplit(self.path).path):
+            self.send_response(403)
+            self.end_headers()
+            return
+        super().do_HEAD()
+
     def do_GET(self) -> None:
         url = urllib.parse.urlsplit(self.path)
+        if self.is_private_path(url.path):          # defence in depth: reports are stored outside this folder anyway
+            self.send_json(403, {"error": "forbidden"})
+            return
         if url.path == "/":                        # the welcome sky is the front door; the blink viewer stays at /index.html
             self.path = "/welcome.html" + (("?" + url.query) if url.query else "")
             url = urllib.parse.urlsplit(self.path)
@@ -84,7 +140,24 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def handle_api(self, path: str, query: dict) -> None:
         arg = lambda name, default=None: query.get(name, [default])[0]
         if path == "/api/status":
-            self.send_json(200, {"ok": True, "live": True, "gaia": True})
+            self.send_json(200, {"ok": True, "live": True, "gaia": True, "reports": True})
+            return
+        if path.startswith("/api/admin/"):
+            if not self.is_admin(query):
+                self.send_json(403, {"error": "admin only: set ADMIN_TOKEN and pass ?token=..., or open this page on the computer running serve.py"})
+                return
+            if path == "/api/admin/reports":
+                self.send_json(200, {"ok": True, "reports": reports_store.list_reports(ROOT)})
+                return
+            if path == "/api/admin/image":
+                hit = reports_store.read_image(ROOT, arg("id", ""), arg("name", ""))
+                if not hit:
+                    self.send_json(404, {"error": "no such image"})
+                    return
+                data, mime = hit
+                self.send_response(200); self.send_header("Content-Type", mime); self.send_header("Content-Length", str(len(data))); self.end_headers(); self.wfile.write(data)
+                return
+            self.send_json(404, {"error": f"unknown endpoint {path}"})
             return
         if path == "/api/gaia":
             try:

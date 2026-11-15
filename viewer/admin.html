@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Space_VI · Reports</title>
+<style>
+  :root { color-scheme: dark; --bg: #05080f; --card: #0c1220; --line: rgba(255,255,255,.12); --text: #e7edf7; --dim: #94a3b8; --sky: #38bdf8; --amber: #f5a54a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid var(--line); }
+  h1 { margin: 0; font-size: 18px; } small, .dim { color: var(--dim); }
+  main { max-width: 1100px; margin: 0 auto; padding: 18px 16px 60px; display: grid; gap: 14px; }
+  input { height: 36px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: #02040a; color: var(--text); }
+  button { height: 36px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--line); background: #131c30; color: var(--text); cursor: pointer; }
+  .rp { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: 16px; padding: 14px; border-radius: 16px; border: 1px solid var(--line); background: var(--card); }
+  .rp img { width: 100%; border-radius: 10px; border: 1px solid var(--line); background: #000; image-rendering: pixelated; }
+  .rp h2 { margin: 0 0 2px; font-size: 16px; } .rp dl { margin: 8px 0 0; display: grid; grid-template-columns: 130px 1fr; gap: 4px 10px; }
+  .rp dt { color: var(--dim); } .rp dd { margin: 0; word-break: break-word; }
+  .tag { display: inline-block; padding: 1px 8px; border-radius: 6px; background: rgba(245,165,74,.16); color: var(--amber); font-size: 12px; }
+  .imgs { display: grid; gap: 8px; }
+  @media (max-width: 760px) { .rp { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <div><h1>Reports from the viewer</h1><small id="count">Not loaded</small></div>
+  <form id="f" style="display:flex;gap:8px;flex-wrap:wrap"><input id="tok" type="password" placeholder="Admin token (if set)" autocomplete="off"><button>Load</button></form>
+</header>
+<main id="list"><p class="dim">Open this page on the computer running serve.py, or pass the token set in <code>ADMIN_TOKEN</code>. Names and contacts are in these reports: do not share the page.</p></main>
+<script>
+const $ = (s) => document.querySelector(s), esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+$('#tok').value = new URLSearchParams(location.search).get('token') || sessionStorage.getItem('space-vi-admin') || '';
+async function load() {
+  const t = $('#tok').value.trim(); if (t) sessionStorage.setItem('space-vi-admin', t);
+  const q = t ? `?token=${encodeURIComponent(t)}` : '';
+  const r = await fetch('/api/admin/reports' + q), j = await r.json();
+  if (!r.ok) { $('#list').innerHTML = `<p style="color:#fca5a5">${esc(j.error)}</p>`; return; }
+  $('#count').textContent = `${j.reports.length} report${j.reports.length === 1 ? '' : 's'}`;
+  const img = (id, n) => `/api/admin/image?id=${encodeURIComponent(id)}&name=${n}${t ? '&token=' + encodeURIComponent(t) : ''}`;
+  $('#list').innerHTML = j.reports.map((x) => {
+    const m = x.marks || [], mo = x.motion;
+    return `<article class="rp"><div class="imgs"><img src="${img(x.id, 'snapshot')}" alt="snapshot">${x.files && x.files.evidence ? `<img src="${img(x.id, 'evidence')}" alt="evidence">` : ''}</div>
+      <div><h2>${esc(x.reporter.name)} <span class="tag">${esc(x.id)}</span></h2><small>${esc(x.received_utc)}</small>
+      <dl><dt>Contact (for the gift)</dt><dd>${esc(x.reporter.contact)}</dd>
+      <dt>Field</dt><dd>${esc(x.field.target || '')} RA ${x.field.ra.toFixed(5)}°, Dec ${x.field.dec.toFixed(5)}° · ${esc(x.field.mission)} ${esc(x.field.band)} · ${x.field.fov_arcsec}″</dd>
+      <dt>Seen between</dt><dd>${esc(x.window.start)} to ${esc(x.window.end)}</dd>
+      ${m.map((p, i) => `<dt>Mark ${i + 1}</dt><dd>RA ${p.ra.toFixed(5)}°, Dec ${p.dec.toFixed(5)}° · ${esc(p.date)}${p.radius_arcsec ? ' · radius ' + Math.round(p.radius_arcsec) + '″' : ''}</dd>`).join('')}
+      ${mo ? `<dt>Motion</dt><dd>${mo.arcsec}″ in ${mo.years} yr = ${mo.mas_per_yr} mas/yr, PA ${mo.pa_deg}°</dd>` : ''}
+      <dt>Brightness per frame</dt><dd>${(x.detections || []).map((d) => `${esc(d.date)}: ${d.snr}σ`).join(' · ') || '—'}</dd>
+      <dt>Note</dt><dd>${esc(x.note) || '—'}</dd></dl></div></article>`;
+  }).join('') || '<p class="dim">No reports yet.</p>';
+}
+$('#f').addEventListener('submit', (e) => { e.preventDefault(); load(); });
+load();
+</script>
+</body>
+</html>

@@ -20,3 +20,6 @@ viewer/gaia_cache/
 backend/cache/
 *.fits
 .claude/
+
+# Reports sent by users (names and contacts): never commit
+reports/
