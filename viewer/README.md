@@ -9,6 +9,16 @@ The product is now one path: **journey** (`welcome.html`, scroll story) then **s
 - **Real data by default:** the viewer now opens on a real SPHEREx band (Barnard's Star, D2). The simulated WISE and "SPHEREx sim" bands and the injected synthetic movers are hidden from the interface (the code is still there). The Gaia star rings are on by default and coloured by each star's measured temperature.
 - **Star card, visual:** vital signs (temperature on a blackbody colour bar, size against the Sun, distance on a log scale with the year its light left, brightness), proper motion as a compass arrow with "one Moon-width every N years", a real Hertzsprung-Russell diagram (3,168 stars within 100 pc and 900 bright giants from Gaia DR3, the star highlighted at its own BP-RP and absolute G), the habitable zone with the confirmed planets of the NASA Exoplanet Archive (each planet coloured by an estimated equilibrium temperature and judged "in the zone / too hot / too cold"), and a plain ledger of what the data says about life, ending with the reminder that a habitable zone is not evidence of life. The zone uses Kopparapu et al. (2013) and reproduces the published Sun values (0.75, 0.99, 1.70, 1.77 AU). The long list of facts moved under "All the details".
 
+### Put it on the web (Render)
+
+The viewer needs the Python server (`serve.py`, standard library only), because it fetches the real SPHEREx and WISE photographs from IRSA and receives reports. A static host such as GitHub Pages would show the welcome sky but no real photographs and no reports. The repository root has a `Dockerfile` and a `render.yaml` Blueprint:
+
+1. Sign in at render.com with GitHub, choose **New > Blueprint**, pick this repository, apply. (Or open `https://render.com/deploy?repo=https://github.com/RevDra/NASA-SpaceApss-Challenge-2026`.)
+2. Render builds the image and gives a public `https://nodixhi-sky.onrender.com`-style address. Every push to `main` redeploys.
+3. Read the generated `ADMIN_TOKEN` in the service's Environment tab. Reports are at `https://<your-address>/admin.html?token=<ADMIN_TOKEN>`. Without a token the admin pages answer 403 on a public host.
+
+What to know: the free plan sleeps after about 15 minutes idle (the next visit takes about a minute to wake), and its disk is wiped at every deploy or restart, so reports are lost then; the commented lines in `render.yaml` show the paid plan with a disk that keeps them. The first load of a new field takes up to about 70 seconds (it downloads from IRSA, then is cached until the next restart). `PORT` makes the server listen on `0.0.0.0`; `TRUST_PROXY=1` uses the visitor address from `X-Forwarded-For` for the 8-reports-per-hour limit. The optional 18-flag FITS pipeline in `backend/` needs numpy, astropy and scipy and is not installed in this image.
+
 ### Star helper chat bubble (latest)
 
 - A small round face in the bottom-right corner of the welcome page and the viewer. Closed it is only the icon; click it and a chat panel opens (a bottom sheet on phones). Esc closes it.

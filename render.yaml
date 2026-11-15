@@ -1,0 +1,19 @@
+# Render Blueprint: one web service built from the Dockerfile.
+# Deploy: https://dashboard.render.com/blueprints -> New Blueprint Instance -> pick this repository.
+services:
+  - type: web
+    name: nodixhi-sky
+    runtime: docker
+    plan: free                  # sleeps after ~15 min without visits (first visit then takes about a minute)
+    healthCheckPath: /api/status
+    autoDeploy: true
+    envVars:
+      - key: ADMIN_TOKEN        # Render generates it; read it in the dashboard (Environment). Opens /admin.html?token=...
+        generateValue: true
+      - key: TRUST_PROXY        # use X-Forwarded-For for the per-visitor report limit
+        value: "1"
+    # Reports are written to /app/reports. On the free plan that disk is wiped at every deploy or restart, so download
+    # or act on reports before then. To keep them, switch to a paid plan and add:
+    #   plan: starter
+    #   disk: { name: reports, mountPath: /var/data, sizeGB: 1 }
+    # plus an env var REPORTS_DIR=/var/data/reports

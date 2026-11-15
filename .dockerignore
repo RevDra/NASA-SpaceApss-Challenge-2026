@@ -1,0 +1,15 @@
+.git
+.claude
+.agents
+.venv
+**/__pycache__
+**/*.pyc
+reports
+viewer/spherex_cache
+viewer/gaia_cache
+backend
+data
+research
+documentation
+Pan-STARRS
+css

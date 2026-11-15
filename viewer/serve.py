@@ -66,12 +66,21 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         super().end_headers()
 
     # ---- reports from the viewer: stored for the admin, never served as static files ----
+    def client_ip(self) -> str:
+        """The caller's address. Behind a host's proxy every request comes from the proxy, so with TRUST_PROXY=1 the first
+        X-Forwarded-For entry is used (only for the per-address report limit; a spoofed value cannot beat the global limit)."""
+        fwd = self.headers.get("X-Forwarded-For", "")
+        if os.environ.get("TRUST_PROXY") == "1" and fwd:
+            return fwd.split(",")[0].strip()[:64] or self.client_address[0]
+        return self.client_address[0]
+
     def is_admin(self, query: dict) -> bool:
         token = os.environ.get("ADMIN_TOKEN", "")
         given = (query.get("token") or [""])[0]
         if token:
             return hmac.compare_digest(token.encode(), given.encode())
-        return self.client_address[0] in ("127.0.0.1", "::1")
+        # no token: only this computer, and never when the request came through a proxy (that would be the whole internet)
+        return self.client_address[0] in ("127.0.0.1", "::1") and not self.headers.get("X-Forwarded-For")
 
     def is_private_path(self, path: str) -> bool:
         """True for any spelling of /reports/... (case, %-escapes, ./ and ../ tricks), or a path resolving into the store."""
@@ -99,7 +108,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             return
         body = self.rfile.read(n)
         try:
-            self.send_json(200, reports_store.save_report(ROOT, body, self.client_address[0]))
+            self.send_json(200, reports_store.save_report(ROOT, body, self.client_ip()))
         except reports_store.ReportError as exc:
             self.send_json(400, {"error": str(exc)})
         except Exception as exc:
@@ -259,8 +268,8 @@ def free_port(host: str, start: int, attempts: int = 20) -> int:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Serve the SPHEREx & Planet X viewer locally.")
-    parser.add_argument("--host", default="127.0.0.1", help="interface to bind (default 127.0.0.1)")
-    parser.add_argument("--port", type=int, default=8000, help="first port to try (default 8000)")
+    parser.add_argument("--host", default=os.environ.get("HOST") or ("0.0.0.0" if os.environ.get("PORT") else "127.0.0.1"), help="interface to bind (default 127.0.0.1; 0.0.0.0 when the host sets PORT)")
+    parser.add_argument("--port", type=int, default=int(os.environ.get("PORT") or 8000), help="first port to try (default 8000, or the PORT variable)")
     parser.add_argument("--no-browser", action="store_true", help="do not open a browser window")
     args = parser.parse_args()
 
@@ -276,7 +285,9 @@ def main() -> None:
         print(f"  Serving {ROOT}")
         print(f"  Open    {url}")
         print("  Stop    Ctrl+C\n")
-        if not args.no_browser:
+        if os.environ.get("PORT") and not os.environ.get("ADMIN_TOKEN"):
+            print("  NOTE    ADMIN_TOKEN is not set: the admin page is switched off on a public host.\n")
+        if not args.no_browser and not os.environ.get("PORT"):
             threading.Timer(0.6, webbrowser.open, args=(url,)).start()
         try:
             httpd.serve_forever()
