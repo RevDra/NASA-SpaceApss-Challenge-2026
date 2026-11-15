@@ -1,126 +1,130 @@
-# 🔭 SPHEREx Sky Viewer
+# NODIXHI — SPHEREx Sky Explorer
 
-**A public-facing web tool to explore NASA's SPHEREx mission infrared sky images.**
+NODIXHI is a public-facing astronomy experience built for the NASA Space Apps Challenge. It helps people explore real SPHEREx infrared observations, compare how a patch of sky changes over time, and learn about the stars and objects in the field.
 
-Blink between observation epochs to discover moving objects like asteroids, comets, brown dwarfs, and variable stars — just like the astronomers who discovered Pluto!
+## The challenge
 
-![SPHEREx Sky Viewer](https://spherex.caltech.edu/images/spherex_logo.png)
+NASA’s SPHEREx mission surveys the entire sky in 102 near-infrared spectral channels, revisiting it about every six months. Comparing observations can reveal objects that move or change in brightness, including asteroids, comets, brown dwarfs, variable stars, and distant galaxies. The volume of data makes accessible, human-guided exploration valuable.
 
-## 🛰️ Live SPHEREx viewer (real IRSA data)
+This project brings together a welcoming 3D sky, a time-domain image viewer, live astronomy data, and educational tools. It is designed to make it easier to find a target, view observations, and understand what the data can—and cannot—show.
 
-[`viewer/`](viewer/) contains a WiseView-style blink viewer that loads **real SPHEREx exposures** from NASA/IPAC IRSA through a small local proxy:
+## Explore the project
 
-```bash
-cd viewer && python serve.py
+- **Welcome journey and 3D sky:** Start at the landing page to explore a guided introduction, a real-star sky, constellations, planets, and observing tools. The sky can be explored by dragging and zooming; search can take you to stars and constellations.
+- **Image viewer:** View real SPHEREx D1–D6 detector data from NASA/IPAC IRSA and compare observations by blinking through frames. Search by object name or coordinates, change the field of view, and inspect stars in the field.
+- **Longer time baselines:** Load real WISE/NEOWISE W2 observations from 2010–2024 to see changes over a longer period. The viewer can also overlay Gaia DR3 sources and their measured motions.
+- **Learning and participation:** Explore star identity cards, guided tours, a time machine, observing plans, and a browser-only personal collection. Users can submit candidate-object reports for review; a submitted report is not a confirmed discovery.
+- **Research and experiments:** The repository includes an optional FITS cleaning pipeline, Pan-STARRS/WISE analysis, research scripts, and technical documentation.
+
+### Try these targets
+
+The project’s featured targets follow the challenge: Barnard’s Star, Epsilon Indi B, WISE 0855−0714, RW Aurigae, and R Draconis. Search by name in the viewer; names are resolved to current coordinates so high-proper-motion objects are easier to locate. Expected behavior includes apparent motion for nearby stars and brown dwarfs, and brightness variation for variable stars.
+
+## Quick start
+
+The viewer needs to be served by its local Python server to access the live-data proxy; opening an HTML file directly will not provide the full experience.
+
+```powershell
+Set-Location viewer
+python serve.py
 ```
 
-Then pick a band from **SPHEREx D1** to **D6**. See [viewer/README.md](viewer/README.md) for how it works.
+Open the address printed by the server (usually `http://127.0.0.1:8000`). The root page opens the welcome journey; the image viewer is available at `/index.html`.
 
-## 🚀 Quick Start
+The server uses Python’s standard library for its core web and proxy functionality. Python 3.8 or newer is recommended. Live data requires an internet connection and is subject to the availability and response time of the upstream archives. First loads can take tens of seconds; fetched fields are cached locally for subsequent viewing and offline demos.
 
-1. Open `index.html` in any modern web browser
-2. Enter sky coordinates (RA/Dec) or click a featured object
-3. Click **Search Sky** to load SPHEREx data
-4. Use the blink player to animate between epochs
-5. Look for objects that move or change brightness!
+### Optional scientific pipeline and tools
 
-## ✨ Features
+The default viewer does not require the packages in `requirements.txt`. To install the scientific and data-analysis dependencies for the optional FITS pipeline and research scripts:
 
-### Core Functionality
-- **Coordinate Input** — Enter RA/Dec in decimal degrees, sexagesimal (`17h57m48.5s`, `+04d41m36s`), or resolve object names via SIMBAD
-- **Blink Comparison** — Animate between observation epochs to spot moving objects
-- **Difference Mode** — Subtract consecutive frames to highlight changes
-- **Stack Mode** — Combine all epochs to improve signal-to-noise ratio
-- **On-the-fly Spectra** — Extract 102-band SPHEREx spectra at any position
-
-### Visualization
-- **Interactive Sky Map** — Powered by [Aladin Lite](https://aladin.cds.unistra.fr/) (CDS, Strasbourg)
-- **Multiple Colormaps** — Grayscale, Viridis, Inferno, Magma, Plasma, Hot, Cool
-- **Stretch Functions** — Asinh, Linear, Log, Sqrt, Histogram equalization
-- **Adjustable Field of View** — From 30 arcseconds to 30 arcminutes
-- **Background Surveys** — DSS2, 2MASS, AllWISE, unWISE, SDSS
-
-### Data & Overlays
-- **SPHEREx Data Collections** — DR1, QR3, QR3 Deep
-- **Catalog Overlays** — Gaia DR3, AllWISE, SIMBAD
-- **Band Selection** — All bands composite, by detector array, custom range, false-color RGB
-- **Metadata Display** — Observation dates, planning periods, contamination flags, detector info
-
-### Usability
-- **Shareable URLs** — Embed coordinates in URLs: `?ra=269.452&dec=4.693&name=Barnard's+Star`
-- **Keyboard Shortcuts** — Space (play/pause), ←→ (frame navigation), G (grid), S (spectrum)
-- **Featured Objects** — Quick-access buttons for notable targets
-- **Responsive Design** — Works on desktop, tablet, and mobile
-
-## 🎯 Test Objects
-
-| Object | RA (°) | Dec (°) | Type | Expected Behavior |
-|--------|--------|---------|------|-------------------|
-| Barnard's Star | 269.452 | +4.693 | High proper motion star | Moves ~10.3″/year |
-| Epsilon Indi B | 330.840 | −56.785 | Brown dwarf binary | Moving source |
-| WISE 0855−0714 | 133.795 | −7.245 | Cold brown dwarf | Moves ~8.1″/year |
-| RW Aurigae | 76.956 | +30.401 | T Tauri variable | Brightness changes |
-| R Draconis | 248.167 | +66.755 | Mira variable | Large amplitude pulsation |
-
-## 🏗️ Architecture
-
-```
-NASA/
-├── index.html              # Main HTML page
-├── css/
-│   └── style.css           # Complete stylesheet
-├── js/
-│   ├── utils.js            # Coordinate parsing, name resolution, utilities
-│   ├── spherex-api.js       # IRSA API integration, data models
-│   ├── colormaps.js         # Scientific colormaps (viridis, inferno, etc.)
-│   ├── blink-engine.js      # Image rendering, animation, stretch functions
-│   ├── spectrum.js          # Spectrum extraction and Chart.js visualization
-│   └── app.js              # Main application controller
-└── README.md               # This file
+```powershell
+Set-Location ..
+python -m pip install -r requirements.txt
 ```
 
-### External Dependencies (loaded via CDN)
-- **Aladin Lite v3** — Interactive sky viewer (CDS, Strasbourg)
-- **Chart.js 4** — Spectrum chart rendering
+See [backend/README.md](backend/README.md) for the FITS cleaning pipeline and [viewer/README.md](viewer/README.md) for viewer details, endpoints, and troubleshooting.
 
-### Data Sources
-- **SPHEREx Data** — [NASA/IPAC Infrared Science Archive (IRSA)](https://irsa.ipac.caltech.edu/Missions/spherex.html)
-  - SIA v2 endpoint: `https://irsa.ipac.caltech.edu/SIA`
-  - IBE cutout: `https://irsa.ipac.caltech.edu/ibe/data/spherex/`
-  - TAP queries: `https://irsa.ipac.caltech.edu/TAP/sync`
-- **Name Resolution** — SIMBAD/CDS Sesame service
-- **Catalogs** — Gaia DR3, AllWISE, SIMBAD (via HiPS progressive catalogs)
+## How it works
 
-## 🔄 Updating with New Data
+```text
+Browser
+  ├─ welcome.html + sky/      Guided introduction and interactive 3D sky
+  └─ index.html                Time-domain image viewer
+          │ same-origin requests
+          ▼
+viewer/serve.py                Static files and local API/data proxy
+  ├─ spherex_live.py           SPHEREx observations from NASA/IPAC IRSA
+  ├─ wise_live.py              WISE/NEOWISE observations from NASA/IPAC IRSA
+  ├─ gaia_live.py              Gaia DR3 field sources
+  ├─ star_info.py              Star cards and related catalog lookups
+  └─ reports_store.py          Candidate reports and admin endpoints
+```
 
-The tool is designed for easy updates as new SPHEREx data arrives:
+SPHEREx and WISE images are retrieved from NASA/IPAC IRSA and resampled onto a common viewer grid. Gaia DR3 supplies catalog data such as source positions and proper motions. The server provides a same-origin API because the browser cannot directly make all required archive requests. Local caches reduce repeat downloads.
 
-1. **New Quick Releases / Data Releases** — Simply add the new collection name to the `collections` array in `spherex-api.js` and add a checkbox to `index.html`
-2. **New HiPS Surveys** — If/when SPHEREx HiPS tiles become available, add them to the survey selector
-3. **New Catalogs** — Add new catalog HiPS URLs to the overlay toggle system
+The optional [`backend/`](backend/) package contains a separate FITS processing pipeline for background subtraction, flagged-pixel handling, and signal-to-noise estimates. Its scientific Python dependencies are not installed in the default deployment image.
 
-## 📐 Technical Notes
+## Data, interpretation, and limitations
 
-### SPHEREx Data Format
-- **102 spectral bands** spanning 0.75–5.0 µm
-- **6 detector arrays**: D1 (0.75–1.1µm), D2 (1.1–1.6µm), D3 (1.6–2.4µm), D4 (2.4–3.8µm), D5 (3.8–4.4µm), D6 (4.4–5.0µm)
-- **Spectral resolution R** ≈ 35–130
-- **Pixel scale** ≈ 6.2 arcseconds
-- **Full sky coverage** every 6 months
-- **Data format**: Multi-Extension FITS (MEF) with IMAGE, FLAGS, VARIANCE, ZODI, PSF extensions
+- **SPHEREx:** Real image exposures are queried from IRSA’s SPHEREx collections. The viewer presents detector selections D1–D6; SPHEREx’s instrument data cover 102 spectral channels. Consult the viewer documentation for the current supported display and data details.
+- **WISE/NEOWISE:** Real W2 images extend the comparison baseline to 2010–2024. WISE did not observe during its hibernation period, so there are gaps in the time series.
+- **Gaia:** Gaia DR3 sources provide context and measured motions for sources Gaia can observe. Very faint objects, including some brown dwarfs, may not appear in the Gaia catalog.
+- **Image changes need interpretation:** SPHEREx uses linear variable filters, so the wavelength can differ between exposures. Apparent brightness changes may reflect wavelength, detector flags, saturation, or other observational effects, not only intrinsic variability.
+- **No fabricated real-band fallback:** When live archive data for a real band is unavailable, the viewer reports the issue rather than presenting a synthetic frame as a real observation.
+- **Candidate reports are unverified:** Reports are leads for review, not scientific confirmation or a promise of a reward.
 
-### API Integration
-The tool queries IRSA's SIA v2 endpoint for image metadata, then constructs cutout URLs with `center` and `size` parameters. When SPHEREx data is available for the queried position, actual FITS cutouts are retrieved; otherwise, the tool generates realistic demonstration frames showing the expected proper motion or variability behavior.
+For archive and catalog citations, see the viewer’s Links panel and [viewer/README.md](viewer/README.md).
 
-## 📚 Resources
+## Run checks
 
-- [SPHEREx Mission](https://spherex.caltech.edu/)
-- [IRSA SPHEREx Archive](https://irsa.ipac.caltech.edu/Missions/spherex.html)
-- [SPHEREx Tutorial Notebooks](https://caltech-ipac.github.io/irsa-tutorials/spherex/)
-- [WiseView](http://byw.tools/wiseview) — Inspiration for this tool
-- [Backyard Worlds](https://backyardworlds.org/) — Citizen science discoveries
-- [Gaia DR3](https://archive.stsci.edu/missions-and-data/gaia)
+The small browser-side astronomy checks use Node.js and can be run from the viewer directory:
 
-## 📄 License
+```powershell
+Set-Location viewer
+node tools/test_astro.mjs
+node tools/test_constellations.mjs
+node tools/test_hz.mjs
+```
 
-This tool is open source and freely available for educational and scientific use. SPHEREx data is provided by NASA/IPAC IRSA under NASA's data policy.
+## Deployment
+
+The repository includes a Dockerfile and Render Blueprint. To deploy, create a new Blueprint in Render and select this repository; the service builds from [Dockerfile](Dockerfile) and uses [render.yaml](render.yaml).
+
+The deployed service listens on the host-provided `PORT`. Render generates an `ADMIN_TOKEN` for accessing the report administration page at `/admin.html?token=...`. Treat this token as a secret. On Render’s free plan, the service may sleep when idle and its local report storage is lost on restart or redeploy; configure persistent storage before relying on hosted report retention.
+
+## Repository map
+
+| Path | Purpose |
+|---|---|
+| [`viewer/`](viewer/) | Web experience, local server, live-data proxy, sky assets, and viewer documentation |
+| [`backend/`](backend/) | Optional FITS cleaning and science-processing API |
+| [`documentation/`](documentation/) | Mission, architecture, challenge, data-resource, and strategy documentation |
+| [`Pan-STARRS/`](Pan-STARRS/) | Pan-STARRS and WiseView analysis notes |
+| [`research/`](research/) | Astronomy research scripts, pipeline experiments, and supporting material |
+| [`data/`](data/) | Benchmark data used by the project |
+| [`requirements.txt`](requirements.txt) | Python dependencies for optional scientific and research components |
+| [`Dockerfile`](Dockerfile), [`render.yaml`](render.yaml) | Container and Render deployment configuration |
+
+### Further reading
+
+- [Viewer guide and API details](viewer/README.md)
+- [FITS pipeline guide](backend/README.md)
+- [Documentation index](documentation/README.md)
+- [NASA data and resources](documentation/05.NASA%20Data%20%26%20Resources.md)
+- [System architecture](documentation/04-system-architecture/system_architecture.md)
+- [Scientific foundation](documentation/04-system-architecture/scientific_foundation.md)
+- [Pan-STARRS analysis](Pan-STARRS/Pan-STARRS%20%2B%20WiseView%20analysis.md)
+
+## Data resources
+
+- [NASA/IPAC Infrared Science Archive — SPHEREx](https://irsa.ipac.caltech.edu/Missions/spherex.html)
+- [SPHEREx tutorial notebooks](https://caltech-ipac.github.io/irsa-tutorials/spherex/)
+- [Gaia mission data](https://archive.stsci.edu/missions-and-data/gaia)
+- [WiseView](http://byw.tools/wiseview), an inspiration for time-domain infrared image comparison
+- [Canadian Astronomy Data Centre](https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/en/)
+- [NEOSSat](https://www.asc-csa.gc.ca/eng/satellites/neossat/)
+- [NEOSSat data tutorial](https://github.com/asc-csa/NEOSSAT_Tutorial) and [dataset](https://data.asc-csa.gc.ca/dataset/neossat)
+
+## License
+
+This project is released under the [MIT License](LICENSE). NASA and partner-mission data remain subject to the policies of their respective archives.
